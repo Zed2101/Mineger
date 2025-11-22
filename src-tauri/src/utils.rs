@@ -8,7 +8,7 @@ use crate::models::{ServerDataFile, ModEntry, AppConfig, JavaRuntimeMapping};
 use std::process::{Child, Stdio};
 use std::sync::Mutex;
 use lazy_static::lazy_static;
-use std::io::Write;
+use std::io::{BufRead, BufReader, Write};
 use igd_next::{search_gateway, SearchOptions, PortMappingProtocol};
 use std::net::{SocketAddr, SocketAddrV4, UdpSocket};
 use std::time::Duration;
@@ -320,4 +320,25 @@ pub fn remove_upnp_mapping(port: u16) -> Result<String, String> {
         (Err(_), Ok(_)) => Ok(format!("Porta {} UDP rimossa (TCP non trovata o errore).", port)),
         (Err(e1), Err(e2)) => Err(format!("Errore rimozione: TCP {}, UDP {}", e1, e2)),
     }
+}
+
+pub fn write_to_stdin(server_id: &str, command: &str) -> Result<(), String> {
+    let mut servers = RUNNING_SERVERS.lock().map_err(|_| "Failed to lock server list")?;
+
+    if let Some(child) = servers.get_mut(server_id) {
+        if let Some(stdin) = child.stdin.as_mut() {
+            // Add newline if missing
+            let cmd = if command.ends_with('\n') {
+                command.to_string()
+            } else {
+                format!("{}\n", command)
+            };
+            
+            stdin.write_all(cmd.as_bytes()).map_err(|e| e.to_string())?;
+            // Flush to ensure it's sent immediately
+            stdin.flush().map_err(|e| e.to_string())?; 
+            return Ok(());
+        }
+    }
+    Err("Server not running or stdin unavailable".to_string())
 }

@@ -2,8 +2,11 @@
 use std::fs;
 use std::path::Path;
 use std::process::{Command, Stdio};
+use std::thread; 
+use std::io::{BufRead, BufReader};
 use crate::models::{ServerEntry, ServerDataFile}; // Import models
-use crate::utils::{update_mods_list, parse_server_properties, ensure_server_properties, accept_eula, get_java_path_for_version, RUNNING_SERVERS, send_stop_command, setup_upnp_mapping, remove_upnp_mapping}; // Import utils
+use crate::utils::{update_mods_list, parse_server_properties, ensure_server_properties, accept_eula, get_java_path_for_version, RUNNING_SERVERS, send_stop_command, setup_upnp_mapping, remove_upnp_mapping, write_to_stdin}; // Import utils
+use tauri::{AppHandle, Emitter};
 
 #[tauri::command]
 pub async fn get_servers() -> Result<Vec<ServerEntry>, String> {
@@ -62,40 +65,36 @@ pub async fn get_servers() -> Result<Vec<ServerEntry>, String> {
 }
 
 #[tauri::command]
-pub async fn start_server(id: String) -> Result<String, String> {
-    // 1. Controllo se è già avviato
+pub async fn start_server(app: AppHandle, id: String) -> Result<String, String> {
+    // 1. Check if running
     {
         let servers = RUNNING_SERVERS.lock().map_err(|_| "Lock error")?;
         if servers.contains_key(&id) {
             return Ok("Server already running".to_string());
         }
-    } // Rilascio il lock qui per non bloccare
+    }
 
     let servers_path = Path::new("../servers");
     let server_dir = servers_path.join(&id);
 
-    // --- NUOVO: UPnP SETUP ---
-    // 1. Leggiamo la porta dal file server.properties
+    // ... (UPnP Logic unchanged) ...
     let props = parse_server_properties(&server_dir);
     let port_str = props.get("server-port").map(|s| s.as_str()).unwrap_or("25565");
     let port: u16 = port_str.parse().unwrap_or(25565);
 
-    // 2. Tentiamo il mapping UPnP
-    // Usiamo match per non fermare il server se UPnP fallisce
     let upnp_msg = match setup_upnp_mapping(port) {
         Ok(msg) => {
-            println!("[UPnP] Successo: {}", msg);
-            format!(" (UPnP Attivo: Porta {})", port)
+            println!("[UPnP] Success: {}", msg);
+            format!(" (UPnP Active: Port {})", port)
         },
         Err(e) => {
-            println!("[UPnP] Fallito: {}", e); 
-            // Non ritorniamo errore alla UI, il server deve partire lo stesso!
-            " (UPnP Fallito - Controlla Router)".to_string() 
+            println!("[UPnP] Failed: {}", e); 
+            " (UPnP Failed)".to_string() 
         }
     };
 
+    // ... (Data loading, EULA, Java Path unchanged) ...
     if !server_dir.exists() { return Err("Dir not found".to_string()); }
-
     let data_file_path = server_dir.join("server-data.json");
     let file_content = fs::read_to_string(&data_file_path).map_err(|e| e.to_string())?;
     let server_data: ServerDataFile = serde_json::from_str(&file_content).map_err(|e| e.to_string())?;
@@ -103,30 +102,68 @@ pub async fn start_server(id: String) -> Result<String, String> {
     ensure_server_properties(&server_dir)?;
     accept_eula(&server_dir)?;
     let java_path = get_java_path_for_version(&server_data.version)?;
-
-    // 2. Configurazione Lancio
     let jar_path = server_dir.join("server.jar");
+    
     if !jar_path.exists() { return Err("server.jar not found".to_string()); }
 
-    let child = Command::new(java_path)
+    // 2. SPAWN PROCESS
+    let mut child = Command::new(java_path)
         .current_dir(&server_dir)
         .arg("-Xmx2G")
         .arg("-jar")
         .arg("server.jar")
         .arg("nogui")
-        // IMPORTANTE: Dobbiamo abilitare "piped" per poter inviare comandi dopo
-        .stdin(Stdio::piped()) 
-        // Opzionale: piped anche per stdout se vogliamo leggere la console in futuro
+        .stdin(Stdio::piped())   // Write to server
+        .stdout(Stdio::piped())  // Read from server
+        .stderr(Stdio::piped())  // Read errors
         .spawn()
         .map_err(|e| format!("Failed to start Java: {}", e))?;
 
-    // 3. Salva il processo nella mappa globale
+    // 3. HANDLE STDOUT STREAMING
+    // We take ownership of stdout here so we can move it to a separate thread
+    if let Some(stdout) = child.stdout.take() {
+        let server_id_clone = id.clone();
+        let app_handle = app.clone();
+        
+        thread::spawn(move || {
+            let reader = BufReader::new(stdout);
+            for line in reader.lines() {
+                if let Ok(l) = line {
+                    // Emit event to Frontend: "server-output"
+                    // Payload: { id: "server_id", line: "log text" }
+                    let _ = app_handle.emit("server-output", serde_json::json!({
+                        "id": server_id_clone,
+                        "line": l
+                    }));
+                }
+            }
+        });
+    }
+
+    // Handle STDERR as well (optional, but good for java errors)
+    if let Some(stderr) = child.stderr.take() {
+        let server_id_clone = id.clone();
+        let app_handle = app.clone();
+        thread::spawn(move || {
+            let reader = BufReader::new(stderr);
+            for line in reader.lines() {
+                if let Ok(l) = line {
+                    let _ = app_handle.emit("server-output", serde_json::json!({
+                        "id": server_id_clone,
+                        "line": l
+                    }));
+                }
+            }
+        });
+    }
+
+    // 4. Store process
     {
         let mut servers = RUNNING_SERVERS.lock().map_err(|_| "Lock error")?;
         servers.insert(id.clone(), child);
     }
 
-    Ok("Server started".to_string())
+    Ok(format!("Server started{}", upnp_msg))
 }
 
 // NUOVO COMANDO STOP
@@ -158,4 +195,10 @@ pub async fn stop_server(id: String) -> Result<String, String> {
     servers.remove(&id);
 
     Ok("Stop signal sent & UPnP cleaned".to_string())
+}
+
+#[tauri::command]
+pub async fn send_command(id: String, command: String) -> Result<(), String> {
+    write_to_stdin(&id, &command).map_err(|e| e.to_string())?;
+    Ok(())
 }

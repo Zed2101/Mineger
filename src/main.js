@@ -4,6 +4,7 @@ import { setupTabs } from './modules/ui-tabs.js';
 import { populatePropertiesPanel } from './modules/ui-properties.js';
 import { renderModsList } from './modules/ui-mods.js';
 import { setupModals } from './modules/ui-modals.js';
+import { setupConsole, clearConsole } from './modules/ui-console.js';
 
 // --- GLOBAL STATE ---
 // We pass this object to modules so they can read/write shared state
@@ -124,18 +125,22 @@ function selectServer(server) {
   populatePropertiesPanel(server.properties);
   renderModsList(server.mods);
 
-  // Setup Bottone
+  // --- NEW: Console Setup ---
+  clearConsole(); // Clear logs from previous server view
+  // Note: We don't have persistent logs yet (that would require saving logs to disk)
+  // so switching tabs clears the view. 
+  
+  // Setup Button (Unchanged)
   const btnStart = document.querySelector('.btn-start');
   const newBtn = btnStart.cloneNode(true);
   btnStart.parentNode.replaceChild(newBtn, btnStart);
 
-  // Controlla stato attuale
   if (runningServers.has(server.id)) {
     newBtn.textContent = "Stop Server";
     newBtn.style.backgroundColor = "var(--danger)";
   } else {
     newBtn.textContent = "Avvia Server";
-    newBtn.style.backgroundColor = ""; // Colore CSS default (accent)
+    newBtn.style.backgroundColor = ""; 
   }
 
   newBtn.addEventListener('click', () => {
@@ -159,17 +164,16 @@ function updateBannerUI(server) {
 
 async function initApp() {
   setupTabs();
-  
-  // Setup Modals passing state and refresh callbacks
   setupModals(state, renderSidebar, updateBannerUI);
+  
+  // Initialize Console Listeners
+  await setupConsole(state); 
 
-  // Load Data
   serverListEl.classList.add("hidden"); 
   loadingEl.classList.remove("hidden");
 
   try {
     state.serverList = await getServers();
-    console.log("Servers loaded:", state.serverList);
     renderSidebar();
   } catch (e) {
     serverListEl.innerHTML = `<div style='color:var(--danger); text-align:center;'>Errore: ${e}</div>`;
@@ -179,5 +183,4 @@ async function initApp() {
   }
 }
 
-// Start
 window.addEventListener("DOMContentLoaded", initApp);
