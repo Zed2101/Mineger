@@ -24,7 +24,7 @@ export async function setupConsole(state) {
 
         // Only show logs for the currently active server
         if (state.activeServerId === id) {
-            appendLogLine(line);
+            appendLogLine(line, id);
         }
     });
 
@@ -35,14 +35,14 @@ export async function setupConsole(state) {
             if (cmd && state.activeServerId) {
                 // Prevent using the console to stop the server
                 if (cmd.toLowerCase() === 'stop') {
-                    appendLogLine("[Error sending command]: The server must be stopped with the button");
+                    appendLogLine("[Error sending command]: The server must be stopped with the button", null, true);
                     consoleInput.value = "";
                     return;
                 }
 
                 try {
                     // Echo the command to console immediately for UX
-                    appendLogLine(`> ${cmd}`, true);
+                    appendLogLine(`> ${cmd}`, null, true);
                     
                     // Send to Backend
                     await invoke('send_command', { 
@@ -52,14 +52,14 @@ export async function setupConsole(state) {
                     
                     consoleInput.value = ""; // Clear input
                 } catch (err) {
-                    appendLogLine(`[Error sending command]: ${err}`, true);
+                    appendLogLine(`[Error sending command]: ${err}`, null, true);
                 }
             }
         }
     });
 }
 
-function appendLogLine(text, isUserCommand = false) {
+function appendLogLine(text, serverId, isUserCommand = false) {
     const div = document.createElement("div");
     div.className = "console-line";
     div.textContent = text; // Use textContent to prevent XSS
@@ -74,6 +74,13 @@ function appendLogLine(text, isUserCommand = false) {
     }
 
     consoleWindow.appendChild(div);
+
+    console.log(text);
+    if (text.toLowerCase().includes("done") && text.toLowerCase().includes("for help")) {
+        document.getElementById("detail-status").textContent = "ONLINE";
+        document.getElementById("detail-status").style.color = "var(--success)";
+        document.getElementById(`status-dot-${serverId.toLowerCase().replace(/\s+/g, '-')}`).style.backgroundColor = "var(--success)";
+    }
 
     // LIMIT LINES (Performance)
     if (consoleWindow.children.length > MAX_LINES) {

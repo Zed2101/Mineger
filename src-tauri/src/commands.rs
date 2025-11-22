@@ -80,6 +80,8 @@ pub async fn get_servers() -> Result<Vec<ServerEntry>, String> {
 
 #[tauri::command]
 pub async fn start_server(app: AppHandle, id: String) -> Result<String, String> {
+    // print to the console the server being started
+    println!("Starting server with ID: {}", id);
     // 1. Check if running
     {
         let servers = RUNNING_SERVERS.lock().map_err(|_| "Lock error")?;

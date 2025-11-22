@@ -48,7 +48,7 @@ function renderSidebar() {
           <p>${server.version} • ${server.last_played}</p>
         </div>
       </div>
-      <div class="status-dot ${statusClass}" id="status-dot-${server.id}"></div>
+      <div class="status-dot ${statusClass}" id="status-dot-${server.id.toLowerCase().replace(/\s+/g, '-')}"></div>
     `;
     
     li.addEventListener("click", () => selectServer(server));
@@ -78,9 +78,9 @@ async function handleServerToggle(serverId, serverStatus, btn) {
             runningServers.add(serverId);
             
             // Aggiorna status visivo
-            document.getElementById("detail-status").textContent = "ONLINE";
-            document.getElementById("detail-status").style.color = "var(--success)";
-            document.getElementById(`status-dot-${serverId}`).style.backgroundColor = "var(--success)";
+            document.getElementById("detail-status").textContent = "STARTING...";
+            document.getElementById("detail-status").style.color = "var(--warning)";
+            document.getElementById(`status-dot-${serverId.toLowerCase().replace(/\s+/g, '-')}`).style.backgroundColor = "var(--warning)";
             serverStatus = "online";
         } catch (error) {
             alert("Errore Start: " + error);
@@ -107,7 +107,7 @@ async function handleServerToggle(serverId, serverStatus, btn) {
                 
                 document.getElementById("detail-status").textContent = "OFFLINE";
                 document.getElementById("detail-status").style.color = "var(--danger)";
-                document.getElementById(`status-dot-${serverId}`).style.backgroundColor = "var(--danger)";
+                document.getElementById(`status-dot-${serverId.toLowerCase().replace(/\s+/g, '-')}`).style.backgroundColor = "var(--danger)";
                 serverStatus = "offline";
             }, 3000); // Aspetta 3 secondi finti mentre il server salva e chiude
 
@@ -134,7 +134,7 @@ function selectServer(server) {
   // Setup Button (Unchanged)
   const btnStart = document.querySelector('.btn-start');
   const newBtn = btnStart.cloneNode(true);
-  const statusDot = document.getElementById(`status-dot-${server.id}`);
+  const statusDot = document.getElementById(`status-dot-${server.id.toLowerCase().replace(/\s+/g, '-')}`);
   btnStart.parentNode.replaceChild(newBtn, btnStart);
 
   if(server.status === 'online') 
