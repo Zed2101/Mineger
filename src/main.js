@@ -48,7 +48,7 @@ function renderSidebar() {
           <p>${server.version} • ${server.last_played}</p>
         </div>
       </div>
-      <div class="status-dot ${statusClass}"></div>
+      <div class="status-dot ${statusClass}" id="status-dot-${server.id}"></div>
     `;
     
     li.addEventListener("click", () => selectServer(server));
@@ -56,7 +56,7 @@ function renderSidebar() {
   });
 }
 
-async function handleServerToggle(serverId, btn) {
+async function handleServerToggle(serverId, serverStatus, btn) {
     const isRunning = runningServers.has(serverId);
 
     if (!isRunning) {
@@ -80,7 +80,8 @@ async function handleServerToggle(serverId, btn) {
             // Aggiorna status visivo
             document.getElementById("detail-status").textContent = "ONLINE";
             document.getElementById("detail-status").style.color = "var(--success)";
-
+            document.getElementById(`status-dot-${serverId}`).style.backgroundColor = "var(--success)";
+            serverStatus = "online";
         } catch (error) {
             alert("Errore Start: " + error);
             btn.textContent = "Avvia Server";
@@ -106,6 +107,8 @@ async function handleServerToggle(serverId, btn) {
                 
                 document.getElementById("detail-status").textContent = "OFFLINE";
                 document.getElementById("detail-status").style.color = "var(--danger)";
+                document.getElementById(`status-dot-${serverId}`).style.backgroundColor = "var(--danger)";
+                serverStatus = "offline";
             }, 3000); // Aspetta 3 secondi finti mentre il server salva e chiude
 
         } catch (error) {
@@ -126,25 +129,29 @@ function selectServer(server) {
   renderModsList(server.mods);
 
   // --- NEW: Console Setup ---
-  clearConsole(); // Clear logs from previous server view
-  // Note: We don't have persistent logs yet (that would require saving logs to disk)
-  // so switching tabs clears the view. 
+  clearConsole();
   
   // Setup Button (Unchanged)
   const btnStart = document.querySelector('.btn-start');
   const newBtn = btnStart.cloneNode(true);
+  const statusDot = document.getElementById(`status-dot-${server.id}`);
   btnStart.parentNode.replaceChild(newBtn, btnStart);
+
+  if(server.status === 'online') 
+    runningServers.add(server.id);
 
   if (runningServers.has(server.id)) {
     newBtn.textContent = "Stop Server";
     newBtn.style.backgroundColor = "var(--danger)";
+    statusDot.style.backgroundColor = "var(--success)";
   } else {
     newBtn.textContent = "Avvia Server";
     newBtn.style.backgroundColor = ""; 
+    statusDot.style.backgroundColor = "var(--danger)";
   }
 
   newBtn.addEventListener('click', () => {
-    handleServerToggle(server.id, newBtn);
+    handleServerToggle(server.id, server.status, newBtn);
   });
 }
 

@@ -33,6 +33,13 @@ export async function setupConsole(state) {
         if (e.key === 'Enter') {
             const cmd = consoleInput.value.trim();
             if (cmd && state.activeServerId) {
+                // Prevent using the console to stop the server
+                if (cmd.toLowerCase() === 'stop') {
+                    appendLogLine("[Error sending command]: The server must be stopped with the button");
+                    consoleInput.value = "";
+                    return;
+                }
+
                 try {
                     // Echo the command to console immediately for UX
                     appendLogLine(`> ${cmd}`, true);

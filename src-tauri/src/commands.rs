@@ -32,7 +32,7 @@ pub async fn get_servers() -> Result<Vec<ServerEntry>, String> {
                 let mut parsed_data: ServerDataFile = serde_json::from_str(&file_content)
                     .map_err(|e| format!("JSON Error in {:?}: {}", path, e))?;
 
-                // Update Mods Logic from utils
+                // Update Mods Logic
                 let did_update = update_mods_list(&path, &mut parsed_data)?;
 
                 if did_update {
@@ -41,17 +41,31 @@ pub async fn get_servers() -> Result<Vec<ServerEntry>, String> {
                     fs::write(&data_file_path, updated_json).map_err(|e| e.to_string())?;
                 }
 
-                // Parse Properties from utils
+                // Parse Properties
                 let properties_map = parse_server_properties(&path);
                 let mods_count = parsed_data.mods.len();
+                
+                // 1. Extract ID first
+                let id = path.file_name().unwrap().to_string_lossy().to_string();
+
+                // 2. Check REAL Status from RUNNING_SERVERS
+                let status = {
+                    // We assume an error in locking means we can't check, so we default to offline
+                    let servers = RUNNING_SERVERS.lock().unwrap_or_else(|e| e.into_inner());
+                    if servers.contains_key(&id) {
+                        "online".to_string()
+                    } else {
+                        "offline".to_string()
+                    }
+                };
 
                 servers_list.push(ServerEntry {
-                    id: path.file_name().unwrap().to_string_lossy().to_string(),
+                    id, // Use the extracted variable
                     uuid: parsed_data.id,
                     name: parsed_data.name,
                     version: parsed_data.version,
                     icon: parsed_data.icon,
-                    status: "offline".to_string(),
+                    status, // Use the calculated status
                     last_played: parsed_data.last_played,
                     mods: parsed_data.mods,
                     properties: properties_map,
