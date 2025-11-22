@@ -12,6 +12,8 @@ const state = {
   activeServerId: null
 };
 
+const runningServers = new Set();
+
 // --- DOM REF ---
 const serverListEl = document.getElementById("server-list");
 const loadingEl = document.getElementById("sidebar-loading");
@@ -53,9 +55,68 @@ function renderSidebar() {
   });
 }
 
+async function handleServerToggle(serverId, btn) {
+    const isRunning = runningServers.has(serverId);
+
+    if (!isRunning) {
+        // --- START LOGIC ---
+        const originalText = btn.textContent;
+        btn.textContent = "Avvio...";
+        btn.disabled = true;
+        btn.style.opacity = "0.7";
+
+        try {
+            await invoke('start_server', { id: serverId });
+            
+            // Successo Avvio
+            btn.textContent = "Stop Server";
+            btn.style.backgroundColor = "var(--danger)"; // Rosso
+            btn.disabled = false;
+            btn.style.opacity = "1";
+            
+            runningServers.add(serverId);
+            
+            // Aggiorna status visivo
+            document.getElementById("detail-status").textContent = "ONLINE";
+            document.getElementById("detail-status").style.color = "var(--success)";
+
+        } catch (error) {
+            alert("Errore Start: " + error);
+            btn.textContent = "Avvia Server";
+            btn.disabled = false;
+            btn.style.opacity = "1";
+        }
+
+    } else {
+        // --- STOP LOGIC ---
+        btn.textContent = "Spegnimento...";
+        btn.disabled = true;
+
+        try {
+            await invoke('stop_server', { id: serverId });
+            
+            // Simuliamo un'attesa per la chiusura
+            setTimeout(() => {
+                btn.textContent = "Avvia Server";
+                btn.style.backgroundColor = "var(--success)"; // O il colore primario verde
+                btn.disabled = false;
+                
+                runningServers.delete(serverId);
+                
+                document.getElementById("detail-status").textContent = "OFFLINE";
+                document.getElementById("detail-status").style.color = "var(--danger)";
+            }, 3000); // Aspetta 3 secondi finti mentre il server salva e chiude
+
+        } catch (error) {
+            alert("Errore Stop: " + error);
+            btn.textContent = "Stop Server"; // Torna allo stato di prima
+            btn.disabled = false;
+        }
+    }
+}
+
 function selectServer(server) {
   state.activeServerId = server.id;
-
   emptyStateEl.classList.add("hidden");
   serverDetailsEl.classList.remove("hidden");
 
@@ -63,55 +124,23 @@ function selectServer(server) {
   populatePropertiesPanel(server.properties);
   renderModsList(server.mods);
 
-  // --- NEW: Attach Start Button Listener ---
+  // Setup Bottone
   const btnStart = document.querySelector('.btn-start');
-  
-  // Clone the button to remove old event listeners (simple hack)
   const newBtn = btnStart.cloneNode(true);
   btnStart.parentNode.replaceChild(newBtn, btnStart);
-  
-  newBtn.addEventListener('click', () => {
-    requestStartServer(server.id);
-  });
-}
 
-async function requestStartServer(serverId) {
-  const btn = document.querySelector('.btn-start');
-  if(!btn) return;
-
-  const originalText = btn.textContent;
-  btn.textContent = "Avvio in corso...";
-  btn.disabled = true;
-  btn.style.opacity = "0.7";
-
-  try {
-    const msg = await invoke('start_server', { id: serverId });
-    console.log(msg);
-    
-    btn.textContent = "Server Avviato!";
-    btn.style.backgroundColor = "var(--success)";
-    
-    // Reset button after 3 seconds
-    setTimeout(() => {
-      btn.textContent = "Stop Server"; // Should eventually change state
-      btn.style.backgroundColor = "var(--danger)"; // Change to stop button
-      btn.disabled = false;
-      btn.style.opacity = "1";
-    }, 3000);
-
-  } catch (error) {
-    console.error(error);
-    btn.textContent = "Errore Avvio";
-    btn.style.backgroundColor = "var(--danger)";
-    alert("Errore avvio: " + error);
-    
-    setTimeout(() => {
-      btn.textContent = originalText;
-      btn.style.backgroundColor = "var(--success)"; // Reset color
-      btn.disabled = false;
-      btn.style.opacity = "1";
-    }, 3000);
+  // Controlla stato attuale
+  if (runningServers.has(server.id)) {
+    newBtn.textContent = "Stop Server";
+    newBtn.style.backgroundColor = "var(--danger)";
+  } else {
+    newBtn.textContent = "Avvia Server";
+    newBtn.style.backgroundColor = ""; // Colore CSS default (accent)
   }
+
+  newBtn.addEventListener('click', () => {
+    handleServerToggle(server.id, newBtn);
+  });
 }
 
 function updateBannerUI(server) {

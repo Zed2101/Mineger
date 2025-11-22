@@ -3,7 +3,7 @@ use std::fs;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use crate::models::{ServerEntry, ServerDataFile}; // Import models
-use crate::utils::{update_mods_list, parse_server_properties, ensure_server_properties, accept_eula, get_java_path_for_version}; // Import utils
+use crate::utils::{update_mods_list, parse_server_properties, ensure_server_properties, accept_eula, get_java_path_for_version, RUNNING_SERVERS, send_stop_command, setup_upnp_mapping, remove_upnp_mapping}; // Import utils
 
 #[tauri::command]
 pub async fn get_servers() -> Result<Vec<ServerEntry>, String> {
@@ -63,43 +63,99 @@ pub async fn get_servers() -> Result<Vec<ServerEntry>, String> {
 
 #[tauri::command]
 pub async fn start_server(id: String) -> Result<String, String> {
+    // 1. Controllo se è già avviato
+    {
+        let servers = RUNNING_SERVERS.lock().map_err(|_| "Lock error")?;
+        if servers.contains_key(&id) {
+            return Ok("Server already running".to_string());
+        }
+    } // Rilascio il lock qui per non bloccare
+
     let servers_path = Path::new("../servers");
     let server_dir = servers_path.join(&id);
 
-    if !server_dir.exists() {
-        return Err("Server directory not found".to_string());
-    }
+    // --- NUOVO: UPnP SETUP ---
+    // 1. Leggiamo la porta dal file server.properties
+    let props = parse_server_properties(&server_dir);
+    let port_str = props.get("server-port").map(|s| s.as_str()).unwrap_or("25565");
+    let port: u16 = port_str.parse().unwrap_or(25565);
 
-    // 1. Load Server Data to get Version
+    // 2. Tentiamo il mapping UPnP
+    // Usiamo match per non fermare il server se UPnP fallisce
+    let upnp_msg = match setup_upnp_mapping(port) {
+        Ok(msg) => {
+            println!("[UPnP] Successo: {}", msg);
+            format!(" (UPnP Attivo: Porta {})", port)
+        },
+        Err(e) => {
+            println!("[UPnP] Fallito: {}", e); 
+            // Non ritorniamo errore alla UI, il server deve partire lo stesso!
+            " (UPnP Fallito - Controlla Router)".to_string() 
+        }
+    };
+
+    if !server_dir.exists() { return Err("Dir not found".to_string()); }
+
     let data_file_path = server_dir.join("server-data.json");
     let file_content = fs::read_to_string(&data_file_path).map_err(|e| e.to_string())?;
     let server_data: ServerDataFile = serde_json::from_str(&file_content).map_err(|e| e.to_string())?;
 
-    // 2. Prepare Environment (Properties & EULA)
     ensure_server_properties(&server_dir)?;
     accept_eula(&server_dir)?;
-
-    // 3. Determine Java Path
     let java_path = get_java_path_for_version(&server_data.version)?;
 
-    // 4. Find the Server Jar
-    // Logic: Look for "server.jar" or the first .jar that isn't in mods/
+    // 2. Configurazione Lancio
     let jar_path = server_dir.join("server.jar");
-    if !jar_path.exists() {
-        return Err("server.jar not found in server folder".to_string());
-    }
+    if !jar_path.exists() { return Err("server.jar not found".to_string()); }
 
-    // 5. Launch Process
-    // Note: In the future, we will spawn this and keep track of the PID to stop it/read logs.
-    // For now, we just fire it.
-    Command::new(java_path)
-        .current_dir(&server_dir) // IMPORTANT: Run inside server folder
-        .arg("-Xmx2G") // Default RAM (make this configurable later)
+    let child = Command::new(java_path)
+        .current_dir(&server_dir)
+        .arg("-Xmx2G")
         .arg("-jar")
         .arg("server.jar")
         .arg("nogui")
-        .spawn() // spawn() runs it async, output() would wait for it to finish
+        // IMPORTANTE: Dobbiamo abilitare "piped" per poter inviare comandi dopo
+        .stdin(Stdio::piped()) 
+        // Opzionale: piped anche per stdout se vogliamo leggere la console in futuro
+        .spawn()
         .map_err(|e| format!("Failed to start Java: {}", e))?;
 
+    // 3. Salva il processo nella mappa globale
+    {
+        let mut servers = RUNNING_SERVERS.lock().map_err(|_| "Lock error")?;
+        servers.insert(id.clone(), child);
+    }
+
     Ok("Server started".to_string())
+}
+
+// NUOVO COMANDO STOP
+#[tauri::command]
+pub async fn stop_server(id: String) -> Result<String, String> {
+    // 1. Manda il comando "stop" al processo Java
+    send_stop_command(&id)?;
+
+    // 2. RECUPERA LA PORTA PER IL CLEANUP UPnP
+    // Dobbiamo sapere quale porta chiudere. Leggiamo il file properties.
+    let servers_path = Path::new("../servers");
+    let server_dir = servers_path.join(&id);
+    
+    // Leggiamo le properties (se fallisce usiamo default 25565)
+    let props = parse_server_properties(&server_dir);
+    let port_str = props.get("server-port").map(|s| s.as_str()).unwrap_or("25565");
+    let port: u16 = port_str.parse().unwrap_or(25565);
+
+    // 3. ESEGUI CLEANUP UPnP
+    // Usiamo match/println perché se la rimozione fallisce (es. router spento), 
+    // NON vogliamo che l'app dia errore all'utente. Il server si è comunque fermato.
+    match remove_upnp_mapping(port) {
+        Ok(msg) => println!("[UPnP Cleanup] {}", msg),
+        Err(e) => println!("[UPnP Cleanup Error] {}", e),
+    }
+
+    // 4. Rimuovi dalla lista dei processi attivi
+    let mut servers = RUNNING_SERVERS.lock().map_err(|_| "Lock error")?;
+    servers.remove(&id);
+
+    Ok("Stop signal sent & UPnP cleaned".to_string())
 }

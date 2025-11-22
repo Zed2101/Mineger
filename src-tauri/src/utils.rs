@@ -5,6 +5,17 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use sha1::{Sha1, Digest};
 use std::collections::HashMap;
 use crate::models::{ServerDataFile, ModEntry, AppConfig, JavaRuntimeMapping};
+use std::process::{Child, Stdio};
+use std::sync::Mutex;
+use lazy_static::lazy_static;
+use std::io::Write;
+use igd_next::{search_gateway, SearchOptions, PortMappingProtocol};
+use std::net::{SocketAddr, SocketAddrV4, UdpSocket};
+use std::time::Duration;
+
+lazy_static! {
+    pub static ref RUNNING_SERVERS: Mutex<HashMap<String, Child>> = Mutex::new(HashMap::new());
+}
 
 /// SHA1 hash of filename only
 pub fn calculate_sha1(path: &Path) -> Result<String, String> {
@@ -17,6 +28,17 @@ pub fn calculate_sha1(path: &Path) -> Result<String, String> {
     let result = hasher.finalize();
 
     Ok(hex::encode(result))
+}
+
+fn get_local_ip_via_socket_trick() -> Option<std::net::Ipv4Addr> {
+    let socket = UdpSocket::bind("0.0.0.0:0").ok()?;
+    // Non invia dati reali, serve solo al SO per scegliere l'interfaccia di rete corretta
+    socket.connect("8.8.8.8:80").ok()?;
+    if let Ok(SocketAddr::V4(addr)) = socket.local_addr() {
+        Some(*addr.ip())
+    } else {
+        None
+    }
 }
 
 /// Directory modified time
@@ -193,4 +215,109 @@ pub fn get_java_path_for_version(mc_version: &str) -> Result<String, String> {
     config.java_paths.get(required_java_id)
         .cloned()
         .ok_or_else(|| format!("Nessun percorso configurato per {} nel config.json", required_java_id))
+}
+
+pub fn send_stop_command(server_id: &str) -> Result<String, String> {
+    // Blocchiamo il mutex per accedere alla mappa in modo sicuro
+    let mut servers = RUNNING_SERVERS.lock().map_err(|_| "Failed to lock server list")?;
+
+    if let Some(child) = servers.get_mut(server_id) {
+        // Prendiamo lo stdin del processo
+        if let Some(stdin) = child.stdin.as_mut() {
+            // Scriviamo "stop" + invio
+            stdin.write_all(b"stop\n").map_err(|e| e.to_string())?;
+            return Ok("Stop command sent".to_string());
+        } else {
+            return Err("Server stdin not available".to_string());
+        }
+    }
+    
+    Err("Server not running".to_string())
+}
+
+pub fn kill_server_process(server_id: &str) -> Result<String, String> {
+    let mut servers = RUNNING_SERVERS.lock().map_err(|_| "Failed to lock server list")?;
+    
+    if let Some(mut child) = servers.remove(server_id) {
+        // Uccidi il processo
+        child.kill().map_err(|e| e.to_string())?;
+        return Ok("Server killed".to_string());
+    }
+    
+    Ok("Server was not running".to_string())
+}
+
+pub fn setup_upnp_mapping(port: u16) -> Result<String, String> {
+    // 1. Trova IP Locale
+    let my_ip = get_local_ip_via_socket_trick()
+        .ok_or("Impossibile rilevare IP Locale per UPnP")?;
+
+    // 2. Configura la ricerca del Gateway
+    let options = SearchOptions {
+        bind_addr: SocketAddr::V4(SocketAddrV4::new(my_ip, 0)),
+        timeout: Some(Duration::from_secs(3)), 
+        ..Default::default()
+    };
+
+    // 3. Cerca Gateway
+    let gateway = search_gateway(options)
+        .map_err(|e| format!("Nessun gateway UPnP trovato: {}", e))?;
+
+    // 4. Mappa le porte (TCP e UDP)
+    let local_addr = SocketAddr::V4(SocketAddrV4::new(my_ip, port));
+    let lease_duration = 0; // 0 = Infinito
+    let description = format!("Mineger Server Port {}", port);
+
+    // Tentativo TCP (Fondamentale per Minecraft)
+    let tcp_result = gateway.add_port(PortMappingProtocol::TCP, port, local_addr, lease_duration, &description);
+    
+    // Tentativo UDP (Fondamentale per Voice Chat / Query)
+    let udp_result = gateway.add_port(PortMappingProtocol::UDP, port, local_addr, lease_duration, &description);
+
+    // 5. Gestione Risultati Combinati
+    match (tcp_result, udp_result) {
+        (Ok(_), Ok(_)) => {
+            Ok(format!("Porta {} (TCP & UDP) aperta con successo su {}", port, gateway.addr))
+        },
+        (Ok(_), Err(e)) => {
+            // TCP è andato, UDP no. È comunque un successo parziale (si può giocare).
+            Ok(format!("TCP aperto su {}, ma UDP fallito: {}", gateway.addr, e))
+        },
+        (Err(e), Ok(_)) => {
+            // Raro: UDP andato, TCP no.
+            Ok(format!("UDP aperto su {}, ma TCP fallito: {}", gateway.addr, e))
+        },
+        (Err(e1), Err(e2)) => {
+            // Entrambi falliti
+            Err(format!("Fallito tutto. TCP: {}, UDP: {}", e1, e2))
+        }
+    }
+}
+
+pub fn remove_upnp_mapping(port: u16) -> Result<String, String> {
+    // 1. Trova IP Locale
+    let my_ip = get_local_ip_via_socket_trick()
+        .ok_or("Impossibile rilevare IP Locale per pulizia UPnP")?;
+
+    // 2. Cerca Gateway
+    let options = SearchOptions {
+        bind_addr: SocketAddr::V4(SocketAddrV4::new(my_ip, 0)),
+        timeout: Some(Duration::from_secs(3)), 
+        ..Default::default()
+    };
+
+    let gateway = search_gateway(options)
+        .map_err(|e| format!("Nessun gateway UPnP trovato per rimozione: {}", e))?;
+
+    // 3. Rimuovi le porte (Indipendentemente)
+    let tcp_res = gateway.remove_port(PortMappingProtocol::TCP, port);
+    let udp_res = gateway.remove_port(PortMappingProtocol::UDP, port);
+
+    // 4. Report Risultati
+    match (tcp_res, udp_res) {
+        (Ok(_), Ok(_)) => Ok(format!("Porta {} (TCP & UDP) rimossa.", port)),
+        (Ok(_), Err(_)) => Ok(format!("Porta {} TCP rimossa (UDP non trovata o errore).", port)),
+        (Err(_), Ok(_)) => Ok(format!("Porta {} UDP rimossa (TCP non trovata o errore).", port)),
+        (Err(e1), Err(e2)) => Err(format!("Errore rimozione: TCP {}, UDP {}", e1, e2)),
+    }
 }

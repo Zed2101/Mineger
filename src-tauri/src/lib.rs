@@ -11,7 +11,8 @@ pub fn run() {
         // Register the commands from the commands module
         .invoke_handler(tauri::generate_handler![
             commands::get_servers,
-            commands::start_server
+            commands::start_server,
+            commands::stop_server
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
