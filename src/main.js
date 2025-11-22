@@ -1,3 +1,4 @@
+const { invoke } = window.__TAURI__.core;
 import { getServers } from './modules/api.js';
 import { setupTabs } from './modules/ui-tabs.js';
 import { populatePropertiesPanel } from './modules/ui-properties.js';
@@ -58,12 +59,59 @@ function selectServer(server) {
   emptyStateEl.classList.add("hidden");
   serverDetailsEl.classList.remove("hidden");
 
-  // Update Banner
   updateBannerUI(server);
-
-  // Delegate specific tabs to modules
   populatePropertiesPanel(server.properties);
   renderModsList(server.mods);
+
+  // --- NEW: Attach Start Button Listener ---
+  const btnStart = document.querySelector('.btn-start');
+  
+  // Clone the button to remove old event listeners (simple hack)
+  const newBtn = btnStart.cloneNode(true);
+  btnStart.parentNode.replaceChild(newBtn, btnStart);
+  
+  newBtn.addEventListener('click', () => {
+    requestStartServer(server.id);
+  });
+}
+
+async function requestStartServer(serverId) {
+  const btn = document.querySelector('.btn-start');
+  if(!btn) return;
+
+  const originalText = btn.textContent;
+  btn.textContent = "Avvio in corso...";
+  btn.disabled = true;
+  btn.style.opacity = "0.7";
+
+  try {
+    const msg = await invoke('start_server', { id: serverId });
+    console.log(msg);
+    
+    btn.textContent = "Server Avviato!";
+    btn.style.backgroundColor = "var(--success)";
+    
+    // Reset button after 3 seconds
+    setTimeout(() => {
+      btn.textContent = "Stop Server"; // Should eventually change state
+      btn.style.backgroundColor = "var(--danger)"; // Change to stop button
+      btn.disabled = false;
+      btn.style.opacity = "1";
+    }, 3000);
+
+  } catch (error) {
+    console.error(error);
+    btn.textContent = "Errore Avvio";
+    btn.style.backgroundColor = "var(--danger)";
+    alert("Errore avvio: " + error);
+    
+    setTimeout(() => {
+      btn.textContent = originalText;
+      btn.style.backgroundColor = "var(--success)"; // Reset color
+      btn.disabled = false;
+      btn.style.opacity = "1";
+    }, 3000);
+  }
 }
 
 function updateBannerUI(server) {

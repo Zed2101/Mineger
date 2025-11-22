@@ -1,8 +1,9 @@
 // src-tauri/src/commands.rs
 use std::fs;
 use std::path::Path;
+use std::process::{Command, Stdio};
 use crate::models::{ServerEntry, ServerDataFile}; // Import models
-use crate::utils::{update_mods_list, parse_server_properties}; // Import utils
+use crate::utils::{update_mods_list, parse_server_properties, ensure_server_properties, accept_eula, get_java_path_for_version}; // Import utils
 
 #[tauri::command]
 pub async fn get_servers() -> Result<Vec<ServerEntry>, String> {
@@ -58,4 +59,47 @@ pub async fn get_servers() -> Result<Vec<ServerEntry>, String> {
     }
 
     Ok(servers_list)
+}
+
+#[tauri::command]
+pub async fn start_server(id: String) -> Result<String, String> {
+    let servers_path = Path::new("../servers");
+    let server_dir = servers_path.join(&id);
+
+    if !server_dir.exists() {
+        return Err("Server directory not found".to_string());
+    }
+
+    // 1. Load Server Data to get Version
+    let data_file_path = server_dir.join("server-data.json");
+    let file_content = fs::read_to_string(&data_file_path).map_err(|e| e.to_string())?;
+    let server_data: ServerDataFile = serde_json::from_str(&file_content).map_err(|e| e.to_string())?;
+
+    // 2. Prepare Environment (Properties & EULA)
+    ensure_server_properties(&server_dir)?;
+    accept_eula(&server_dir)?;
+
+    // 3. Determine Java Path
+    let java_path = get_java_path_for_version(&server_data.version)?;
+
+    // 4. Find the Server Jar
+    // Logic: Look for "server.jar" or the first .jar that isn't in mods/
+    let jar_path = server_dir.join("server.jar");
+    if !jar_path.exists() {
+        return Err("server.jar not found in server folder".to_string());
+    }
+
+    // 5. Launch Process
+    // Note: In the future, we will spawn this and keep track of the PID to stop it/read logs.
+    // For now, we just fire it.
+    Command::new(java_path)
+        .current_dir(&server_dir) // IMPORTANT: Run inside server folder
+        .arg("-Xmx2G") // Default RAM (make this configurable later)
+        .arg("-jar")
+        .arg("server.jar")
+        .arg("nogui")
+        .spawn() // spawn() runs it async, output() would wait for it to finish
+        .map_err(|e| format!("Failed to start Java: {}", e))?;
+
+    Ok("Server started".to_string())
 }

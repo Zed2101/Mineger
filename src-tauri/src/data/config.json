@@ -1,0 +1,8 @@
+{
+  "java_paths": {
+    "java_8": "C:\\Program Files\\OpenLogic\\jre-8.0.422.05-hotspot\\bin\\java.exe",
+    "java_16": "C:\\Program Files\\OpenLogic\\jdk-17.0.12.7-hotspot\\bin\\java.exe",
+    "java_17": "C:\\Program Files\\OpenLogic\\jdk-17.0.12.7-hotspot\\bin\\java.exe",
+    "java_21": "C:\\Program Files\\OpenLogic\\jdk-21.0.8.9-hotspot\\bin\\java.exe"
+  }
+}

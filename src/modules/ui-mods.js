@@ -9,7 +9,7 @@ export function renderModsList(mods) {
   modsListEl.innerHTML = "";
 
   if (!mods || mods.length === 0) {
-    modsListEl.innerHTML = `<li style="padding:20px; text-align:center; color:gray; list-style:none;">Nessuna mod installata</li>`;
+    modsListEl.innerHTML = `<li style="padding:20px; text-align:center; color:gray; list-style:none; grid-column: span 2;">Nessuna mod installata</li>`;
     return;
   }
 

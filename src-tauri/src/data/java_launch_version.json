@@ -1,0 +1,38 @@
+[
+  {
+    "id": "java_21",
+    "java_version": 21,
+    "rules": {
+      "min_inclusive": "1.20.5",
+      "max_inclusive": null
+    },
+    "note": "Required for 1.20.5, 1.21 and upcoming versions."
+  },
+  {
+    "id": "java_17",
+    "java_version": 17,
+    "rules": {
+      "min_inclusive": "1.18",
+      "max_inclusive": "1.20.4"
+    },
+    "note": "The standard for the Caves & Cliffs era."
+  },
+  {
+    "id": "java_16",
+    "java_version": 16,
+    "rules": {
+      "min_inclusive": "1.17",
+      "max_inclusive": "1.17.1"
+    },
+    "note": "Short-lived requirement. Java 17 often works here too, but 16 was the strict minimum."
+  },
+  {
+    "id": "java_8",
+    "java_version": 8,
+    "rules": {
+      "min_inclusive": "1.0",
+      "max_inclusive": "1.16.5"
+    },
+    "note": "The classic standard. Includes 1.7.10, 1.12.2, and 1.16.5."
+  }
+]

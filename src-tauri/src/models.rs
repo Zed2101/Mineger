@@ -37,3 +37,22 @@ pub struct ServerEntry {
     pub properties: HashMap<String, String>,
     pub mods_count: usize, 
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct AppConfig {
+    pub java_paths: HashMap<String, String>,
+}
+
+// NEW: Structs for java_launch_version.json
+#[derive(Serialize, Deserialize, Debug)]
+pub struct JavaRuntimeRule {
+    pub min_inclusive: String,
+    pub max_inclusive: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct JavaRuntimeMapping {
+    pub id: String,
+    pub java_version: u32,
+    pub rules: JavaRuntimeRule,
+}
