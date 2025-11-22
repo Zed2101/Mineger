@@ -1,15 +1,20 @@
-import { formatBytes } from './utils.js';
+// src/modules/ui-mods.js (o dove hai la funzione)
+
+import { formatBytes } from './utils.js'; // Assicurati che l'import sia corretto
 
 export function renderModsList(mods) {
   const modsListEl = document.getElementById("mods-list");
-  const modsHeaderEl = document.querySelector(".mods-header h3");
+  // Selettore aggiornato per sicurezza
+  const modsHeaderEl = document.querySelector(".mods-header h3") || document.getElementById("mods-header-title"); 
 
   const count = mods ? mods.length : 0;
-  modsHeaderEl.textContent = `Mod Installate (${count})`;
+  if(modsHeaderEl) modsHeaderEl.textContent = `Mod Installate (${count})`;
+  
   modsListEl.innerHTML = "";
 
   if (!mods || mods.length === 0) {
-    modsListEl.innerHTML = `<li style="padding:20px; text-align:center; color:gray; list-style:none; grid-column: span 2;">Nessuna mod installata</li>`;
+    // Ho aggiunto grid-column: span 2 per centrare il messaggio su tutta la larghezza
+    modsListEl.innerHTML = `<li style="grid-column: span 2; padding:30px; text-align:center; color:var(--text-muted); list-style:none;">Nessuna mod installata</li>`;
     return;
   }
 
@@ -18,10 +23,30 @@ export function renderModsList(mods) {
     li.className = "mod-item";
     const sizeFormatted = formatBytes(mod.size);
 
+    // Nota: "checked" è hardcoded per ora. In futuro leggeremo se il file finisce con .disabled
+    const isEnabled = true; 
+
     li.innerHTML = `
-      <span class="mod-name">${mod.name}</span>
-      <span class="size">${sizeFormatted}</span>
+      <div class="mod-info">
+        <span class="mod-name" title="${mod.name}">${mod.name}</span>
+        <span class="mod-size">${sizeFormatted}</span>
+      </div>
+
+      <div class="mod-actions">
+        <label class="switch mod-switch" title="Attiva/Disattiva">
+          <input type="checkbox" ${isEnabled ? 'checked' : ''} class="mod-toggle-input" data-filename="${mod.name}">
+          <span class="slider round"></span>
+        </label>
+
+        <button class="btn-delete-mod" title="Elimina Mod" data-filename="${mod.name}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        </button>
+      </div>
     `;
+    
     modsListEl.appendChild(li);
   });
 }

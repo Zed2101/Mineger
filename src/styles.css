@@ -343,21 +343,85 @@ body {
   background: var(--bg-hover);
 }
 
+/* --- MODS LIST STYLES UPDATED --- */
 .mods-list {
   list-style: none;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px 20px;
+  grid-template-columns: 1fr 1fr; /* Due colonne */
+  gap: 10px 15px;
+  padding-bottom: 20px;
 }
 
 .mod-item {
-  background: rgba(0,0,0,0.2);
-  padding: 10px;
-  margin-bottom: 5px;
-  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 8px 12px;
+  border-radius: 6px;
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.mod-item:hover {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Parte Sinistra: Nome e Dimensione */
+.mod-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Serve per l'ellipsis se il nome è lungo */
+  margin-right: 10px;
+}
+
+.mod-name {
   font-size: 13px;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Aggiunge "..." se il nome è troppo lungo */
+  font-weight: 500;
+}
+
+.mod-size {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Parte Destra: Azioni */
+.mod-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0; /* Impedisce che i bottoni vengano schiacciati */
+}
+
+/* Rimpicciolisce lo switch standard per farlo stare meglio nella lista */
+.mod-switch {
+  transform: scale(0.8); 
+  transform-origin: right center; /* Mantiene l'allineamento a destra */
+}
+
+/* Bottone Delete */
+.btn-delete-mod {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.btn-delete-mod:hover {
+  color: var(--danger);
+  background: rgba(243, 139, 168, 0.15); /* Rosso trasparente */
 }
 
 .size { color: var(--text-muted); font-size: 11px; }
