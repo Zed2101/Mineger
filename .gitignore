@@ -23,3 +23,11 @@ dist-ssr
 *.sln
 *.sw?
 servers/*
+# Tailwind output (generato da `npm run css:build`)
+src/tailwind.css
+
+# Impostazioni locali (host remoto, token)
+src-tauri/src/data/settings.json
+
+# Icone caricate dall utente (dev)
+/icons/

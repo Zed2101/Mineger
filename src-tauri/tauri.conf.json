@@ -1,18 +1,23 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "mineger",
-  "version": "0.1.0",
+  "productName": "Mineger",
+  "version": "1.0.0",
   "identifier": "com.zed.mineger",
   "build": {
-    "frontendDist": "../src"
+    "frontendDist": "../src",
+    "beforeDevCommand": "npm run css:watch",
+    "beforeBuildCommand": "npm run css:build"
   },
   "app": {
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "mineger",
-        "width": 800,
-        "height": 600
+        "title": "Mineger",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1100,
+        "minHeight": 700,
+        "center": true
       }
     ],
     "security": {
