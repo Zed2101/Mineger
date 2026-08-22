@@ -31,3 +31,6 @@ src-tauri/src/data/settings.json
 
 # Icone caricate dall utente (dev)
 /icons/
+
+# Piano di lavoro interno
+PIANO.md
