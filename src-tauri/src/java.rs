@@ -13,6 +13,7 @@
 
 use crate::models::{AppConfig, JavaRuntimeMapping};
 use crate::paths;
+use crate::tr;
 use serde::Serialize;
 use std::collections::HashSet;
 use std::env;
@@ -321,28 +322,21 @@ pub fn resolve(app: &AppHandle, mc_version: &str) -> Result<JavaChoice, String> 
 
     let runtimes = detect_runtimes();
     if runtimes.is_empty() {
-        return Err(format!(
-            "Nessuna installazione Java trovata. Installa Java {} (es. Adoptium Temurin) oppure indica il percorso in config.json",
-            required
-        ));
+        return Err(tr!("errors.java.none_installed", "major" => required));
     }
 
     if let Some(rt) = runtimes.iter().filter(|r| r.major >= required).min_by_key(|r| r.major) {
-        let warning = (rt.major != required).then(|| {
-            format!(
-                "Java {} non trovata: uso Java {} ({}). Server molto vecchi potrebbero non avviarsi.",
-                required, rt.major, rt.path
-            )
-        });
+        let warning = (rt.major != required)
+            .then(|| tr!("errors.java.fallback_used", "required" => required, "used" => rt.major, "path" => rt.path));
         return Ok(JavaChoice { runtime: rt.clone(), required_major: required, warning });
     }
 
     let available: Vec<String> = runtimes.iter().map(|r| r.major.to_string()).collect();
-    Err(format!(
-        "Minecraft {} richiede Java {} o superiore, ma sono installate solo: Java {}",
-        mc_version,
-        required,
-        available.join(", ")
+    Err(tr!(
+        "errors.java.version_too_old",
+        "version" => mc_version,
+        "required" => required,
+        "available" => available.join(", ")
     ))
 }
 

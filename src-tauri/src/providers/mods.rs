@@ -8,6 +8,7 @@
 // installabili sono due. Le mod copiate a mano restano senza sorgente ("manuale").
 
 use super::{epoch_to_iso, http, iso_to_epoch, normalize_loader, Provider, USER_AGENT};
+use crate::tr;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use tauri::AppHandle;
@@ -130,14 +131,14 @@ fn mr_get<T: serde::de::DeserializeOwned>(url: &str) -> Result<T, String> {
         .header("User-Agent", USER_AGENT)
         .header("Accept", "application/json")
         .send()
-        .map_err(|e| format!("Modrinth non raggiungibile: {}", e))?;
+        .map_err(|e| tr!("errors.http.unreachable", "who" => "Modrinth", "error" => e))?;
     if resp.status().as_u16() == 404 {
-        return Err("Progetto non trovato su Modrinth".to_string());
+        return Err(tr!("errors.modrinth.project_not_found"));
     }
     if !resp.status().is_success() {
-        return Err(format!("Modrinth: HTTP {}", resp.status()));
+        return Err(tr!("errors.http.status", "who" => "Modrinth", "status" => resp.status()));
     }
-    resp.json().map_err(|e| format!("Risposta Modrinth non valida: {}", e))
+    resp.json().map_err(|e| tr!("errors.http.invalid_response", "who" => "Modrinth", "error" => e))
 }
 
 #[derive(Deserialize)]
@@ -543,7 +544,7 @@ pub fn search(
         match provider {
             Provider::Modrinth => modrinth_search(query, kind, mc, loader, limit),
             Provider::Curseforge => curseforge_search(app, query, kind, mc, loader, limit),
-            Provider::Ftb => Err("FTB pubblica solo modpack: usa Modrinth o CurseForge per le singole mod".to_string()),
+            Provider::Ftb => Err(tr!("errors.mods.ftb_packs_only_hint")),
         }
     };
 
@@ -572,7 +573,7 @@ pub fn versions(
         match provider {
             Provider::Modrinth => modrinth_versions(project_id, kind, mc, loader),
             Provider::Curseforge => curseforge_versions(app, project_id, kind, mc, loader),
-            Provider::Ftb => Err("FTB pubblica solo modpack".to_string()),
+            Provider::Ftb => Err(tr!("errors.mods.ftb_packs_only")),
         }
     };
 
@@ -613,11 +614,11 @@ pub fn download_url(app: &AppHandle, provider: Provider, project_id: &str, file:
     }
     match provider {
         Provider::Curseforge => {
-            let project: u64 = project_id.parse().map_err(|_| "Id progetto CurseForge non valido".to_string())?;
-            let file_id: u64 = file.id.parse().map_err(|_| "Id file CurseForge non valido".to_string())?;
+            let project: u64 = project_id.parse().map_err(|_| tr!("errors.mods.invalid_cf_project_id"))?;
+            let file_id: u64 = file.id.parse().map_err(|_| tr!("errors.mods.invalid_cf_file_id"))?;
             super::curseforge::file_download_url(app, project, file_id)
         }
-        _ => Err(format!("Nessun link di download per {}", file.name)),
+        _ => Err(tr!("errors.mods.no_download_link", "name" => file.name)),
     }
 }
 

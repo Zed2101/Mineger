@@ -13,6 +13,7 @@
 use crate::models::LaunchConfig;
 use crate::packs::Progress;
 use crate::providers::{self, USER_AGENT};
+use crate::tr;
 use crate::{create, utils};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -100,7 +101,7 @@ fn http() -> Result<reqwest::blocking::Client, String> {
         .connect_timeout(Duration::from_secs(15))
         .timeout(Duration::from_secs(60))
         .build()
-        .map_err(|e| format!("HTTP client: {}", e))
+        .map_err(|e| tr!("errors.http.client", "error" => e))
 }
 
 fn get_json<T: serde::de::DeserializeOwned>(url: &str, who: &str) -> Result<T, String> {
@@ -109,9 +110,9 @@ fn get_json<T: serde::de::DeserializeOwned>(url: &str, who: &str) -> Result<T, S
         .header("Accept", "application/json")
         .send()
         .and_then(|r| r.error_for_status())
-        .map_err(|e| format!("{} non raggiungibile: {}", who, e))?
+        .map_err(|e| tr!("errors.http.unreachable", "who" => who, "error" => e))?
         .json()
-        .map_err(|e| format!("Risposta {} non valida: {}", who, e))
+        .map_err(|e| tr!("errors.http.invalid_response", "who" => who, "error" => e))
 }
 
 // ---------------------------------------------------------------------------
@@ -192,9 +193,9 @@ pub fn forge_versions(mc: &str) -> Result<Vec<LoaderVersion>, String> {
         .get(FORGE_META)
         .send()
         .and_then(|r| r.error_for_status())
-        .map_err(|e| format!("Forge non raggiungibile: {}", e))?
+        .map_err(|e| tr!("errors.http.unreachable", "who" => "Forge", "error" => e))?
         .text()
-        .map_err(|e| format!("Risposta Forge non valida: {}", e))?;
+        .map_err(|e| tr!("errors.http.invalid_response", "who" => "Forge", "error" => e))?;
 
     let prefix = format!("{}-", mc);
     let mut versions: Vec<String> = xml
@@ -215,7 +216,7 @@ pub fn forge_versions(mc: &str) -> Result<Vec<LoaderVersion>, String> {
     let latest = promos.get(&format!("{}-latest", mc)).cloned();
 
     if versions.is_empty() {
-        return Err(format!("Forge non ha build per Minecraft {}", mc));
+        return Err(tr!("errors.loader.no_builds", "loader" => "Forge", "version" => mc));
     }
     // Se le promotions non rispondono, si consiglia la build più recente.
     let fallback = recommended.is_none().then(|| versions[0].clone());
@@ -269,7 +270,7 @@ pub fn neoforge_prefix(mc: &str) -> Option<String> {
 
 /// Versioni NeoForge per una versione MC (dalla più recente); le `-beta` sono marcate.
 pub fn neoforge_versions(mc: &str) -> Result<Vec<LoaderVersion>, String> {
-    let prefix = neoforge_prefix(mc).ok_or_else(|| format!("NeoForge non supporta Minecraft {}", mc))?;
+    let prefix = neoforge_prefix(mc).ok_or_else(|| tr!("errors.loader.unsupported_mc", "loader" => "NeoForge", "version" => mc))?;
     let all: NeoforgeVersions = get_json(NEOFORGE_META, "NeoForge")?;
     let mut list: Vec<String> = all
         .versions
@@ -278,7 +279,7 @@ pub fn neoforge_versions(mc: &str) -> Result<Vec<LoaderVersion>, String> {
         .collect();
     list.reverse();
     if list.is_empty() {
-        return Err(format!("NeoForge non ha build per Minecraft {}", mc));
+        return Err(tr!("errors.loader.no_builds", "loader" => "NeoForge", "version" => mc));
     }
     let first_stable = list.iter().position(|v| !v.contains("beta"));
     Ok(list
@@ -310,7 +311,7 @@ pub fn fabric_versions(mc: &str) -> Result<Vec<LoaderVersion>, String> {
     let url = format!("{}/{}", FABRIC_LOADER, mc);
     let list: Vec<FabricLoaderEntry> = get_json(&url, "Fabric")?;
     if list.is_empty() {
-        return Err(format!("Fabric non supporta Minecraft {}", mc));
+        return Err(tr!("errors.loader.unsupported_mc", "loader" => "Fabric", "version" => mc));
     }
     let first_stable = list.iter().position(|e| e.loader.stable);
     Ok(list
@@ -373,37 +374,37 @@ pub fn loader_versions(kind: ServerKind, mc: &str) -> Result<Vec<LoaderVersion>,
 
 /// Scarica il jar Paper della build indicata (o dell'ultima stabile) in `server.jar`.
 fn install_paper(dir: &Path, mc: &str, build: &str, progress: Progress) -> Result<(), String> {
-    progress("resolve", 0, "Cerco la build Paper…");
+    progress("resolve", 0, &tr!("progress.paper.resolving"));
     let builds = paper_builds(mc)?;
     let chosen = if build.trim().is_empty() {
         builds
             .iter()
             .find(|b| b.channel.eq_ignore_ascii_case("STABLE"))
             .or_else(|| builds.first())
-            .ok_or_else(|| format!("Paper non ha build per Minecraft {}", mc))?
+            .ok_or_else(|| tr!("errors.loader.no_builds", "loader" => "Paper", "version" => mc))?
     } else {
         builds
             .iter()
             .find(|b| b.id.to_string() == build.trim())
-            .ok_or_else(|| format!("Build Paper {} non trovata per Minecraft {}", build, mc))?
+            .ok_or_else(|| tr!("errors.paper.build_not_found", "build" => build, "version" => mc))?
     };
-    let dl = chosen.server().ok_or("La build Paper non ha un jar server")?;
+    let dl = chosen.server().ok_or_else(|| tr!("errors.paper.no_server_jar"))?;
     let sha256 = dl.checksums.get("sha256").cloned().unwrap_or_default();
 
-    progress("download", 0, &format!("Scarico {}…", dl.name));
+    progress("download", 0, &tr!("progress.download.file", "name" => dl.name));
     let dest = dir.join("server.jar");
     let mut report = |got: u64, total: u64| {
         let pct = if total > 0 { ((got * 100) / total).min(100) as u8 } else { 0 };
-        progress("download", pct, &format!("{} · {} / {} MB", dl.name, got / 1_048_576, total / 1_048_576));
+        progress("download", pct, &tr!("progress.download.file_mb", "name" => dl.name, "done" => got / 1_048_576, "total" => total / 1_048_576));
     };
     providers::download_file(&dl.url, &dest, None, Some(dl.size), &mut report)?;
 
     if !sha256.is_empty() {
-        progress("verify", 95, "Verifica dell'integrità…");
+        progress("verify", 95, &tr!("progress.verify"));
         let actual = sha256_of(&dest)?;
         if !actual.eq_ignore_ascii_case(&sha256) {
             let _ = std::fs::remove_file(&dest);
-            return Err(format!("SHA256 non corrispondente per {} (atteso {}, ottenuto {})", dl.name, sha256, actual));
+            return Err(tr!("errors.download.sha256_mismatch", "name" => dl.name, "expected" => sha256, "actual" => actual));
         }
     }
     // I plugin vanno qui: la cartella esiste da subito così è chiaro dove finiscono.
@@ -431,7 +432,7 @@ pub fn create_server(
 ) -> Result<String, String> {
     let mc = mc.trim();
     if mc.is_empty() {
-        return Err("Scegli una versione di Minecraft".to_string());
+        return Err(tr!("errors.create.choose_version"));
     }
     if kind == ServerKind::Vanilla {
         return create::create_vanilla_server(app, name, mc);
@@ -456,7 +457,7 @@ pub fn create_server(
 
     match result {
         Ok(()) => {
-            progress("done", 100, "Server creato");
+            progress("done", 100, &tr!("progress.create.done"));
             Ok(id)
         }
         Err(e) => {

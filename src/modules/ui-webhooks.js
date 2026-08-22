@@ -7,6 +7,7 @@
 
 import { escapeHtml, formatRelativeDay, formatClock } from './utils.js';
 import { isRemoteId } from './api.js';
+import { t } from './i18n.js';
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -60,7 +61,7 @@ function curlExample(hook) {
   const url = `${hookBase()}${hook.id}`;
   const p = hook.perms;
   const body = p.say
-    ? `{"action":"say","message":"Ciao dal bot","from":"Luca"}`
+    ? `{"action":"say","message":"${t('msg2.webhooks.example_say_message')}","from":"Luca"}`
     : p.command
       ? `{"action":"command","command":"time set day"}`
       : p.power
@@ -74,10 +75,10 @@ function curlExample(hook) {
     `  -H "Content-Type: application/json" \\`,
     `  -d '${body.replace('}', `${serverArg}}`)}'`,
     ``,
-    `# GET (per integrazioni semplici, es. IFTTT / StreamElements)`,
+    `# ${t('msg2.webhooks.example_get_comment')}`,
     `${url}?token=${hook.token}&action=status${hook.server_id ? '' : '&server=<id-server>'}`,
     ``,
-    `# Risposta: {"ok":true,...} oppure {"ok":false,"error":"..."} con HTTP 400/401/403/409`,
+    `# ${t('msg2.webhooks.example_response_comment')}`,
   ].join('\n');
 }
 
@@ -92,23 +93,23 @@ function permPill(label, on) {
 function statsHtml(w) {
   const s = w.stats || {};
   const last = s.last_call_at
-    ? `${formatRelativeDay(s.last_call_at)} · ${escapeHtml(s.last_action || '?')} · <span class="${s.last_ok ? 'text-accent' : 'text-danger'}">${s.last_ok ? 'ok' : 'errore'}</span>`
-    : 'mai chiamato';
+    ? `${formatRelativeDay(s.last_call_at)} · ${escapeHtml(s.last_action || '?')} · <span class="${s.last_ok ? 'text-accent' : 'text-danger'}">${s.last_ok ? t('msg2.webhooks.ok') : t('msg2.webhooks.error_short')}</span>`
+    : t('msg2.webhooks.never_called');
   return `
     <div class="mt-3 grid grid-cols-3 gap-3">
       <div class="rounded-lg bg-bg-inset p-3">
-        <div class="micro">Chiamate</div>
+        <div class="micro">${escapeHtml(t('msg2.webhooks.stat_calls'))}</div>
         <div class="mt-1 font-mono text-[20px] font-semibold leading-none">${s.calls || 0}</div>
       </div>
       <div class="rounded-lg bg-bg-inset p-3">
-        <div class="micro">Ultima</div>
+        <div class="micro">${escapeHtml(t('msg2.webhooks.stat_last'))}</div>
         <div class="mt-1 font-mono text-[11px] text-text-soft">${last}</div>
-        <div class="note mt-0.5">${s.last_from ? `da ${escapeHtml(s.last_from)}` : '&nbsp;'}</div>
+        <div class="note mt-0.5">${s.last_from ? escapeHtml(t('msg2.webhooks.from', { name: s.last_from })) : '&nbsp;'}</div>
       </div>
       <div class="min-w-0 rounded-lg bg-bg-inset p-3">
-        <div class="micro">Endpoint</div>
+        <div class="micro">${escapeHtml(t('msg2.webhooks.stat_endpoint'))}</div>
         <div class="mt-1 truncate font-mono text-[11px] text-text-soft" title="${escapeHtml(hookBase() + w.id)}">${escapeHtml(hookBase() + w.id)}</div>
-        <div class="note mt-0.5">POST JSON/form o GET</div>
+        <div class="note mt-0.5">${escapeHtml(t('msg2.webhooks.endpoint_hint'))}</div>
       </div>
     </div>`;
 }
@@ -121,30 +122,30 @@ function cardHtml(w, { generic = false } = {}) {
         <div class="min-w-0">
           <div class="flex items-center gap-2">
             <span class="text-[14px] font-bold">${escapeHtml(w.name)}</span>
-            <span class="${w.enabled ? 'pill-online' : 'pill-offline'}">${w.enabled ? 'attivo' : 'spento'}</span>
-            ${generic ? '<span class="note">server indicato in ogni richiesta</span>' : ''}
+            <span class="${w.enabled ? 'pill-online' : 'pill-offline'}">${escapeHtml(w.enabled ? t('msg2.webhooks.enabled') : t('msg2.webhooks.disabled'))}</span>
+            ${generic ? `<span class="note">${escapeHtml(t('msg2.webhooks.generic_note'))}</span>` : ''}
           </div>
           <div class="mt-1.5 flex flex-wrap items-center gap-1">
             ${permPill('say', w.perms.say)}${permPill('command', w.perms.command)}${permPill('power', w.perms.power)}${permPill('status', w.perms.status)}
-            ${w.perms.command ? `<span class="note ml-1">${w.allowed_commands.length ? 'comandi: ' + escapeHtml(w.allowed_commands.join(', ')) : 'tutti i comandi (tranne stop)'}</span>` : ''}
+            ${w.perms.command ? `<span class="note ml-1">${w.allowed_commands.length ? escapeHtml(t('msg2.webhooks.commands_list', { list: w.allowed_commands.join(', ') })) : escapeHtml(t('msg2.webhooks.commands_all'))}</span>` : ''}
           </div>
         </div>
-        <label class="toggle" title="${w.enabled ? 'Disabilita' : 'Abilita'}">
+        <label class="toggle" title="${escapeHtml(w.enabled ? t('msg2.webhooks.toggle_disable') : t('msg2.webhooks.toggle_enable'))}">
           <input type="checkbox" data-wh-toggle="${escapeHtml(w.id)}" ${w.enabled ? 'checked' : ''} />
           <span class="toggle-track"></span>
         </label>
       </div>
       ${statsHtml(w)}
       <div class="mt-3 flex flex-wrap items-center gap-2">
-        <span class="micro">Token</span>
+        <span class="micro">${escapeHtml(t('msg2.webhooks.token'))}</span>
         <code class="rounded bg-bg-inset px-2 py-1 font-mono text-[11px] text-text-soft">${escapeHtml(show ? w.token : maskToken(w.token))}</code>
-        <button class="btn-small" data-wh-reveal="${escapeHtml(w.id)}">${show ? 'Nascondi' : 'Mostra'}</button>
+        <button class="btn-small" data-wh-reveal="${escapeHtml(w.id)}">${escapeHtml(show ? t('msg2.webhooks.hide') : t('msg2.webhooks.show'))}</button>
         <div class="flex-1"></div>
-        <button class="btn-small" data-wh-copy-url="${escapeHtml(w.id)}">Copia URL</button>
-        <button class="btn-small" data-wh-copy-token="${escapeHtml(w.id)}">Copia token</button>
-        <button class="btn-small" data-wh-example="${escapeHtml(w.id)}">Esempio</button>
-        <button class="btn-small" data-wh-test="${escapeHtml(w.id)}" ${generic ? 'disabled title="Webhook generico: indica il server nella chiamata"' : ''}>Prova</button>
-        <button class="btn-small hover:!border-danger hover:!text-danger" data-wh-delete="${escapeHtml(w.id)}">Elimina</button>
+        <button class="btn-small" data-wh-copy-url="${escapeHtml(w.id)}">${escapeHtml(t('msg2.webhooks.copy_url'))}</button>
+        <button class="btn-small" data-wh-copy-token="${escapeHtml(w.id)}">${escapeHtml(t('msg2.webhooks.copy_token'))}</button>
+        <button class="btn-small" data-wh-example="${escapeHtml(w.id)}">${escapeHtml(t('msg2.webhooks.example'))}</button>
+        <button class="btn-small" data-wh-test="${escapeHtml(w.id)}" ${generic ? `disabled title="${escapeHtml(t('msg2.webhooks.test_disabled_title'))}"` : ''}>${escapeHtml(t('msg2.webhooks.test'))}</button>
+        <button class="btn-small hover:!border-danger hover:!text-danger" data-wh-delete="${escapeHtml(w.id)}">${escapeHtml(t('msg2.webhooks.delete'))}</button>
       </div>
       <pre class="wh-example mt-3 hidden overflow-x-auto rounded-lg border border-line bg-bg-console p-3 font-mono text-[10px] leading-relaxed text-text-soft"></pre>
       <p class="wh-test-result mt-2 min-h-[14px] ${lastTest.get(w.id)?.cls || 'note'}">${escapeHtml(lastTest.get(w.id)?.text || '')}</p>
@@ -164,14 +165,14 @@ function renderCards(server) {
   let html = '';
   if (own.length === 0) {
     html += `<div class="card p-6 text-center">
-      <div class="text-[13px] font-semibold">Nessun webhook per questo server</div>
-      <p class="note mt-1">Crea un webhook per mandare messaggi o comandi da un bot Discord, un'estensione Twitch o qualsiasi automazione.</p>
+      <div class="text-[13px] font-semibold">${escapeHtml(t('msg2.webhooks.empty_title'))}</div>
+      <p class="note mt-1">${escapeHtml(t('msg2.webhooks.empty_text'))}</p>
     </div>`;
   } else {
     html += own.map((w) => cardHtml(w)).join('');
   }
   if (generic.length) {
-    html += `<div class="micro mt-2">Webhook generici (valgono per ogni server)</div>`;
+    html += `<div class="micro mt-2">${escapeHtml(t('msg2.webhooks.generic_section'))}</div>`;
     html += generic.map((w) => cardHtml(w, { generic: true })).join('');
   }
   cards.innerHTML = html;
@@ -182,10 +183,10 @@ function callHtml(c) {
   return `<li class="rounded-md bg-bg-inset px-3 py-2">
     <div class="flex items-center justify-between gap-2">
       <span class="font-mono text-[10px] text-text-faint">${formatClock(c.at)}</span>
-      <span class="perm-pill ${c.ok ? 'on' : 'off'}">${c.ok ? 'ok' : 'errore'}</span>
+      <span class="perm-pill ${c.ok ? 'on' : 'off'}">${escapeHtml(c.ok ? t('msg2.webhooks.ok') : t('msg2.webhooks.error_short'))}</span>
     </div>
     <div class="mt-0.5 truncate text-[12px]"><span class="font-semibold">${escapeHtml(c.hook_name)}</span> · ${escapeHtml(c.action)}${c.detail ? ` · <span class="font-mono text-[11px] text-text-soft">${escapeHtml(c.detail)}</span>` : ''}</div>
-    <div class="note truncate">da ${escapeHtml(c.from)}${c.ok ? '' : ` · ${escapeHtml(c.message)}`}</div>
+    <div class="note truncate">${escapeHtml(t('msg2.webhooks.from', { name: c.from }))}${c.ok ? '' : ` · ${escapeHtml(c.message)}`}</div>
   </li>`;
 }
 
@@ -193,7 +194,7 @@ function renderCalls() {
   const list = el('wh-calls');
   list.innerHTML = calls.length
     ? calls.slice(0, MAX_CALLS_SHOWN).map(callHtml).join('')
-    : `<li class="note">Nessuna chiamata ricevuta finora.</li>`;
+    : `<li class="note">${escapeHtml(t('msg2.webhooks.no_calls'))}</li>`;
 }
 
 function setFormError(text) {
@@ -218,7 +219,7 @@ export async function renderWebhooksTab(state, server) {
       invoke('get_host_status'),
     ]);
   } catch (err) {
-    el('wh-cards').innerHTML = `<div class="note-err">Errore: ${escapeHtml(String(err))}</div>`;
+    el('wh-cards').innerHTML = `<div class="note-err">${escapeHtml(t('msg2.webhooks.error_generic', { error: String(err) }))}</div>`;
     return;
   }
   el('wh-base').textContent = hookBase();
@@ -285,7 +286,7 @@ export function setupWebhooksTab(state) {
       if (server) renderCards(server);
     } catch (err) {
       input.checked = !input.checked;
-      alert('Errore: ' + err);
+      alert(t('msg2.webhooks.error_generic', { error: err }));
     }
   });
 
@@ -303,15 +304,15 @@ export function setupWebhooksTab(state) {
       else revealed.add(id);
       renderCards(server);
     } else if (btn.dataset.whCopyUrl !== undefined) {
-      flash(btn, (await copyText(`${hookBase()}${hook.id}`)) ? 'Copiato!' : 'Errore');
+      flash(btn, (await copyText(`${hookBase()}${hook.id}`)) ? t('msg2.webhooks.copied') : t('msg2.webhooks.copy_failed'));
     } else if (btn.dataset.whCopyToken !== undefined) {
-      flash(btn, (await copyText(hook.token)) ? 'Copiato!' : 'Errore');
+      flash(btn, (await copyText(hook.token)) ? t('msg2.webhooks.copied') : t('msg2.webhooks.copy_failed'));
     } else if (btn.dataset.whExample !== undefined) {
       const pre = card.querySelector('.wh-example');
       pre.textContent = curlExample(hook);
       pre.classList.toggle('hidden');
     } else if (btn.dataset.whTest !== undefined) {
-      setTestResult(server, id, 'note', 'Chiamata in corso…');
+      setTestResult(server, id, 'note', t('msg2.webhooks.testing'));
       try {
         const res = await invoke('test_webhook', { id });
         const body = typeof res.body === 'string' ? res.body : JSON.stringify(res.body);
@@ -320,12 +321,12 @@ export function setupWebhooksTab(state) {
         setTestResult(server, id, 'note-err', String(err));
       }
     } else if (btn.dataset.whDelete !== undefined) {
-      if (!confirm(`Eliminare il webhook "${hook.name}"?\nLe integrazioni che lo usano smetteranno di funzionare.`)) return;
+      if (!confirm(t('msg2.webhooks.delete_confirm', { name: hook.name }))) return;
       try {
         allHooks = await invoke('delete_webhook', { id });
         renderCards(server);
       } catch (err) {
-        alert('Errore: ' + err);
+        alert(t('msg2.webhooks.error_generic', { error: err }));
       }
     }
   });

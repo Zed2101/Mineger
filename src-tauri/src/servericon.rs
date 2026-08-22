@@ -4,6 +4,7 @@
 // Deve essere un PNG di esattamente 64×64: qualsiasi immagine viene
 // ridimensionata (crop centrato per mantenere le proporzioni) e riscritta in PNG.
 
+use crate::tr;
 use base64::Engine;
 use image::imageops::FilterType;
 use image::ImageFormat;
@@ -27,14 +28,14 @@ pub struct ServerIconInfo {
 /// Decodifica, ridimensiona a 64×64 (crop centrato) e codifica in PNG RGBA.
 pub fn resize_to_server_icon(bytes: &[u8]) -> Result<Vec<u8>, String> {
     if bytes.is_empty() {
-        return Err("Immagine vuota".to_string());
+        return Err(tr!("errors.server_icon.empty_image"));
     }
     if bytes.len() > MAX_SOURCE_BYTES {
-        return Err(format!("Immagine troppo grande ({} MB, max 25 MB)", bytes.len() / 1_048_576));
+        return Err(tr!("errors.server_icon.image_too_large", "size" => bytes.len() / 1_048_576));
     }
 
     let img = image::load_from_memory(bytes)
-        .map_err(|e| format!("Immagine non riconosciuta (usa PNG, JPG, WEBP, GIF o BMP): {}", e))?;
+        .map_err(|e| tr!("errors.server_icon.unrecognized_image", "error" => e))?;
 
     let resized = if img.width() == SIZE && img.height() == SIZE {
         img
@@ -46,7 +47,7 @@ pub fn resize_to_server_icon(bytes: &[u8]) -> Result<Vec<u8>, String> {
     resized
         .to_rgba8()
         .write_to(&mut out, ImageFormat::Png)
-        .map_err(|e| format!("Codifica PNG fallita: {}", e))?;
+        .map_err(|e| tr!("errors.server_icon.png_encode_failed", "error" => e))?;
     Ok(out.into_inner())
 }
 
@@ -76,15 +77,15 @@ pub fn read(server_dir: &Path) -> Result<Option<ServerIconInfo>, String> {
 pub fn write(server_dir: &Path, source: &[u8]) -> Result<ServerIconInfo, String> {
     let png = resize_to_server_icon(source)?;
     let path = server_dir.join(FILE_NAME);
-    fs::write(&path, &png).map_err(|e| format!("Impossibile scrivere {}: {}", path.display(), e))?;
+    fs::write(&path, &png).map_err(|e| tr!("errors.file.write_failed", "path" => path.display(), "error" => e))?;
     info_from_bytes(&png)
 }
 
 pub fn write_from_path(server_dir: &Path, src: &Path) -> Result<ServerIconInfo, String> {
     if !src.is_file() {
-        return Err("File non trovato".to_string());
+        return Err(tr!("errors.file.not_found"));
     }
-    let bytes = fs::read(src).map_err(|e| format!("Impossibile leggere {}: {}", src.display(), e))?;
+    let bytes = fs::read(src).map_err(|e| tr!("errors.file.read_failed", "path" => src.display(), "error" => e))?;
     write(server_dir, &bytes)
 }
 

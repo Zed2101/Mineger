@@ -13,6 +13,7 @@ use crate::packs::Progress;
 use crate::providers::mods::{self, ContentKind, ModFile, ModSearchResult, ModVersionList};
 use crate::providers::{self, Provider};
 use crate::service::{read_server_data, server_dir, write_server_data};
+use crate::tr;
 use crate::utils;
 use serde::Serialize;
 use std::fs;
@@ -87,7 +88,7 @@ fn parts(app: &AppHandle, id: &str) -> Result<(std::path::PathBuf, ServerDataFil
 pub fn search(app: &AppHandle, id: &str, provider: Provider, query: &str, limit: u32) -> Result<ModSearchResult, String> {
     let (_, data, kind, content) = parts(app, id)?;
     if kind == ServerKind::Vanilla {
-        return Err("Un server vanilla non carica mod o plugin: creane uno con Paper (plugin) o con un loader (mod)".to_string());
+        return Err(tr!("errors.mods.vanilla_no_content_hint"));
     }
     mods::search(app, provider, query, content, &data.version, kind.loader(), limit)
 }
@@ -109,16 +110,16 @@ pub fn install(
 ) -> Result<Vec<ModEntry>, String> {
     let (dir, mut data, kind, content) = parts(app, id)?;
     if kind == ServerKind::Vanilla {
-        return Err("Un server vanilla non carica mod o plugin".to_string());
+        return Err(tr!("errors.mods.vanilla_no_content"));
     }
 
-    progress("resolve", 0, "Cerco la versione…");
+    progress("resolve", 0, &tr!("progress.mods.resolving"));
     let all = mods::versions(app, provider, project_id, content, &data.version, kind.loader())?.files;
     let file = all
         .iter()
         .find(|f| f.id == file_id)
         .cloned()
-        .ok_or_else(|| "Versione non più disponibile su questa fonte".to_string())?;
+        .ok_or_else(|| tr!("errors.mods.version_unavailable"))?;
 
     let hit_name = mods::search(app, provider, &file.name, content, "", "", 1)
         .ok()
@@ -131,7 +132,7 @@ pub fn install(
     data.mod_sources.insert(entry.0.clone(), entry.1);
     let mods_list = utils::rescan_mods(&dir, &mut data)?;
     write_server_data(&dir, &data)?;
-    progress("done", 100, &format!("{} installata", file.name));
+    progress("done", 100, &tr!("progress.mods.installed", "name" => file.name));
     Ok(mods_list)
 }
 
@@ -147,17 +148,17 @@ fn download_into(
     progress: Progress,
 ) -> Result<(String, ModSource), String> {
     if !utils::valid_mod_name(&file.name) {
-        return Err(format!("Nome file non valido: {}", file.name));
+        return Err(tr!("errors.mods.invalid_file_name", "name" => file.name));
     }
     let url = mods::download_url(app, provider, project_id, file)?;
     let folder = dir.join(content.folder());
     fs::create_dir_all(&folder).map_err(|e| e.to_string())?;
     let dest = folder.join(&file.name);
 
-    progress("download", 0, &format!("Scarico {}…", file.name));
+    progress("download", 0, &tr!("progress.download.file", "name" => file.name));
     let mut report = |got: u64, total: u64| {
         let pct = if total > 0 { ((got * 100) / total).min(100) as u8 } else { 0 };
-        progress("download", pct, &format!("{} · {} KB", file.name, got / 1024));
+        progress("download", pct, &tr!("progress.download.file_kb", "name" => file.name, "done" => got / 1024));
     };
     providers::download_file(&url, &dest, file.sha1.as_deref(), Some(file.size), &mut report)?;
 
@@ -238,14 +239,15 @@ pub fn update(app: &AppHandle, id: &str, name: &str, progress: Progress) -> Resu
         .mod_sources
         .get(name)
         .cloned()
-        .ok_or_else(|| format!("{} è stata installata manualmente: aggiornala sostituendo il file", name))?;
-    let provider = Provider::from_str(&src.provider).ok_or_else(|| format!("Fonte sconosciuta: {}", src.provider))?;
+        .ok_or_else(|| tr!("errors.mods.installed_manually", "name" => name))?;
+    let provider = Provider::from_str(&src.provider)
+        .ok_or_else(|| tr!("errors.mods.unknown_source_detail", "provider" => src.provider))?;
 
-    progress("resolve", 0, "Cerco la versione più recente…");
+    progress("resolve", 0, &tr!("progress.mods.resolving_latest"));
     let latest = mods::latest(app, provider, &src.project_id, content, &data.version, kind.loader())?
-        .ok_or_else(|| format!("Nessuna versione compatibile con Minecraft {}", data.version))?;
+        .ok_or_else(|| tr!("errors.mods.no_compatible_version", "version" => data.version))?;
     if latest.id == src.file_id {
-        return Err(format!("{} è già all'ultima versione", name));
+        return Err(tr!("errors.mods.already_latest", "name" => name));
     }
 
     let was_enabled = utils::mod_path(&dir, name, true).exists();
@@ -269,7 +271,7 @@ pub fn update(app: &AppHandle, id: &str, name: &str, progress: Progress) -> Resu
     data.mod_sources.insert(new_name.clone(), source);
     let mods_list = utils::rescan_mods(&dir, &mut data)?;
     write_server_data(&dir, &data)?;
-    progress("done", 100, &format!("{} aggiornata a {}", src.project_name, latest.version));
+    progress("done", 100, &tr!("progress.mods.updated", "name" => src.project_name, "version" => latest.version));
     Ok(mods_list)
 }
 

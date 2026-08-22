@@ -17,7 +17,7 @@
       <aside class="flex w-[276px] shrink-0 flex-col border-r border-line bg-bg-sidebar">
         <div class="flex items-center justify-between px-5 pb-4 pt-[18px]">
           <h1 class="text-[17px] font-bold tracking-tight">Mineger</h1>
-          <button id="btn-refresh" class="btn-icon" title="Aggiorna lista server">
+          <button id="btn-refresh" class="btn-icon" data-i18n-title="ui.sidebar.refresh_title" title="Aggiorna lista server">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
           </button>
         </div>
@@ -25,7 +25,7 @@
         <div class="px-3 pb-3">
           <label class="relative block">
             <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-faint" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input id="server-search" type="text" class="input w-full pl-8 font-sans text-[12px] font-normal" placeholder="Cerca server..." autocomplete="off" />
+            <input id="server-search" type="text" class="input w-full pl-8 font-sans text-[12px] font-normal" data-i18n-placeholder="ui.sidebar.search_placeholder" placeholder="Cerca server..." autocomplete="off" />
           </label>
         </div>
 
@@ -36,14 +36,14 @@
 
         <div id="sidebar-loading" class="hidden flex-col items-center gap-2 py-8 note">
           <span class="h-5 w-5 animate-spin rounded-full border-2 border-line border-t-accent"></span>
-          Caricamento...
+          <span data-i18n="ui.sidebar.loading">Caricamento...</span>
         </div>
 
         <ul id="server-list" class="flex-1 space-y-1 overflow-y-auto px-3 pb-2"></ul>
 
         <div class="border-t border-line px-5 pb-2 pt-4">
           <div class="flex items-center justify-between gap-2">
-            <span class="micro whitespace-nowrap">Spazio su disco</span>
+            <span class="micro whitespace-nowrap" data-i18n="ui.sidebar.disk_space">Spazio su disco</span>
             <span id="disk-text" class="whitespace-nowrap font-mono text-[11px] text-text-soft">—</span>
           </div>
           <div class="mt-2 h-[3px] w-full overflow-hidden rounded bg-line">
@@ -52,14 +52,14 @@
           <button id="btn-settings" class="mt-3 flex w-full items-center justify-between rounded-md py-1.5 text-[12px] text-text-muted transition-colors hover:text-text-main">
             <span class="flex items-center gap-2">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line><circle cx="9" cy="6" r="2" fill="currentColor"></circle><circle cx="15" cy="12" r="2" fill="currentColor"></circle><circle cx="8" cy="18" r="2" fill="currentColor"></circle></svg>
-              Impostazioni
+              <span data-i18n="ui.sidebar.settings">Impostazioni</span>
             </span>
             <span id="app-version" class="font-mono text-[10px] text-text-faint">v—</span>
           </button>
         </div>
 
         <div class="px-4 pb-4">
-          <button id="btn-add-server" class="btn-outline w-full">+ Aggiungi Server</button>
+          <button id="btn-add-server" class="btn-outline w-full" data-i18n="ui.sidebar.add_server">+ Aggiungi Server</button>
         </div>
       </aside>
 
@@ -67,7 +67,7 @@
       <main class="flex min-w-0 flex-1 flex-col">
         <div id="empty-state" class="flex flex-1 flex-col items-center justify-center gap-2 text-text-muted">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-text-faint"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-          <p class="text-[14px]">Seleziona un server per iniziare</p>
+          <p class="text-[14px]" data-i18n="ui.empty.select_server">Seleziona un server per iniziare</p>
         </div>
 
         <div id="server-details" class="hidden flex min-h-0 flex-1 flex-col">
@@ -86,10 +86,10 @@
               </div>
             </div>
             <div class="flex shrink-0 items-center gap-2">
-              <button id="btn-start" class="btn-primary">Avvia Server</button>
-              <button id="btn-kill" class="btn-danger-text hidden" title="Termina il processo senza attendere il salvataggio">Forza arresto</button>
-              <button id="btn-open-folder" class="btn-outline" title="Apri la cartella del server in Esplora file">Apri cartella</button>
-              <button id="btn-edit-banner" class="btn-icon" title="Modifica nome e icona">
+              <button id="btn-start" class="btn-primary" data-i18n="ui.topbar.start">Avvia Server</button>
+              <button id="btn-kill" class="btn-danger-text hidden" data-i18n="ui.topbar.force_stop" data-i18n-title="ui.topbar.force_stop_title" title="Termina il processo senza attendere il salvataggio">Forza arresto</button>
+              <button id="btn-open-folder" class="btn-outline" data-i18n="ui.topbar.open_folder" data-i18n-title="ui.topbar.open_folder_title" title="Apri la cartella del server in Esplora file">Apri cartella</button>
+              <button id="btn-edit-banner" class="btn-icon" data-i18n-title="ui.topbar.edit_title" title="Modifica nome e icona">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
               </button>
             </div>
@@ -97,11 +97,11 @@
 
           <!-- Tabs -->
           <nav class="flex border-b border-line px-6">
-            <button class="tab active" data-target="view-details">Dettagli</button>
-            <button class="tab" data-target="view-mods">Mods <span id="tab-mods-count" class="tab-badge">0</span></button>
-            <button class="tab" data-target="view-properties">Proprietà</button>
-            <button class="tab" data-target="view-console">Console</button>
-            <button class="tab" data-target="view-webhooks">Webhook <span id="tab-wh-count" class="tab-badge">0</span></button>
+            <button class="tab active" data-target="view-details" data-i18n="ui.tabs.details">Dettagli</button>
+            <button class="tab" data-target="view-mods"><span data-i18n="ui.tabs.mods">Mods</span> <span id="tab-mods-count" class="tab-badge">0</span></button>
+            <button class="tab" data-target="view-properties" data-i18n="ui.tabs.properties">Proprietà</button>
+            <button class="tab" data-target="view-console" data-i18n="ui.tabs.console">Console</button>
+            <button class="tab" data-target="view-webhooks"><span data-i18n="ui.tabs.webhooks">Webhook</span> <span id="tab-wh-count" class="tab-badge">0</span></button>
           </nav>
 
           <div class="relative min-h-0 flex-1">
@@ -110,24 +110,24 @@
             <section id="view-details" class="tab-content absolute inset-0 overflow-y-auto p-6">
               <div class="grid grid-cols-4 gap-4">
                 <div class="card p-[18px]">
-                  <div class="micro">CPU</div>
+                  <div class="micro" data-i18n="ui.details.stat_cpu">CPU</div>
                   <div id="stat-cpu" class="stat-value mt-3">—</div>
-                  <div id="stat-cpu-sub" class="note mt-2">processo Java</div>
+                  <div id="stat-cpu-sub" class="note mt-2" data-i18n="ui.details.stat_cpu_sub">processo Java</div>
                 </div>
                 <div class="card p-[18px]">
-                  <div class="micro">RAM</div>
+                  <div class="micro" data-i18n="ui.details.stat_ram">RAM</div>
                   <div id="stat-ram" class="stat-value mt-3">—</div>
-                  <div id="stat-ram-sub" class="note mt-2">di 2048 MB assegnati</div>
+                  <div id="stat-ram-sub" class="note mt-2" data-i18n="ui.details.stat_ram_sub">di 2048 MB assegnati</div>
                 </div>
                 <div class="card p-[18px]">
-                  <div class="micro">Tick</div>
+                  <div class="micro" data-i18n="ui.details.stat_tick">Tick</div>
                   <div id="stat-tick" class="stat-value mt-3">—</div>
                   <div id="stat-tick-sub" class="note mt-2">—</div>
                 </div>
                 <div class="card p-[18px]">
-                  <div class="micro">Uptime</div>
+                  <div class="micro" data-i18n="ui.details.stat_uptime">Uptime</div>
                   <div id="stat-uptime" class="stat-value mt-3">—</div>
-                  <div id="stat-uptime-sub" class="note mt-2">non in esecuzione</div>
+                  <div id="stat-uptime-sub" class="note mt-2" data-i18n="ui.details.stat_uptime_sub">non in esecuzione</div>
                 </div>
               </div>
 
@@ -135,37 +135,37 @@
                 <div class="card col-span-2 flex flex-col p-[18px]">
                   <div class="flex items-center justify-between">
                     <div class="flex items-center gap-4">
-                      <span class="text-[13px] font-bold">CPU / RAM</span>
+                      <span class="text-[13px] font-bold" data-i18n="ui.details.chart_title">CPU / RAM</span>
                       <span class="flex items-center gap-1.5 font-mono text-[10px] text-text-muted"><span class="h-2 w-2 rounded-sm bg-accent"></span>CPU</span>
                       <span class="flex items-center gap-1.5 font-mono text-[10px] text-text-muted"><span class="h-2 w-2 rounded-sm bg-bar-ram"></span>RAM</span>
                     </div>
-                    <span id="chart-range" class="note">in attesa di dati</span>
+                    <span id="chart-range" class="note" data-i18n="ui.details.chart_waiting">in attesa di dati</span>
                   </div>
                   <div id="chart" class="mt-4 flex min-h-[280px] flex-1 items-end gap-[6px]"></div>
                 </div>
 
                 <div class="card p-[18px]">
                   <div class="flex items-center justify-between">
-                    <span class="text-[13px] font-bold">Giocatori online</span>
+                    <span class="text-[13px] font-bold" data-i18n="ui.details.players_title">Giocatori online</span>
                     <span id="players-count" class="font-mono text-[13px] font-semibold text-accent">0/20</span>
                   </div>
                   <ul id="players-list" class="mt-3 space-y-1.5"></ul>
-                  <p id="players-empty" class="note mt-3">Nessun giocatore connesso</p>
+                  <p id="players-empty" class="note mt-3" data-i18n="ui.details.players_empty">Nessun giocatore connesso</p>
                 </div>
 
                 <div class="card flex flex-col p-[18px]">
-                  <span class="text-[13px] font-bold">Backup mondo</span>
-                  <div class="note mt-3">Ultimo backup</div>
+                  <span class="text-[13px] font-bold" data-i18n="ui.details.backup_title">Backup mondo</span>
+                  <div class="note mt-3" data-i18n="ui.details.backup_last">Ultimo backup</div>
                   <div id="backup-last" class="mt-1 font-mono text-[12px] text-text-soft">—</div>
                   <div class="flex-1"></div>
-                  <button id="btn-backup" class="btn-outline-accent w-full">Crea backup</button>
-                  <p id="backup-note" class="note mt-2 text-center">manuale</p>
+                  <button id="btn-backup" class="btn-outline-accent w-full" data-i18n="ui.details.backup_create">Crea backup</button>
+                  <p id="backup-note" class="note mt-2 text-center" data-i18n="ui.details.backup_manual">manuale</p>
                 </div>
               </div>
 
               <div class="card mt-4 grid grid-cols-4 divide-x divide-line">
                 <div class="min-w-0 px-5 py-4">
-                  <div class="micro">Versione</div>
+                  <div class="micro" data-i18n="ui.details.info_version">Versione</div>
                   <div id="detail-version" class="mt-1.5 truncate font-mono text-[13px] font-semibold">—</div>
                 </div>
                 <div class="min-w-0 px-5 py-4">
@@ -177,7 +177,7 @@
                   <div id="detail-java" class="mt-1.5 truncate font-mono text-[13px] font-semibold" title="">—</div>
                 </div>
                 <div class="min-w-0 px-5 py-4">
-                  <div class="micro">Avvio</div>
+                  <div class="micro" data-i18n="ui.details.info_launch">Avvio</div>
                   <div id="detail-launch" class="mt-1.5 truncate font-mono text-[13px] font-semibold" title="">—</div>
                 </div>
               </div>
@@ -186,17 +186,17 @@
                 <div class="flex items-start justify-between gap-4">
                   <div class="min-w-0">
                     <div class="flex items-center gap-2">
-                      <span class="text-[13px] font-bold">Modpack</span>
+                      <span class="text-[13px] font-bold" data-i18n="ui.details.pack_title">Modpack</span>
                       <span id="pack-provider" class="pill-online">—</span>
                       <span id="pack-name" class="truncate text-[13px] text-text-soft">—</span>
                     </div>
-                    <div class="mt-1.5 font-mono text-[12px] text-text-main">Versione installata: <span id="pack-version">—</span></div>
+                    <div class="mt-1.5 font-mono text-[12px] text-text-main"><span data-i18n="ui.details.pack_installed_version">Versione installata:</span> <span id="pack-version">—</span></div>
                     <div class="note mt-0.5"><span id="pack-version-meta"></span> <span id="pack-file" class="opacity-70"></span></div>
-                    <div id="pack-check-status" class="note mt-1.5">Aggiornamenti non ancora controllati</div>
+                    <div id="pack-check-status" class="note mt-1.5" data-i18n="ui.details.pack_not_checked">Aggiornamenti non ancora controllati</div>
                   </div>
                   <div class="flex shrink-0 items-center gap-2">
-                    <button id="btn-pack-check" class="btn-small">Controlla aggiornamenti</button>
-                    <button id="btn-pack-page" class="btn-small">Pagina</button>
+                    <button id="btn-pack-check" class="btn-small" data-i18n="ui.details.pack_check">Controlla aggiornamenti</button>
+                    <button id="btn-pack-page" class="btn-small" data-i18n="ui.details.pack_page">Pagina</button>
                   </div>
                 </div>
 
@@ -207,8 +207,8 @@
                       <div id="pack-update-meta" class="note mt-0.5"></div>
                     </div>
                     <div class="flex shrink-0 items-center gap-2">
-                      <button id="btn-pack-changelog" class="btn-small">Note di rilascio</button>
-                      <button id="btn-pack-update" class="btn-primary">Aggiorna</button>
+                      <button id="btn-pack-changelog" class="btn-small" data-i18n="ui.details.pack_changelog">Note di rilascio</button>
+                      <button id="btn-pack-update" class="btn-primary" data-i18n="ui.details.pack_update">Aggiorna</button>
                     </div>
                   </div>
                   <div id="pack-update-progress" class="mt-3 hidden">
@@ -230,16 +230,16 @@
                 <div class="flex shrink-0 items-center gap-2">
                   <label class="relative block">
                     <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-faint" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <input id="mods-search" type="text" class="input w-[170px] pl-8 font-sans text-[12px] font-normal" placeholder="Cerca..." autocomplete="off" />
+                    <input id="mods-search" type="text" class="input w-[170px] pl-8 font-sans text-[12px] font-normal" data-i18n-placeholder="ui.mods.search_placeholder" placeholder="Cerca..." autocomplete="off" />
                   </label>
                   <div id="mods-filter" class="flex rounded-lg border border-line p-0.5">
-                    <button class="seg active" data-filter="all">Tutte</button>
-                    <button class="seg" data-filter="on">Attive <span id="mods-on-count" class="font-mono text-[11px]">0</span></button>
-                    <button class="seg" data-filter="off">Disattivate <span id="mods-off-count" class="font-mono text-[11px]">0</span></button>
+                    <button class="seg active" data-filter="all" data-i18n="ui.mods.filter_all">Tutte</button>
+                    <button class="seg" data-filter="on"><span data-i18n="ui.mods.filter_on">Attive</span> <span id="mods-on-count" class="font-mono text-[11px]">0</span></button>
+                    <button class="seg" data-filter="off"><span data-i18n="ui.mods.filter_off">Disattivate</span> <span id="mods-off-count" class="font-mono text-[11px]">0</span></button>
                   </div>
-                  <button id="btn-check-mod-updates" class="btn-outline" title="Cerca versioni più recenti su Modrinth e CurseForge">Aggiornamenti</button>
-                  <button id="btn-add-mod-file" class="btn-outline">Da file</button>
-                  <button id="btn-add-mod" class="btn-primary">+ Aggiungi</button>
+                  <button id="btn-check-mod-updates" class="btn-outline" data-i18n="ui.mods.check_updates" data-i18n-title="ui.mods.check_updates_title" title="Cerca versioni più recenti su Modrinth e CurseForge">Aggiornamenti</button>
+                  <button id="btn-add-mod-file" class="btn-outline" data-i18n="ui.mods.add_from_file">Da file</button>
+                  <button id="btn-add-mod" class="btn-primary" data-i18n="ui.mods.add">+ Aggiungi</button>
                 </div>
               </div>
               <p id="mods-note" class="note min-h-[14px] px-6"></p>
@@ -248,7 +248,7 @@
               </div>
               <div class="flex items-center justify-between border-t border-line px-6 py-3">
                 <span id="mods-footer-note" class="note"></span>
-                <button id="btn-open-mods-folder" class="btn-outline">Apri cartella mods</button>
+                <button id="btn-open-mods-folder" class="btn-outline" data-i18n="ui.mods.open_folder">Apri cartella mods</button>
               </div>
             </section>
 
@@ -257,13 +257,13 @@
               <div class="min-h-0 flex-1 overflow-y-auto p-6">
                 <form id="props-form" class="grid grid-cols-2 gap-4" onsubmit="return false;">
                   <div class="card p-[18px]">
-                    <div class="card-title mb-2">Generale</div>
+                    <div class="card-title mb-2" data-i18n="ui.properties.section_general">Generale</div>
                     <div class="prop-row">
-                      <label class="prop-label" for="prop-motd">Motd (Descrizione)</label>
+                      <label class="prop-label" for="prop-motd" data-i18n="ui.properties.motd">Motd (Descrizione)</label>
                       <input type="text" id="prop-motd" class="input w-[230px]" />
                     </div>
                     <div class="prop-row">
-                      <label class="prop-label" for="prop-gamemode">Gamemode</label>
+                      <label class="prop-label" for="prop-gamemode" data-i18n="ui.properties.gamemode">Gamemode</label>
                       <select id="prop-gamemode" class="select w-[200px]">
                         <option value="survival">Survival</option>
                         <option value="creative">Creative</option>
@@ -272,7 +272,7 @@
                       </select>
                     </div>
                     <div class="prop-row">
-                      <label class="prop-label" for="prop-difficulty">Difficoltà</label>
+                      <label class="prop-label" for="prop-difficulty" data-i18n="ui.properties.difficulty">Difficoltà</label>
                       <select id="prop-difficulty" class="select w-[200px]">
                         <option value="peaceful">Peaceful</option>
                         <option value="easy">Easy</option>
@@ -283,75 +283,75 @@
                   </div>
 
                   <div class="card p-[18px]">
-                    <div class="card-title mb-2">Network</div>
+                    <div class="card-title mb-2" data-i18n="ui.properties.section_network">Network</div>
                     <div class="prop-row">
-                      <label class="prop-label" for="prop-max-players">Max Players</label>
+                      <label class="prop-label" for="prop-max-players" data-i18n="ui.properties.max_players">Max Players</label>
                       <input type="number" id="prop-max-players" class="input w-[70px] text-center" min="1" />
                     </div>
                     <div class="prop-row">
-                      <label class="prop-label" for="prop-server-port">Server Port</label>
+                      <label class="prop-label" for="prop-server-port" data-i18n="ui.properties.server_port">Server Port</label>
                       <input type="number" id="prop-server-port" class="input w-[70px] text-center" min="1" max="65535" />
                     </div>
                     <div class="prop-row">
-                      <span class="prop-label">Online Mode (Premium)</span>
+                      <span class="prop-label" data-i18n="ui.properties.online_mode">Online Mode (Premium)</span>
                       <label class="toggle"><input type="checkbox" id="prop-online-mode" /><span class="toggle-track"></span></label>
                     </div>
                   </div>
 
                   <div class="card p-[18px]">
-                    <div class="card-title mb-2">Gameplay &amp; World</div>
+                    <div class="card-title mb-2" data-i18n="ui.properties.section_gameplay">Gameplay &amp; World</div>
                     <div class="prop-row">
-                      <span class="prop-label">Hardcore Mode</span>
+                      <span class="prop-label" data-i18n="ui.properties.hardcore">Hardcore Mode</span>
                       <label class="toggle"><input type="checkbox" id="prop-hardcore" /><span class="toggle-track"></span></label>
                     </div>
                     <div class="prop-row">
-                      <span class="prop-label">Abilita PvP</span>
+                      <span class="prop-label" data-i18n="ui.properties.pvp">Abilita PvP</span>
                       <label class="toggle"><input type="checkbox" id="prop-pvp" /><span class="toggle-track"></span></label>
                     </div>
                     <div class="prop-row">
-                      <span class="prop-label">Consenti il Volo</span>
+                      <span class="prop-label" data-i18n="ui.properties.flight">Consenti il Volo</span>
                       <label class="toggle"><input type="checkbox" id="prop-flight" /><span class="toggle-track"></span></label>
                     </div>
                     <div class="prop-row">
-                      <span class="prop-label">Genera Strutture</span>
+                      <span class="prop-label" data-i18n="ui.properties.structures">Genera Strutture</span>
                       <label class="toggle"><input type="checkbox" id="prop-structures" /><span class="toggle-track"></span></label>
                     </div>
                   </div>
 
                   <div class="card p-[18px]">
-                    <div class="card-title mb-2">Server Launch Options</div>
+                    <div class="card-title mb-2" data-i18n="ui.properties.section_launch">Server Launch Options</div>
                     <div class="prop-row">
-                      <label class="prop-label" for="prop-max-ram">Massima RAM (MB)</label>
+                      <label class="prop-label" for="prop-max-ram" data-i18n="ui.properties.max_ram">Massima RAM (MB)</label>
                       <input type="number" id="prop-max-ram" class="input w-[80px] text-center" min="512" step="256" />
                     </div>
                     <div class="prop-row">
                       <div>
-                        <span class="prop-label">Apri la porta sul router (UPnP)</span>
-                        <div class="note mt-0.5">Disattivalo se hai già un port-forward manuale o vuoi il server solo in LAN</div>
+                        <span class="prop-label" data-i18n="ui.properties.upnp">Apri la porta sul router (UPnP)</span>
+                        <div class="note mt-0.5" data-i18n="ui.properties.upnp_note">Disattivalo se hai già un port-forward manuale o vuoi il server solo in LAN</div>
                       </div>
                       <label class="toggle"><input type="checkbox" id="prop-upnp" /><span class="toggle-track"></span></label>
                     </div>
                     <div class="pt-3">
-                      <div class="micro">Java rilevato</div>
+                      <div class="micro" data-i18n="ui.properties.java_detected">Java rilevato</div>
                       <div id="props-java" class="mt-1 font-mono text-[12px] text-text-soft">—</div>
                     </div>
                   </div>
 
                   <div class="card col-span-2 p-[18px]">
-                    <div class="card-title mb-3">Icona server (lista multiplayer)</div>
+                    <div class="card-title mb-3" data-i18n="ui.properties.icon_section">Icona server (lista multiplayer)</div>
                     <div class="flex items-center gap-5">
                       <div class="icon-preview flex h-[76px] w-[76px] shrink-0 items-center justify-center rounded-lg border border-line">
                         <img id="server-icon-preview" class="hidden h-16 w-16 rounded" style="image-rendering: pixelated" alt="" draggable="false" />
-                        <span id="server-icon-empty" class="note text-center leading-tight">nessuna<br />icona</span>
+                        <span id="server-icon-empty" class="note text-center leading-tight" data-i18n-html="ui.properties.icon_none">nessuna<br />icona</span>
                       </div>
                       <div class="min-w-0 flex-1">
-                        <p class="text-[13px] text-text-soft">È il file <span class="font-mono">server-icon.png</span> che i giocatori vedono nella lista dei server. Qualsiasi immagine viene ridimensionata automaticamente a <span class="font-mono">64×64</span> (ritaglio centrato) e salvata in PNG; ha effetto al riavvio del server.</p>
+                        <p class="text-[13px] text-text-soft" data-i18n-html="ui.properties.icon_help">È il file <span class="font-mono">server-icon.png</span> che i giocatori vedono nella lista dei server. Qualsiasi immagine viene ridimensionata automaticamente a <span class="font-mono">64×64</span> (ritaglio centrato) e salvata in PNG; ha effetto al riavvio del server.</p>
                         <p id="server-icon-status" class="note mt-1 min-h-[14px]"></p>
                         <div class="mt-2 flex flex-wrap items-center gap-2">
-                          <button type="button" id="btn-server-icon-pick" class="btn-small">Scegli immagine…</button>
-                          <button type="button" id="btn-server-icon-from-mineger" class="btn-small">Usa l'icona di Mineger</button>
-                          <button type="button" id="btn-server-icon-remove" class="btn-small hover:!border-danger hover:!text-danger">Rimuovi</button>
-                          <span class="note">oppure trascina qui un'immagine</span>
+                          <button type="button" id="btn-server-icon-pick" class="btn-small" data-i18n="ui.properties.icon_pick">Scegli immagine…</button>
+                          <button type="button" id="btn-server-icon-from-mineger" class="btn-small" data-i18n="ui.properties.icon_use_mineger">Usa l'icona di Mineger</button>
+                          <button type="button" id="btn-server-icon-remove" class="btn-small hover:!border-danger hover:!text-danger" data-i18n="ui.properties.icon_remove">Rimuovi</button>
+                          <span class="note" data-i18n="ui.properties.icon_drop_hint">oppure trascina qui un'immagine</span>
                         </div>
                       </div>
                     </div>
@@ -360,10 +360,10 @@
                 <input type="file" id="server-icon-file-input" class="hidden" accept=".png,.jpg,.jpeg,.webp,.gif,.bmp" />
               </div>
               <div class="flex items-center justify-between border-t border-line bg-bg-card/60 px-6 py-3.5">
-                <span id="props-save-note" class="note">Le modifiche avranno effetto al riavvio del server</span>
+                <span id="props-save-note" class="note" data-i18n="ui.properties.save_note">Le modifiche avranno effetto al riavvio del server</span>
                 <div class="flex items-center gap-2">
-                  <button id="btn-cancel-props" type="button" class="btn-ghost">Annulla</button>
-                  <button id="btn-save-props" type="button" class="btn-primary">Salva Modifiche</button>
+                  <button id="btn-cancel-props" type="button" class="btn-ghost" data-i18n="ui.properties.cancel">Annulla</button>
+                  <button id="btn-save-props" type="button" class="btn-primary" data-i18n="ui.properties.save">Salva Modifiche</button>
                 </div>
               </div>
             </section>
@@ -374,15 +374,15 @@
                 <div class="flex items-center justify-between border-b border-line px-4 py-2.5">
                   <div class="flex items-center gap-2.5">
                     <span id="console-dot" class="status-dot offline"></span>
-                    <span class="text-[13px] font-bold">Console — <span id="console-title">—</span></span>
+                    <span class="text-[13px] font-bold"><span data-i18n="ui.console.title">Console</span> — <span id="console-title">—</span></span>
                     <span id="console-count" class="note">0 righe</span>
                   </div>
                   <div class="flex items-center gap-3">
                     <label class="flex cursor-pointer items-center gap-2">
-                      <span class="micro">Auto-scroll</span>
+                      <span class="micro" data-i18n="ui.console.autoscroll">Auto-scroll</span>
                       <span class="toggle"><input type="checkbox" id="console-autoscroll" checked /><span class="toggle-track"></span></span>
                     </label>
-                    <button id="btn-console-clear" class="btn-small">Pulisci</button>
+                    <button id="btn-console-clear" class="btn-small" data-i18n="ui.console.clear">Pulisci</button>
                   </div>
                 </div>
                 <div id="console-window" class="min-h-0 flex-1 overflow-y-auto bg-bg-console px-4 py-3">
@@ -391,14 +391,14 @@
               </div>
 
               <div class="mt-3 flex items-center gap-3">
-                <span class="micro">Comandi rapidi</span>
+                <span class="micro" data-i18n="ui.console.quick_commands">Comandi rapidi</span>
                 <div id="quick-commands" class="flex flex-wrap gap-1.5"></div>
               </div>
 
               <div class="mt-3 flex items-center gap-3 rounded-[10px] border border-line bg-bg-card px-4 py-3">
                 <span class="font-mono text-[14px] font-bold text-accent">&gt;</span>
-                <input id="console-input" type="text" class="min-w-0 flex-1 bg-transparent font-mono text-[12px] text-text-main outline-none placeholder:font-sans placeholder:text-text-faint" placeholder="Scrivi un comando…" autocomplete="off" spellcheck="false" />
-                <span class="micro rounded border border-line px-1.5 py-0.5">invio</span>
+                <input id="console-input" type="text" class="min-w-0 flex-1 bg-transparent font-mono text-[12px] text-text-main outline-none placeholder:font-sans placeholder:text-text-faint" data-i18n-placeholder="ui.console.input_placeholder" placeholder="Scrivi un comando…" autocomplete="off" spellcheck="false" />
+                <span class="micro rounded border border-line px-1.5 py-0.5" data-i18n="ui.console.enter_key">invio</span>
               </div>
             </section>
 
@@ -406,42 +406,42 @@
             <section id="view-webhooks" class="tab-content absolute inset-0 hidden flex flex-col">
               <div class="flex items-start justify-between gap-4 px-6 pb-3 pt-5">
                 <div class="min-w-0">
-                  <h3 class="text-[15px] font-bold">Webhook</h3>
-                  <p class="note mt-0.5">Messaggi e comandi da bot Discord, estensioni Twitch, automazioni. Base URL <span id="wh-base" class="font-mono text-text-soft">—</span></p>
+                  <h3 class="text-[15px] font-bold" data-i18n="ui.webhooks.title">Webhook</h3>
+                  <p class="note mt-0.5"><span data-i18n="ui.webhooks.intro">Messaggi e comandi da bot Discord, estensioni Twitch, automazioni.</span> <span data-i18n="ui.webhooks.base_url">Base URL</span> <span id="wh-base" class="font-mono text-text-soft">—</span></p>
                 </div>
-                <button id="btn-wh-new" class="btn-primary shrink-0">+ Nuovo webhook</button>
+                <button id="btn-wh-new" class="btn-primary shrink-0" data-i18n="ui.webhooks.new">+ Nuovo webhook</button>
               </div>
 
               <div class="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
-                <p id="wh-remote-note" class="note hidden">I webhook si configurano sul PC che ospita il server (tab Webhook sull'host).</p>
+                <p id="wh-remote-note" class="note hidden" data-i18n="ui.webhooks.remote_note">I webhook si configurano sul PC che ospita il server (tab Webhook sull'host).</p>
 
                 <div id="wh-body">
                   <div id="wh-form" class="card mb-4 hidden p-[18px]">
-                    <div class="card-title mb-3">Nuovo webhook</div>
+                    <div class="card-title mb-3" data-i18n="ui.webhooks.form_title">Nuovo webhook</div>
                     <div class="grid grid-cols-2 gap-x-6 gap-y-3">
                       <div>
-                        <label class="field-label" for="wh-name">Nome</label>
-                        <input type="text" id="wh-name" class="input w-full" placeholder="es. Bot Discord" autocomplete="off" />
+                        <label class="field-label" for="wh-name" data-i18n="ui.webhooks.name_label">Nome</label>
+                        <input type="text" id="wh-name" class="input w-full" data-i18n-placeholder="ui.webhooks.name_placeholder" placeholder="es. Bot Discord" autocomplete="off" />
                       </div>
                       <div>
-                        <label class="field-label" for="wh-allowed">Comandi consentiti (solo con permesso command)</label>
-                        <input type="text" id="wh-allowed" class="input w-full" placeholder="prefissi separati da virgola, es. time set, weather — vuoto = tutti" autocomplete="off" />
+                        <label class="field-label" for="wh-allowed" data-i18n="ui.webhooks.allowed_label">Comandi consentiti (solo con permesso command)</label>
+                        <input type="text" id="wh-allowed" class="input w-full" data-i18n-placeholder="ui.webhooks.allowed_placeholder" placeholder="prefissi separati da virgola, es. time set, weather — vuoto = tutti" autocomplete="off" />
                       </div>
                       <div class="col-span-2">
-                        <span class="field-label">Permessi</span>
+                        <span class="field-label" data-i18n="ui.webhooks.perms_label">Permessi</span>
                         <div class="flex flex-wrap gap-x-5 gap-y-1.5 text-[12px] text-text-soft">
-                          <label class="flex items-center gap-1.5"><input type="checkbox" id="wh-perm-say" class="accent-[var(--color-accent)]" checked /> <span class="font-mono">say</span> <span class="note">messaggi in chat</span></label>
-                          <label class="flex items-center gap-1.5"><input type="checkbox" id="wh-perm-command" class="accent-[var(--color-accent)]" /> <span class="font-mono">command</span> <span class="note">comandi console</span></label>
-                          <label class="flex items-center gap-1.5"><input type="checkbox" id="wh-perm-power" class="accent-[var(--color-accent)]" /> <span class="font-mono">power</span> <span class="note">avvia / arresta</span></label>
-                          <label class="flex items-center gap-1.5"><input type="checkbox" id="wh-perm-status" class="accent-[var(--color-accent)]" checked /> <span class="font-mono">status</span> <span class="note">stato del server</span></label>
+                          <label class="flex items-center gap-1.5"><input type="checkbox" id="wh-perm-say" class="accent-[var(--color-accent)]" checked /> <span class="font-mono">say</span> <span class="note" data-i18n="ui.webhooks.perm_say">messaggi in chat</span></label>
+                          <label class="flex items-center gap-1.5"><input type="checkbox" id="wh-perm-command" class="accent-[var(--color-accent)]" /> <span class="font-mono">command</span> <span class="note" data-i18n="ui.webhooks.perm_command">comandi console</span></label>
+                          <label class="flex items-center gap-1.5"><input type="checkbox" id="wh-perm-power" class="accent-[var(--color-accent)]" /> <span class="font-mono">power</span> <span class="note" data-i18n="ui.webhooks.perm_power">avvia / arresta</span></label>
+                          <label class="flex items-center gap-1.5"><input type="checkbox" id="wh-perm-status" class="accent-[var(--color-accent)]" checked /> <span class="font-mono">status</span> <span class="note" data-i18n="ui.webhooks.perm_status">stato del server</span></label>
                         </div>
                       </div>
                     </div>
                     <div class="mt-4 flex items-center justify-between">
                       <span id="wh-error" class="note-err"></span>
                       <div class="flex gap-2">
-                        <button id="btn-wh-cancel" class="btn-ghost">Annulla</button>
-                        <button id="btn-wh-create" class="btn-primary">Crea webhook</button>
+                        <button id="btn-wh-cancel" class="btn-ghost" data-i18n="ui.webhooks.cancel">Annulla</button>
+                        <button id="btn-wh-create" class="btn-primary" data-i18n="ui.webhooks.create">Crea webhook</button>
                       </div>
                     </div>
                   </div>
@@ -449,7 +449,7 @@
                   <div class="grid grid-cols-3 gap-4">
                     <div id="wh-cards" class="col-span-2 space-y-3"></div>
                     <div class="card self-start p-[18px]">
-                      <div class="card-title mb-3">Ultime chiamate</div>
+                      <div class="card-title mb-3" data-i18n="ui.webhooks.recent_calls">Ultime chiamate</div>
                       <ul id="wh-calls" class="space-y-1.5"></ul>
                     </div>
                   </div>
@@ -470,17 +470,17 @@
     <div id="modal-eula" class="modal-overlay hidden">
       <div class="modal-box">
         <div class="modal-header">
-          <h3 class="text-[15px] font-bold">EULA di Minecraft</h3>
+          <h3 class="text-[15px] font-bold" data-i18n="ui.eula.title">EULA di Minecraft</h3>
           <button id="btn-close-eula" class="text-[22px] leading-none text-text-muted hover:text-danger">&times;</button>
         </div>
         <div class="modal-body space-y-3 text-[13px] leading-relaxed text-text-soft">
-          <p>Per avviare un server devi accettare l'<strong class="text-text-main">End User License Agreement</strong> di Minecraft (Mojang / Microsoft).</p>
-          <p>Accettando verrà scritto <code class="rounded bg-bg-inset px-1.5 py-0.5 font-mono text-[11px]">eula=true</code> nel file <code class="rounded bg-bg-inset px-1.5 py-0.5 font-mono text-[11px]">eula.txt</code> di questo server.</p>
-          <button id="btn-eula-open" class="text-[13px] text-accent underline underline-offset-2 hover:text-text-main">Leggi la EULA (aka.ms/MinecraftEULA) ↗</button>
+          <p data-i18n-html="ui.eula.intro">Per avviare un server devi accettare l'<strong class="text-text-main">End User License Agreement</strong> di Minecraft (Mojang / Microsoft).</p>
+          <p data-i18n-html="ui.eula.detail">Accettando verrà scritto <code class="rounded bg-bg-inset px-1.5 py-0.5 font-mono text-[11px]">eula=true</code> nel file <code class="rounded bg-bg-inset px-1.5 py-0.5 font-mono text-[11px]">eula.txt</code> di questo server.</p>
+          <button id="btn-eula-open" class="text-[13px] text-accent underline underline-offset-2 hover:text-text-main" data-i18n="ui.eula.read_link">Leggi la EULA (aka.ms/MinecraftEULA) ↗</button>
         </div>
         <div class="modal-footer">
-          <button id="btn-eula-cancel" class="btn-ghost">Annulla</button>
-          <button id="btn-eula-accept" class="btn-primary">Accetto e avvia</button>
+          <button id="btn-eula-cancel" class="btn-ghost" data-i18n="ui.eula.cancel">Annulla</button>
+          <button id="btn-eula-accept" class="btn-primary" data-i18n="ui.eula.accept">Accetto e avvia</button>
         </div>
       </div>
     </div>
@@ -488,33 +488,33 @@
     <div id="modal-edit" class="modal-overlay hidden">
       <div class="modal-box">
         <div class="modal-header">
-          <h3 class="text-[15px] font-bold">Modifica Server</h3>
+          <h3 class="text-[15px] font-bold" data-i18n="ui.edit.title">Modifica Server</h3>
           <button id="btn-close-modal" class="text-[22px] leading-none text-text-muted hover:text-danger">&times;</button>
         </div>
         <div class="modal-body space-y-4">
           <div>
-            <label class="field-label" for="edit-name-input">Nome Server</label>
-            <input type="text" id="edit-name-input" class="input w-full" placeholder="Es. Mio Server" />
+            <label class="field-label" for="edit-name-input" data-i18n="ui.edit.name_label">Nome Server</label>
+            <input type="text" id="edit-name-input" class="input w-full" data-i18n-placeholder="ui.edit.name_placeholder" placeholder="Es. Mio Server" />
           </div>
           <div>
             <div class="mb-1.5 flex items-center justify-between">
-              <span class="field-label mb-0">Icona</span>
+              <span class="field-label mb-0" data-i18n="ui.edit.icon_label">Icona</span>
               <span id="edit-icon-name" class="note">—</span>
             </div>
             <div id="icon-grid" class="flex max-h-[176px] flex-wrap gap-2 overflow-y-auto rounded-lg border border-line bg-bg-inset/60 p-2"></div>
             <div id="icon-dropzone" class="dropzone mt-2">
-              Trascina qui un'immagine (PNG, JPG, WEBP, GIF — max 5 MB)
-              <span class="mx-1 text-text-faint">oppure</span>
-              <button type="button" id="btn-icon-browse" class="text-accent underline underline-offset-2 hover:text-text-main">Sfoglia…</button>
+              <span data-i18n="ui.edit.dropzone">Trascina qui un'immagine (PNG, JPG, WEBP, GIF — max 5 MB)</span>
+              <span class="mx-1 text-text-faint" data-i18n="ui.edit.dropzone_or">oppure</span>
+              <button type="button" id="btn-icon-browse" class="text-accent underline underline-offset-2 hover:text-text-main" data-i18n="ui.edit.browse">Sfoglia…</button>
             </div>
             <p id="icon-note" class="note mt-1.5 min-h-[14px]"></p>
             <input type="hidden" id="edit-icon-input" />
           </div>
         </div>
         <div class="modal-footer">
-          <button id="btn-delete-server" class="btn-danger-text mr-auto">Elimina server…</button>
-          <button id="btn-cancel-edit" class="btn-ghost">Annulla</button>
-          <button id="btn-confirm-edit" class="btn-primary">Salva</button>
+          <button id="btn-delete-server" class="btn-danger-text mr-auto" data-i18n="ui.edit.delete">Elimina server…</button>
+          <button id="btn-cancel-edit" class="btn-ghost" data-i18n="ui.edit.cancel">Annulla</button>
+          <button id="btn-confirm-edit" class="btn-primary" data-i18n="ui.edit.save">Salva</button>
         </div>
       </div>
     </div>
@@ -524,7 +524,7 @@
     <div id="modal-mods" class="modal-overlay hidden">
       <div class="modal-box wide">
         <div class="modal-header">
-          <h3 id="mb-title" class="text-[15px] font-bold">Aggiungi mod</h3>
+          <h3 id="mb-title" class="text-[15px] font-bold" data-i18n="ui.modbrowser.title">Aggiungi mod</h3>
           <button id="btn-close-mb" class="text-[22px] leading-none text-text-muted hover:text-danger">&times;</button>
         </div>
         <div class="modal-body space-y-3">
@@ -533,8 +533,8 @@
               <button type="button" class="seg active" data-source="modrinth">Modrinth</button>
               <button type="button" class="seg" data-source="curseforge">CurseForge</button>
             </div>
-            <input type="text" id="mb-query" class="input min-w-0 flex-1 font-sans text-[12px] font-normal" placeholder="Cerca per nome (es. JEI, WorldEdit)" autocomplete="off" spellcheck="false" />
-            <button type="button" id="btn-mb-search" class="btn-outline shrink-0">Cerca</button>
+            <input type="text" id="mb-query" class="input min-w-0 flex-1 font-sans text-[12px] font-normal" data-i18n-placeholder="ui.modbrowser.search_placeholder" placeholder="Cerca per nome (es. JEI, WorldEdit)" autocomplete="off" spellcheck="false" />
+            <button type="button" id="btn-mb-search" class="btn-outline shrink-0" data-i18n="ui.modbrowser.search">Cerca</button>
           </div>
           <p id="mb-note" class="note min-h-[14px]"></p>
 
@@ -542,16 +542,16 @@
 
           <div id="mb-versions-box" class="hidden">
             <div class="version-head">
-              <span class="field-label">Versione da installare</span>
+              <span class="field-label" data-i18n="ui.modbrowser.version_label">Versione da installare</span>
               <span id="mb-versions-count" class="note"></span>
             </div>
-            <div id="mb-versions" class="pick-list max-h-[150px]" role="radiogroup" aria-label="Versione della mod"></div>
+            <div id="mb-versions" class="pick-list max-h-[150px]" role="radiogroup" data-i18n-aria="ui.modbrowser.versions_aria" aria-label="Versione della mod"></div>
           </div>
         </div>
         <div class="modal-footer">
           <span id="mb-ctx" class="note mr-auto"></span>
-          <button id="btn-mb-cancel" class="btn-ghost">Chiudi</button>
-          <button id="btn-mb-install" class="btn-primary" disabled>Installa</button>
+          <button id="btn-mb-cancel" class="btn-ghost" data-i18n="ui.modbrowser.close">Chiudi</button>
+          <button id="btn-mb-install" class="btn-primary" data-i18n="ui.modbrowser.install" disabled>Installa</button>
         </div>
       </div>
     </div>
@@ -560,7 +560,7 @@
     <div id="modal-delete" class="modal-overlay hidden">
       <div class="modal-box">
         <div class="modal-header">
-          <h3 class="text-[15px] font-bold text-danger">Elimina server</h3>
+          <h3 class="text-[15px] font-bold text-danger" data-i18n="ui.delete.title">Elimina server</h3>
           <button id="btn-close-delete" class="text-[22px] leading-none text-text-muted hover:text-danger">&times;</button>
         </div>
         <div class="modal-body space-y-4">
@@ -572,18 +572,18 @@
             </div>
           </div>
           <div class="rounded-lg border border-danger/30 bg-danger/5 p-3 text-[12px] text-text-soft">
-            <p class="font-semibold text-danger">Operazione irreversibile</p>
-            <p class="mt-1">Verranno cancellati definitivamente mondo, mod, configurazioni e i backup nella cartella <span class="font-mono">backups/</span> del server. Mineger non ne conserva una copia.</p>
+            <p class="font-semibold text-danger" data-i18n="ui.delete.warning_title">Operazione irreversibile</p>
+            <p class="mt-1" data-i18n-html="ui.delete.warning_body">Verranno cancellati definitivamente mondo, mod, configurazioni e i backup nella cartella <span class="font-mono">backups/</span> del server. Mineger non ne conserva una copia.</p>
           </div>
           <div>
-            <label class="field-label" for="delete-confirm-input">Scrivi <span class="font-mono font-bold text-text-main">CONFERMA</span> per procedere</label>
-            <input type="text" id="delete-confirm-input" class="input w-full" placeholder="CONFERMA" autocomplete="off" spellcheck="false" />
+            <label class="field-label" for="delete-confirm-input" data-i18n-html="ui.delete.confirm_label">Scrivi <span class="font-mono font-bold text-text-main">CONFERMA</span> per procedere</label>
+            <input type="text" id="delete-confirm-input" class="input w-full" data-i18n-placeholder="ui.delete.confirm_placeholder" placeholder="CONFERMA" autocomplete="off" spellcheck="false" />
             <p id="delete-note" class="note-err mt-1.5 min-h-[14px]"></p>
           </div>
         </div>
         <div class="modal-footer">
-          <button id="btn-cancel-delete" class="btn-ghost">Annulla</button>
-          <button id="btn-confirm-delete" class="btn-danger" disabled>Elimina definitivamente</button>
+          <button id="btn-cancel-delete" class="btn-ghost" data-i18n="ui.delete.cancel">Annulla</button>
+          <button id="btn-confirm-delete" class="btn-danger" data-i18n="ui.delete.confirm" disabled>Elimina definitivamente</button>
         </div>
       </div>
     </div>
@@ -591,98 +591,136 @@
     <div id="modal-settings" class="modal-overlay hidden">
       <div class="modal-box wide">
         <div class="modal-header">
-          <div class="flex items-center gap-3">
-            <h3 class="text-[15px] font-bold">Impostazioni</h3>
+          <div class="flex items-baseline gap-3">
+            <h3 class="text-[15px] font-bold" data-i18n="ui.settings.title">Impostazioni</h3>
             <span id="settings-version" class="font-mono text-[10px] text-text-faint">v—</span>
           </div>
-          <button id="btn-close-settings" class="text-[22px] leading-none text-text-muted hover:text-danger">&times;</button>
+          <button id="btn-close-settings" class="btn-icon" data-i18n-aria="ui.settings.close">&times;</button>
         </div>
-        <div class="modal-body max-h-[70vh] space-y-5 overflow-y-auto">
-          <div>
-            <div class="card-title mb-2">Cartelle</div>
+
+        <div class="modal-body max-h-[70vh] space-y-4 overflow-y-auto">
+
+          <!-- Lingua -->
+          <section class="settings-card">
+            <div class="settings-head">
+              <div class="card-title" data-i18n="ui.settings.language_title">Lingua</div>
+              <span class="note" data-i18n="ui.settings.language_hint_short">Completezza della traduzione</span>
+            </div>
+            <div id="language-list" class="pick-list" role="radiogroup" data-i18n-aria="ui.settings.language_label"></div>
+            <p id="language-note" class="note mt-1.5" data-i18n="ui.settings.language_hint">Il cambio è immediato: non serve riavviare l'app.</p>
+          </section>
+
+          <!-- Cartelle -->
+          <section class="settings-card">
+            <div class="settings-head">
+              <div class="card-title" data-i18n="ui.settings.folders_title">Cartelle</div>
+            </div>
             <div class="space-y-2">
-              <div class="flex items-center gap-3">
-                <span class="w-[90px] shrink-0 text-[12px] text-text-muted">Server</span>
-                <span id="settings-servers-dir" class="min-w-0 flex-1 truncate font-mono text-[11px] text-text-soft">—</span>
-                <button id="btn-open-servers-dir" class="btn-small">Apri</button>
+              <div class="settings-row">
+                <span class="settings-label" data-i18n="ui.settings.folder_servers">Server</span>
+                <span id="settings-servers-dir" class="settings-value">—</span>
+                <button id="btn-open-servers-dir" class="btn-small shrink-0" data-i18n="ui.settings.open">Apri</button>
               </div>
-              <div class="flex items-center gap-3">
-                <span class="w-[90px] shrink-0 text-[12px] text-text-muted">Config Java</span>
-                <span id="settings-config-path" class="min-w-0 flex-1 truncate font-mono text-[11px] text-text-soft">—</span>
-                <button id="btn-open-config-dir" class="btn-small">Apri</button>
+              <div class="settings-row">
+                <span class="settings-label" data-i18n="ui.settings.folder_config">Config Java</span>
+                <span id="settings-config-path" class="settings-value">—</span>
+                <button id="btn-open-config-dir" class="btn-small shrink-0" data-i18n="ui.settings.open">Apri</button>
               </div>
-              <div class="flex items-center gap-3">
-                <span class="w-[90px] shrink-0 text-[12px] text-text-muted">Disco</span>
-                <span id="settings-disk" class="font-mono text-[11px] text-text-soft">—</span>
+              <div class="settings-row">
+                <span class="settings-label" data-i18n="ui.settings.disk">Disco</span>
+                <span class="min-w-0 flex-1">
+                  <span class="block h-1.5 w-full overflow-hidden rounded-full bg-line">
+                    <span id="settings-disk-fill" class="block h-full rounded-full bg-warning transition-[width]" style="width:0%"></span>
+                  </span>
+                </span>
+                <span id="settings-disk" class="shrink-0 font-mono text-[11px] text-text-soft">—</span>
               </div>
             </div>
-          </div>
-          <div>
-            <div class="card-title mb-2">Controllo remoto (host)</div>
-            <div class="space-y-2.5">
-              <div class="flex items-center justify-between gap-3">
-                <span class="text-[12px] text-text-soft">Consenti ad altri Mineger di gestire i miei server</span>
-                <label class="toggle"><input type="checkbox" id="host-enabled" /><span class="toggle-track"></span></label>
-              </div>
+          </section>
+
+          <!-- Controllo remoto -->
+          <section class="settings-card">
+            <div class="settings-head">
               <div class="flex items-center gap-2">
-                <span class="w-[90px] shrink-0 text-[12px] text-text-muted">Nome host</span>
-                <input type="text" id="host-name" class="input min-w-0 flex-1" placeholder="PC di Zed" autocomplete="off" />
-                <span class="text-[12px] text-text-muted">Porta</span>
+                <div class="card-title" data-i18n="ui.settings.remote_title">Controllo remoto (host)</div>
+                <span id="host-state-pill" class="pill-offline" data-i18n="ui.settings.remote_off">Disattivato</span>
+              </div>
+              <label class="flex cursor-pointer items-center gap-2.5">
+                <span class="text-[12px] text-text-soft" data-i18n="ui.settings.remote_enable">Consenti ad altri Mineger di gestire i miei server</span>
+                <span class="toggle"><input type="checkbox" id="host-enabled" /><span class="toggle-track"></span></span>
+              </label>
+            </div>
+            <div class="space-y-2.5">
+              <div class="flex items-center gap-2">
+                <span class="settings-label" data-i18n="ui.settings.host_name">Nome host</span>
+                <input type="text" id="host-name" class="input min-w-0 flex-1" data-i18n-placeholder="ui.settings.host_name_placeholder" placeholder="PC di Zed" autocomplete="off" />
+                <span class="shrink-0 text-[12px] text-text-muted" data-i18n="ui.settings.port">Porta</span>
                 <input type="number" id="host-port" class="input w-[84px] text-center" min="1024" max="65535" />
-                <button id="btn-host-apply" class="btn-small">Applica</button>
+                <button id="btn-host-apply" class="btn-outline-accent shrink-0" data-i18n="ui.settings.apply">Applica</button>
               </div>
               <p id="host-status" class="note">—</p>
               <div id="host-invites" class="hidden space-y-1.5">
                 <div class="flex items-center gap-2">
-                  <span class="w-[90px] shrink-0 text-[12px] text-text-muted">Link LAN</span>
+                  <span class="settings-label" data-i18n="ui.settings.link_lan">Link LAN</span>
                   <input type="text" id="host-invite-local" readonly class="input min-w-0 flex-1 text-[10px]" />
-                  <button class="btn-small" data-copy="host-invite-local">Copia</button>
+                  <button class="btn-small shrink-0" data-copy="host-invite-local" data-i18n="ui.settings.copy">Copia</button>
                 </div>
                 <div id="host-invite-public-row" class="flex items-center gap-2">
-                  <span class="w-[90px] shrink-0 text-[12px] text-text-muted">Link internet</span>
+                  <span class="settings-label" data-i18n="ui.settings.link_internet">Link internet</span>
                   <input type="text" id="host-invite-public" readonly class="input min-w-0 flex-1 text-[10px]" />
-                  <button class="btn-small" data-copy="host-invite-public">Copia</button>
+                  <button class="btn-small shrink-0" data-copy="host-invite-public" data-i18n="ui.settings.copy">Copia</button>
                 </div>
                 <div class="flex justify-end">
-                  <button id="btn-host-regenerate" class="btn-small">Rigenera token</button>
+                  <button id="btn-host-regenerate" class="btn-small" data-i18n="ui.settings.regenerate_token">Rigenera token</button>
                 </div>
               </div>
-              <p class="note">Connessione senza TLS: usala in LAN o con una VPN (Tailscale, ZeroTier) e condividi il link solo con persone fidate.</p>
+              <p class="note" data-i18n="ui.settings.tls_note">Connessione senza TLS: usala in LAN o con una VPN (Tailscale, ZeroTier) e condividi il link solo con persone fidate.</p>
             </div>
-          </div>
+          </section>
 
-          <div>
-            <div class="card-title mb-2">Host collegati</div>
+          <!-- Host collegati -->
+          <section class="settings-card">
+            <div class="settings-head">
+              <div class="card-title" data-i18n="ui.settings.linked_hosts">Host collegati</div>
+            </div>
             <ul id="settings-hosts-list" class="space-y-1.5"></ul>
-          </div>
+            <p class="note mt-2" data-i18n-html="ui.settings.webhooks_note">I webhook in ingresso (Discord, Twitch, automazioni) si gestiscono nel tab <span class="font-semibold text-text-soft">Webhook</span> di ogni server; usano la stessa porta del controllo remoto.</p>
+          </section>
 
-          <p class="note">I webhook in ingresso (Discord, Twitch, automazioni) si gestiscono nel tab <span class="font-semibold text-text-soft">Webhook</span> di ogni server; usano la stessa porta del controllo remoto.</p>
-
-          <div>
-            <div class="card-title mb-2">Modpack da link</div>
+          <!-- Modpack da link -->
+          <section class="settings-card">
+            <div class="settings-head">
+              <div class="card-title" data-i18n="ui.settings.modpack_link_title">Modpack da link</div>
+            </div>
             <div class="flex items-center gap-2">
-              <span class="w-[90px] shrink-0 text-[12px] text-text-muted">Chiave CurseForge</span>
-              <input type="text" id="cf-api-key" class="input min-w-0 flex-1 text-[10px]" placeholder="incolla qui la tua chiave CurseForge" autocomplete="off" spellcheck="false" />
-              <button id="btn-cf-key-save" class="btn-small">Salva</button>
+              <span class="settings-label" data-i18n="ui.settings.cf_key_label">Chiave CurseForge</span>
+              <input type="text" id="cf-api-key" class="input min-w-0 flex-1 text-[10px]" data-i18n-placeholder="ui.settings.cf_key_placeholder" placeholder="incolla qui la tua chiave CurseForge" autocomplete="off" spellcheck="false" />
+              <button id="btn-cf-key-save" class="btn-outline-accent shrink-0" data-i18n="ui.settings.save">Salva</button>
             </div>
             <p class="note mt-1.5">
-              CurseForge richiede una chiave API <span class="text-text-soft">personale</span>: senza, mod e modpack di CurseForge non sono disponibili.
-              È gratuita — generala su <button type="button" id="link-cf-console" class="text-accent underline underline-offset-2 hover:text-text-main">console.curseforge.com</button>.
-              <span class="block mt-0.5">Modrinth e FTB non richiedono nessuna chiave.</span>
+              <span data-i18n-html="ui.settings.cf_note">CurseForge richiede una chiave API <span class="text-text-soft">personale</span>: senza, mod e modpack di CurseForge non sono disponibili.</span>
+              <span data-i18n="ui.settings.cf_note_free">È gratuita — generala su</span> <button type="button" id="link-cf-console" class="text-accent underline underline-offset-2 hover:text-text-main">console.curseforge.com</button>.
+              <span class="block mt-0.5" data-i18n="ui.settings.cf_note_others">Modrinth e FTB non richiedono nessuna chiave.</span>
             </p>
-          </div>
+          </section>
 
-          <div>
-            <div class="mb-2 flex items-center justify-between">
-              <div class="card-title">Java rilevate</div>
-              <button id="btn-settings-rescan" class="btn-small">Riscansiona</button>
+          <!-- Java -->
+          <section class="settings-card">
+            <div class="settings-head">
+              <div class="flex items-baseline gap-2">
+                <div class="card-title" data-i18n="ui.settings.java_title">Java rilevate</div>
+                <span id="settings-java-count" class="note"></span>
+              </div>
+              <button id="btn-settings-rescan" class="btn-small" data-i18n="ui.settings.rescan">Riscansiona</button>
             </div>
             <ul id="settings-java-list" class="max-h-[220px] space-y-1.5 overflow-y-auto"></ul>
-            <p class="note mt-2">Per forzare un percorso specifico modifica <span class="font-mono">java_paths</span> nel config.json (es. <span class="font-mono">"java_17": "C:\\...\\java.exe"</span>).</p>
-          </div>
+            <p class="note mt-2" data-i18n-html="ui.settings.java_note">Per forzare un percorso specifico modifica <span class="font-mono">java_paths</span> nel config.json (es. <span class="font-mono">"java_17": "C:\\...\\java.exe"</span>).</p>
+          </section>
         </div>
-        <div class="modal-footer">
-          <button id="btn-settings-ok" class="btn-primary">Chiudi</button>
+
+        <div class="modal-footer justify-between">
+          <span class="font-mono text-[11px] text-text-faint" data-i18n="ui.settings.esc_hint">ESC per chiudere</span>
+          <button id="btn-settings-ok" class="btn-primary" data-i18n="ui.settings.close">Chiudi</button>
         </div>
       </div>
     </div>
@@ -690,52 +728,52 @@
     <div id="modal-new" class="modal-overlay hidden">
       <div class="modal-box wide">
         <div class="modal-header">
-          <h3 class="text-[15px] font-bold">Nuovo Server</h3>
+          <h3 class="text-[15px] font-bold" data-i18n="ui.wizard.create_title">Nuovo Server</h3>
           <button id="btn-close-new" class="text-[22px] leading-none text-text-muted hover:text-danger">&times;</button>
         </div>
 
         <div class="modal-body">
           <div id="step-selection">
-            <p class="mb-4 text-center text-[13px] text-text-muted">Come vuoi creare il tuo server?</p>
+            <p class="mb-4 text-center text-[13px] text-text-muted" data-i18n="ui.wizard.how_question">Come vuoi creare il tuo server?</p>
             <div class="grid grid-cols-2 gap-3">
               <div class="selection-card" data-type="create">
                 <div class="mb-2 flex justify-center text-accent"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg></div>
-                <h4 class="text-[13px] font-semibold">Crea da Zero</h4>
-                <p class="mt-1 text-[11px] leading-snug text-text-muted">Scarica e installa una versione Vanilla automaticamente.</p>
+                <h4 class="text-[13px] font-semibold" data-i18n="ui.wizard.card_create_title">Crea da Zero</h4>
+                <p class="mt-1 text-[11px] leading-snug text-text-muted" data-i18n="ui.wizard.card_create_desc">Scarica e installa una versione Vanilla automaticamente.</p>
               </div>
               <div class="selection-card" data-type="import">
                 <div class="mb-2 flex justify-center text-accent"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></div>
-                <h4 class="text-[13px] font-semibold">Importa ZIP</h4>
-                <p class="mt-1 text-[11px] leading-snug text-text-muted">Carica un pacchetto server già configurato (.zip).</p>
+                <h4 class="text-[13px] font-semibold" data-i18n="ui.wizard.card_import_title">Importa ZIP</h4>
+                <p class="mt-1 text-[11px] leading-snug text-text-muted" data-i18n="ui.wizard.card_import_desc">Carica un pacchetto server già configurato (.zip).</p>
               </div>
               <div class="selection-card" data-type="remote">
                 <div class="mb-2 flex justify-center text-accent"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></div>
-                <h4 class="text-[13px] font-semibold">Connetti Remoto</h4>
-                <p class="mt-1 text-[11px] leading-snug text-text-muted">Gestisci i server sul PC di un amico con il suo link d'invito.</p>
+                <h4 class="text-[13px] font-semibold" data-i18n="ui.wizard.card_remote_title">Connetti Remoto</h4>
+                <p class="mt-1 text-[11px] leading-snug text-text-muted" data-i18n="ui.wizard.card_remote_desc">Gestisci i server sul PC di un amico con il suo link d'invito.</p>
               </div>
               <div class="selection-card" data-type="link">
                 <div class="mb-2 flex justify-center text-accent"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></div>
-                <h4 class="text-[13px] font-semibold">Aggiungi da link</h4>
-                <p class="mt-1 text-[11px] leading-snug text-text-muted">Incolla un link e Mineger prepara il server per te.</p>
+                <h4 class="text-[13px] font-semibold" data-i18n="ui.wizard.card_link_title">Aggiungi da link</h4>
+                <p class="mt-1 text-[11px] leading-snug text-text-muted" data-i18n="ui.wizard.card_link_desc">Incolla un link e Mineger prepara il server per te.</p>
               </div>
             </div>
           </div>
 
           <div id="step-form" class="hidden space-y-4">
             <div id="field-name">
-              <label class="field-label" for="new-server-name">Nome del Server</label>
-              <input type="text" id="new-server-name" class="input w-full" placeholder="Es. Survival 2024" autocomplete="off" />
+              <label class="field-label" for="new-server-name" data-i18n="ui.wizard.name_label">Nome del Server</label>
+              <input type="text" id="new-server-name" class="input w-full" data-i18n-placeholder="ui.wizard.name_placeholder" placeholder="Es. Survival 2024" autocomplete="off" />
             </div>
 
             <div id="fields-link" class="hidden space-y-3">
               <div>
-                <label class="field-label" for="link-url">Link del modpack (CurseForge, Modrinth o FTB)</label>
+                <label class="field-label" for="link-url" data-i18n="ui.wizard.link_label">Link del modpack (CurseForge, Modrinth o FTB)</label>
                 <div class="flex gap-2">
                   <input type="text" id="link-url" class="input min-w-0 flex-1" placeholder="https://www.curseforge.com/minecraft/modpacks/all-the-mods-10" autocomplete="off" spellcheck="false" />
-                  <button type="button" id="btn-link-search" class="btn-outline shrink-0">Cerca</button>
+                  <button type="button" id="btn-link-search" class="btn-outline shrink-0" data-i18n="ui.wizard.search">Cerca</button>
                 </div>
                 <span id="link-note" class="note mt-1.5 block min-h-[14px]"></span>
-                <p id="link-cf-warning" class="note-warn mt-1.5 hidden">I link CurseForge richiedono la tua chiave API (Impostazioni → Chiave CurseForge). Modrinth e FTB funzionano subito.</p>
+                <p id="link-cf-warning" class="note-warn mt-1.5 hidden" data-i18n="ui.wizard.link_cf_warning">I link CurseForge richiedono la tua chiave API (Impostazioni → Chiave CurseForge). Modrinth e FTB funzionano subito.</p>
               </div>
 
               <div id="link-result" class="hidden space-y-3">
@@ -752,11 +790,11 @@
                 </div>
                 <div>
                   <div class="version-head">
-                    <span class="field-label">Versione server</span>
+                    <span class="field-label" data-i18n="ui.wizard.pack_version_label">Versione server</span>
                     <span id="link-version-count" class="note"></span>
                   </div>
-                  <div id="link-versions" class="version-list" role="radiogroup" aria-label="Versione server"></div>
-                  <button type="button" id="link-versions-more" class="version-more hidden">Mostra tutte le versioni</button>
+                  <div id="link-versions" class="version-list" role="radiogroup" data-i18n-aria="ui.wizard.pack_version_aria" aria-label="Versione server"></div>
+                  <button type="button" id="link-versions-more" class="version-more hidden" data-i18n="ui.wizard.show_all_versions">Mostra tutte le versioni</button>
                 </div>
                 <p id="link-warning" class="note-warn hidden"></p>
               </div>
@@ -764,38 +802,38 @@
 
             <div id="fields-remote" class="hidden space-y-3">
               <div>
-                <label class="field-label" for="remote-link">Link d'invito oppure indirizzo dell'host</label>
+                <label class="field-label" for="remote-link" data-i18n="ui.wizard.remote_link_label">Link d'invito oppure indirizzo dell'host</label>
                 <input type="text" id="remote-link" class="input w-full" placeholder="mineger://192.168.1.20:25580/#token  oppure  192.168.1.20:25580" autocomplete="off" spellcheck="false" />
               </div>
               <div>
-                <label class="field-label" for="remote-token">Token (solo se non è incluso nel link)</label>
-                <input type="text" id="remote-token" class="input w-full" placeholder="opzionale" autocomplete="off" spellcheck="false" />
+                <label class="field-label" for="remote-token" data-i18n="ui.wizard.remote_token_label">Token (solo se non è incluso nel link)</label>
+                <input type="text" id="remote-token" class="input w-full" data-i18n-placeholder="ui.wizard.remote_token_placeholder" placeholder="opzionale" autocomplete="off" spellcheck="false" />
               </div>
-              <p class="text-[12px] leading-relaxed text-text-muted">L'amico trova il link in <span class="font-semibold text-text-soft">Impostazioni → Controllo remoto</span>. Funziona in LAN, con una VPN (Tailscale, ZeroTier) o con la porta aperta sul router.</p>
+              <p class="text-[12px] leading-relaxed text-text-muted" data-i18n-html="ui.wizard.remote_hint">L'amico trova il link in <span class="font-semibold text-text-soft">Impostazioni → Controllo remoto</span>. Funziona in LAN, con una VPN (Tailscale, ZeroTier) o con la porta aperta sul router.</p>
             </div>
 
             <div id="fields-create" class="hidden space-y-3">
               <div>
-                <span class="field-label">Tipo di server</span>
-                <div id="create-kind" class="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Tipo di server">
+                <span class="field-label" data-i18n="ui.wizard.kind_label">Tipo di server</span>
+                <div id="create-kind" class="grid grid-cols-3 gap-2" role="radiogroup" data-i18n-aria="ui.wizard.kind_aria" aria-label="Tipo di server">
                   <button type="button" class="kind-card selected" data-kind="vanilla" role="radio" aria-checked="true">
                     <span class="kind-name">Vanilla</span>
-                    <span class="kind-desc">Minecraft ufficiale, senza aggiunte</span>
+                    <span class="kind-desc" data-i18n="ui.wizard.kind_vanilla_desc">Minecraft ufficiale, senza aggiunte</span>
                   </button>
                   <button type="button" class="kind-card" data-kind="paper" role="radio" aria-checked="false">
-                    <span class="kind-name">Plugin</span>
-                    <span class="kind-desc">Paper: plugin Bukkit/Spigot</span>
+                    <span class="kind-name" data-i18n="ui.wizard.kind_paper_name">Plugin</span>
+                    <span class="kind-desc" data-i18n="ui.wizard.kind_paper_desc">Paper: plugin Bukkit/Spigot</span>
                   </button>
                   <button type="button" class="kind-card" data-kind="modded" role="radio" aria-checked="false">
-                    <span class="kind-name">Moddato</span>
-                    <span class="kind-desc">NeoForge, Forge o Fabric</span>
+                    <span class="kind-name" data-i18n="ui.wizard.kind_modded_name">Moddato</span>
+                    <span class="kind-desc" data-i18n="ui.wizard.kind_modded_desc">NeoForge, Forge o Fabric</span>
                   </button>
                 </div>
               </div>
 
               <div id="create-loader-row" class="hidden">
-                <span class="field-label">Mod loader</span>
-                <div id="create-loader" class="flex gap-2" role="radiogroup" aria-label="Mod loader">
+                <span class="field-label" data-i18n="ui.wizard.loader_label">Mod loader</span>
+                <div id="create-loader" class="flex gap-2" role="radiogroup" data-i18n-aria="ui.wizard.loader_aria" aria-label="Mod loader">
                   <button type="button" class="loader-pill selected" data-loader="neoforge" role="radio" aria-checked="true">NeoForge</button>
                   <button type="button" class="loader-pill" data-loader="forge" role="radio" aria-checked="false">Forge</button>
                   <button type="button" class="loader-pill" data-loader="fabric" role="radio" aria-checked="false">Fabric</button>
@@ -805,31 +843,31 @@
               <div class="grid grid-cols-2 gap-3">
                 <div class="min-w-0">
                   <div class="version-head">
-                    <span class="field-label">Versione Minecraft</span>
+                    <span class="field-label" data-i18n="ui.wizard.mc_version_label">Versione Minecraft</span>
                     <span id="mc-count" class="note"></span>
                   </div>
-                  <input type="text" id="mc-filter" class="input mb-1.5 w-full font-sans text-[12px] font-normal" placeholder="Filtra (es. 1.21)" autocomplete="off" spellcheck="false" />
-                  <div id="mc-list" class="pick-list" role="radiogroup" aria-label="Versione Minecraft"></div>
+                  <input type="text" id="mc-filter" class="input mb-1.5 w-full font-sans text-[12px] font-normal" data-i18n-placeholder="ui.wizard.mc_filter_placeholder" placeholder="Filtra (es. 1.21)" autocomplete="off" spellcheck="false" />
+                  <div id="mc-list" class="pick-list" role="radiogroup" data-i18n-aria="ui.wizard.mc_version_aria" aria-label="Versione Minecraft"></div>
                 </div>
                 <div id="loader-col" class="hidden min-w-0">
                   <div class="version-head">
-                    <span id="loader-label" class="field-label">Build</span>
+                    <span id="loader-label" class="field-label" data-i18n="ui.wizard.build_label">Build</span>
                     <span id="lv-count" class="note"></span>
                   </div>
                   <div class="input mb-1.5 w-full invisible" aria-hidden="true">&nbsp;</div>
-                  <div id="lv-list" class="pick-list" role="radiogroup" aria-label="Versione del loader"></div>
+                  <div id="lv-list" class="pick-list" role="radiogroup" data-i18n-aria="ui.wizard.loader_version_aria" aria-label="Versione del loader"></div>
                 </div>
               </div>
 
-              <p id="create-hint" class="text-[12px] leading-relaxed text-text-muted">Il server.jar ufficiale viene scaricato da Mojang e verificato (SHA1). La EULA verrà chiesta al primo avvio.</p>
+              <p id="create-hint" class="text-[12px] leading-relaxed text-text-muted" data-i18n="ui.wizard.create_hint">Il server.jar ufficiale viene scaricato da Mojang e verificato (SHA1). La EULA verrà chiesta al primo avvio.</p>
             </div>
 
             <div id="fields-import" class="hidden space-y-3">
               <div>
-                <label class="field-label" for="import-version">Versione Minecraft (opzionale)</label>
-                <input type="text" id="import-version" class="input w-full" placeholder="Rilevata automaticamente se possibile" autocomplete="off" />
+                <label class="field-label" for="import-version" data-i18n="ui.wizard.import_version_label">Versione Minecraft (opzionale)</label>
+                <input type="text" id="import-version" class="input w-full" data-i18n-placeholder="ui.wizard.import_version_placeholder" placeholder="Rilevata automaticamente se possibile" autocomplete="off" />
               </div>
-              <p class="text-[12px] leading-relaxed text-text-muted">Alla conferma si aprirà la finestra per scegliere il file <span class="font-mono">.zip</span>. Supportati: vanilla, Forge/NeoForge (con file argomenti), Paper/Fabric (jar singolo).</p>
+              <p class="text-[12px] leading-relaxed text-text-muted" data-i18n-html="ui.wizard.import_hint">Alla conferma si aprirà la finestra per scegliere il file <span class="font-mono">.zip</span>. Supportati: vanilla, Forge/NeoForge (con file argomenti), Paper/Fabric (jar singolo).</p>
             </div>
 
             <div id="create-progress" class="hidden">
@@ -841,10 +879,10 @@
         </div>
 
         <div class="modal-footer">
-          <button id="btn-back-step" class="btn-ghost hidden">Indietro</button>
+          <button id="btn-back-step" class="btn-ghost hidden" data-i18n="ui.wizard.back">Indietro</button>
           <div class="flex-1"></div>
-          <button id="btn-cancel-new" class="btn-ghost">Annulla</button>
-          <button id="btn-create-confirm" class="btn-primary hidden">Crea Server</button>
+          <button id="btn-cancel-new" class="btn-ghost" data-i18n="ui.wizard.cancel">Annulla</button>
+          <button id="btn-create-confirm" class="btn-primary hidden" data-i18n="ui.wizard.confirm">Crea Server</button>
         </div>
       </div>
     </div>

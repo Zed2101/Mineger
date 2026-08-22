@@ -7,6 +7,7 @@
 
 use crate::models::BackupInfo;
 use crate::process;
+use crate::tr;
 use crate::utils::parse_server_properties;
 use std::fs;
 use std::io;
@@ -89,7 +90,8 @@ fn zip_worlds(app: &AppHandle, id: &str, server_dir: &Path, worlds: &[PathBuf], 
     }
     let total = files.len().max(1);
 
-    let file = fs::File::create(out_path).map_err(|e| format!("Impossibile creare {}: {}", out_path.display(), e))?;
+    let file = fs::File::create(out_path)
+        .map_err(|e| tr!("errors.file.create_failed", "path" => out_path.display(), "error" => e))?;
     let mut zw = zip::ZipWriter::new(io::BufWriter::new(file));
     let opts = SimpleFileOptions::default()
         .compression_method(zip::CompressionMethod::Deflated)
@@ -118,7 +120,7 @@ fn zip_worlds(app: &AppHandle, id: &str, server_dir: &Path, worlds: &[PathBuf], 
         let pct = (((i + 1) * 100) / total).min(100) as u8;
         if pct != last_pct && pct % 2 == 0 {
             last_pct = pct;
-            emit_progress(app, id, pct, &format!("Compressione {}/{} file", i + 1, total));
+            emit_progress(app, id, pct, &tr!("progress.backup.compressing_files", "done" => i + 1, "total" => total));
         }
     }
 
@@ -129,7 +131,7 @@ fn zip_worlds(app: &AppHandle, id: &str, server_dir: &Path, worlds: &[PathBuf], 
 pub fn create_backup(app: &AppHandle, id: &str, server_dir: &Path) -> Result<BackupInfo, String> {
     let worlds = world_dirs(server_dir);
     if worlds.is_empty() {
-        return Err("Nessuna cartella mondo trovata (il server non è mai stato avviato?)".to_string());
+        return Err(tr!("errors.backup.no_world_dir"));
     }
 
     let backups_dir = server_dir.join(BACKUPS_DIR);
@@ -153,11 +155,11 @@ pub fn create_backup(app: &AppHandle, id: &str, server_dir: &Path) -> Result<Bac
     if running {
         let _ = process::write_stdin(id, "save-off");
         let _ = process::write_stdin(id, "save-all flush");
-        process::emit_line(app, id, "[Mineger] Backup: salvataggio forzato, attendo 3 s...");
+        process::emit_line(app, id, &tr!("console.backup.save_forced"));
         thread::sleep(Duration::from_secs(3));
     }
 
-    emit_progress(app, id, 0, "Compressione in corso...");
+    emit_progress(app, id, 0, &tr!("progress.backup.compressing"));
     let result = zip_worlds(app, id, server_dir, &worlds, &out_path);
 
     if running {
@@ -171,8 +173,8 @@ pub fn create_backup(app: &AppHandle, id: &str, server_dir: &Path) -> Result<Bac
                 size: fs::metadata(&out_path).map(|m| m.len()).unwrap_or(0),
                 modified: modified_secs(&out_path),
             };
-            emit_progress(app, id, 100, "Backup completato");
-            process::emit_line(app, id, &format!("[Mineger] Backup creato: {} ({} MB)", info.file, info.size / 1_048_576));
+            emit_progress(app, id, 100, &tr!("progress.backup.done"));
+            process::emit_line(app, id, &tr!("console.backup.created", "file" => info.file, "size" => info.size / 1_048_576));
             Ok(info)
         }
         Err(e) => {

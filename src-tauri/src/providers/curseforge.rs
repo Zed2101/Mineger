@@ -10,6 +10,7 @@
 
 use super::{http, iso_to_epoch, normalize_loader, PackFile, PackInfo, PackResolution, ParsedLink, Provider};
 use crate::settings;
+use crate::tr;
 use serde::Deserialize;
 use std::time::Duration;
 use tauri::AppHandle;
@@ -22,8 +23,9 @@ const MAX_FILES: usize = 400;
 
 /// Messaggio unico quando manca la chiave: CurseForge richiede una chiave API
 /// personale, che ogni utente genera gratuitamente dalla propria console.
-pub const KEY_MISSING: &str =
-    "CurseForge richiede una chiave API personale. Generane una gratis su console.curseforge.com e incollala in Impostazioni → Chiave CurseForge. Modrinth funziona senza chiave.";
+pub fn key_missing() -> String {
+    tr!("errors.curseforge.key_missing")
+}
 
 #[derive(Deserialize, Debug)]
 struct Envelope<T> {
@@ -124,7 +126,7 @@ pub fn is_configured(app: &AppHandle) -> bool {
 
 /// Chiamata grezza all'API CurseForge (usata anche da `providers::mods`).
 pub fn api_get<T: serde::de::DeserializeOwned>(app: &AppHandle, path: &str, query: &[(&str, String)]) -> Result<T, String> {
-    let key = api_key(app).ok_or(KEY_MISSING)?;
+    let key = api_key(app).ok_or_else(key_missing)?;
     let client = http(Duration::from_secs(30))?;
     let resp = client
         .get(format!("{}{}", API, path))
@@ -132,22 +134,22 @@ pub fn api_get<T: serde::de::DeserializeOwned>(app: &AppHandle, path: &str, quer
         .header("Accept", "application/json")
         .query(query)
         .send()
-        .map_err(|e| format!("CurseForge non raggiungibile: {}", e))?;
+        .map_err(|e| tr!("errors.http.unreachable", "who" => "CurseForge", "error" => e))?;
     let status = resp.status();
     if status.as_u16() == 403 || status.as_u16() == 401 {
-        return Err("CurseForge ha rifiutato la chiave API: controllala in Impostazioni → Chiave CurseForge".to_string());
+        return Err(tr!("errors.curseforge.key_rejected"));
     }
     if status.as_u16() == 404 {
-        return Err("Progetto o file non trovato su CurseForge".to_string());
+        return Err(tr!("errors.curseforge.not_found"));
     }
     if !status.is_success() {
-        return Err(format!("CurseForge: HTTP {}", status));
+        return Err(tr!("errors.http.status", "who" => "CurseForge", "status" => status));
     }
-    resp.json().map_err(|e| format!("Risposta CurseForge non valida: {}", e))
+    resp.json().map_err(|e| tr!("errors.http.invalid_response", "who" => "CurseForge", "error" => e))
 }
 
 fn get<T: serde::de::DeserializeOwned>(app: &AppHandle, path: &str, query: &[(&str, String)]) -> Result<Envelope<T>, String> {
-    let key = api_key(app).ok_or(KEY_MISSING)?;
+    let key = api_key(app).ok_or_else(key_missing)?;
     let client = http(Duration::from_secs(30))?;
     let resp = client
         .get(format!("{}{}", API, path))
@@ -155,19 +157,19 @@ fn get<T: serde::de::DeserializeOwned>(app: &AppHandle, path: &str, query: &[(&s
         .header("Accept", "application/json")
         .query(query)
         .send()
-        .map_err(|e| format!("CurseForge non raggiungibile: {}", e))?;
+        .map_err(|e| tr!("errors.http.unreachable", "who" => "CurseForge", "error" => e))?;
 
     let status = resp.status();
     if status.as_u16() == 403 || status.as_u16() == 401 {
-        return Err("CurseForge ha rifiutato la chiave API: controllala in Impostazioni → Chiave CurseForge".to_string());
+        return Err(tr!("errors.curseforge.key_rejected"));
     }
     if status.as_u16() == 404 {
-        return Err("Progetto o file non trovato su CurseForge".to_string());
+        return Err(tr!("errors.curseforge.not_found"));
     }
     if !status.is_success() {
-        return Err(format!("CurseForge: HTTP {}", status));
+        return Err(tr!("errors.http.status", "who" => "CurseForge", "status" => status));
     }
-    resp.json().map_err(|e| format!("Risposta CurseForge non valida: {}", e))
+    resp.json().map_err(|e| tr!("errors.http.invalid_response", "who" => "CurseForge", "error" => e))
 }
 
 /// Estrae MC version e loader da `gameVersions` (es. ["1.21.1", "NeoForge"]).
@@ -238,7 +240,7 @@ fn find_mod_by_slug(app: &AppHandle, slug: &str) -> Result<Mod, String> {
     env.data
         .into_iter()
         .find(|m| m.slug.eq_ignore_ascii_case(slug))
-        .ok_or_else(|| format!("Modpack \"{}\" non trovato su CurseForge", slug))
+        .ok_or_else(|| tr!("errors.curseforge.pack_not_found", "name" => slug))
 }
 
 fn get_mod(app: &AppHandle, id: &str) -> Result<Mod, String> {
@@ -362,14 +364,14 @@ fn build_resolution(app: &AppHandle, m: Mod, wanted_file: Option<&str>) -> Resul
 
     let warning = if pack_files.is_empty() {
         Some(if stubs > 0 {
-            "I \"server pack\" di questo modpack sono solo installer FTB (pochi KB) e l'API FTB non conosce il pack: scarica i file server dal sito dell'autore e usa \"Importa ZIP\".".to_string()
+            tr!("errors.pack.warn_only_ftb_stubs")
         } else {
-            "Questo modpack non pubblica un server pack su CurseForge e non è installabile dal pack client: scarica i file server dal sito dell'autore e usa \"Importa ZIP\".".to_string()
+            tr!("errors.pack.warn_no_server_pack")
         })
     } else if !m.allow_mod_distribution {
-        Some("L'autore non consente il download da app di terze parti: Mineger può solo avvisarti degli aggiornamenti. Scarica lo zip dalla pagina e usa \"Importa ZIP\".".to_string())
+        Some(tr!("errors.pack.warn_distribution_denied"))
     } else if real_server_packs == 0 && has_builds {
-        Some("Nessun server pack ufficiale: Mineger costruisce il server dal pack client (mod solo-client escluse, loader installato automaticamente). Se una mod fa crashare il server, disattivala dal tab Mods.".to_string())
+        Some(tr!("errors.pack.warn_built_from_client"))
     } else {
         None
     };
@@ -395,7 +397,7 @@ pub fn download_url(app: &AppHandle, project_id: &str, file: &PackFile) -> Resul
     let env: Result<Envelope<String>, String> = get(app, &format!("/mods/{}/files/{}/download-url", project_id, file.id), &[]);
     match env {
         Ok(e) if !e.data.is_empty() => Ok(e.data),
-        _ => Err("Download non disponibile: l'autore non consente la distribuzione da app di terze parti. Scarica lo zip dalla pagina CurseForge e usa \"Importa ZIP\".".to_string()),
+        _ => Err(tr!("errors.curseforge.download_not_allowed")),
     }
 }
 
@@ -453,5 +455,5 @@ pub fn file_download_url(app: &AppHandle, project: u64, file: u64) -> Result<Str
     let f = get_file(app, project, file)?;
     f.download_url
         .filter(|u| !u.is_empty())
-        .ok_or_else(|| format!("Download non disponibile per il file CurseForge {} (distribuzione non consentita dall'autore)", f.file_name))
+        .ok_or_else(|| tr!("errors.curseforge.file_download_not_allowed", "name" => f.file_name))
 }

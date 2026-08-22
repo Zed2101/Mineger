@@ -6,6 +6,7 @@
 
 import { escapeHtml, formatBytes, formatInt, formatRelativeDay } from './utils.js';
 import { call } from './api.js';
+import { t, tp } from './i18n.js';
 
 const { listen } = window.__TAURI__.event;
 
@@ -31,14 +32,15 @@ const CF_KEYS_URL = 'https://console.curseforge.com/#/api-keys';
 
 /** Avviso a tutta larghezza quando manca la chiave API di CurseForge. */
 function renderCurseforgeNotice() {
+  const where = `<span class="font-semibold">${escapeHtml(t('msg.modbrowser.cf_key_where'))}</span>`;
   el('mb-results').innerHTML = `<div class="key-notice">
-      <p class="font-semibold text-text-main">Serve la tua chiave API di CurseForge</p>
-      <p class="mt-1">CurseForge richiede una chiave personale per leggere il catalogo. È gratuita: generala dalla tua console e incollala in <span class="font-semibold">Impostazioni → Chiave CurseForge</span>.</p>
+      <p class="font-semibold text-text-main">${escapeHtml(t('msg.modbrowser.cf_key_title'))}</p>
+      <p class="mt-1">${t('msg.modbrowser.cf_key_body', { where })}</p>
       <div class="mt-3 flex items-center gap-2">
-        <button type="button" id="btn-cf-console" class="btn-outline-accent">Apri console.curseforge.com</button>
-        <button type="button" id="btn-cf-settings" class="btn-outline">Apri impostazioni</button>
+        <button type="button" id="btn-cf-console" class="btn-outline-accent">${escapeHtml(t('msg.modbrowser.cf_open_console'))}</button>
+        <button type="button" id="btn-cf-settings" class="btn-outline">${escapeHtml(t('msg.modbrowser.cf_open_settings'))}</button>
       </div>
-      <p class="note mt-2">Modrinth funziona senza chiave: puoi usarlo subito dal selettore qui sopra.</p>
+      <p class="note mt-2">${escapeHtml(t('msg.modbrowser.cf_modrinth_hint'))}</p>
     </div>`;
   el('mb-versions-box').classList.add('hidden');
   el('btn-mb-install').disabled = true;
@@ -56,7 +58,7 @@ function setBusy(v) {
   state.busy = v;
   el('btn-mb-search').disabled = v;
   el('btn-mb-install').disabled = v || !state.fileId;
-  el('btn-mb-install').textContent = v ? 'Installazione…' : 'Installa';
+  el('btn-mb-install').textContent = v ? t('msg.modbrowser.installing_button') : t('msg.modbrowser.install_button');
 }
 
 // ---------------------------------------------------------------------------
@@ -73,12 +75,12 @@ function hitRow(hit, selected) {
     <span class="min-w-0 flex-1">
       <span class="flex items-center gap-2">
         <span class="truncate text-[13px] font-semibold text-text-main">${escapeHtml(hit.name)}</span>
-        ${blocked ? '<span class="tag-pill beta">no download</span>' : ''}
+        ${blocked ? `<span class="tag-pill beta">${escapeHtml(t('msg.modbrowser.no_download'))}</span>` : ''}
       </span>
       <span class="mt-0.5 line-clamp-1 block text-[11px] text-text-muted">${escapeHtml(hit.summary || '')}</span>
     </span>
     <span class="shrink-0 text-right">
-      <span class="block font-mono text-[10px] text-text-faint">${formatInt(hit.downloads || 0)} download</span>
+      <span class="block font-mono text-[10px] text-text-faint">${escapeHtml(t('msg.modbrowser.downloads', { count: formatInt(hit.downloads || 0) }))}</span>
       <span class="block font-mono text-[10px] text-text-faint">${escapeHtml(hit.author || '')}</span>
     </span>
   </button>`;
@@ -87,7 +89,7 @@ function hitRow(hit, selected) {
 function renderHits() {
   const box = el('mb-results');
   if (!state.hits.length) {
-    box.innerHTML = `<div class="pick-empty note">Nessun risultato: prova un altro nome o cambia fonte.</div>`;
+    box.innerHTML = `<div class="pick-empty note">${escapeHtml(t('msg.modbrowser.no_results'))}</div>`;
     return;
   }
   box.innerHTML = state.hits.map((h) => hitRow(h, h.project_id === state.selected?.project_id)).join('');
@@ -104,7 +106,7 @@ function versionRow(f, selected) {
     <span class="min-w-0 flex-1">
       <span class="flex items-center gap-2">
         <span class="pick-name">${escapeHtml(f.version || f.name)}</span>
-        ${mismatch ? `<span class="tag-pill beta" title="Build per Minecraft ${escapeHtml(mcs)}">altra versione</span>` : ''}
+        ${mismatch ? `<span class="tag-pill beta" title="${escapeHtml(t('msg.modbrowser.build_for_mc', { versions: mcs }))}">${escapeHtml(t('msg.modbrowser.other_version'))}</span>` : ''}
       </span>
       <span class="block truncate font-mono text-[10px] text-text-faint">${escapeHtml(f.name)}${mismatch && mcs ? ` · mc ${escapeHtml(mcs)}` : ''}</span>
     </span>
@@ -115,10 +117,10 @@ function versionRow(f, selected) {
 function renderVersions() {
   const box = el('mb-versions');
   el('mb-versions-box').classList.toggle('hidden', !state.selected);
-  el('mb-versions-count').textContent = state.versions.length ? `${state.versions.length} compatibili` : '';
+  el('mb-versions-count').textContent = state.versions.length ? tp('msg.modbrowser.compatible_count', state.versions.length) : '';
   box.innerHTML = state.versions.length
     ? state.versions.map((f) => versionRow(f, f.id === state.fileId)).join('')
-    : `<div class="pick-empty note">Nessuna build ${escapeHtml(state.ctx?.loader || '')} per questo progetto</div>`;
+    : `<div class="pick-empty note">${escapeHtml(t('msg.modbrowser.no_builds_for_loader', { loader: state.ctx?.loader || '' }))}</div>`;
   el('btn-mb-install').disabled = state.busy || !state.fileId;
 }
 
@@ -142,7 +144,7 @@ async function search() {
   state.versions = [];
   state.fileId = null;
   renderVersions();
-  note(`Cerco su ${SOURCE_LABEL[state.source]}…`);
+  note(t('msg.modbrowser.searching', { source: SOURCE_LABEL[state.source] }));
   setBusy(true);
   try {
     const res = await call('search_mods', { id: state.server.id, provider: state.source, query, limit: 20 });
@@ -150,14 +152,17 @@ async function search() {
     state.relaxedSearch = !!res.relaxed_mc;
     renderHits();
     if (!state.hits.length) {
-      note(`Nessun risultato ${state.ctx.loader} su ${SOURCE_LABEL[state.source]}: prova un altro nome o cambia fonte.`);
+      note(t('msg.modbrowser.no_results_for', { loader: state.ctx.loader, source: SOURCE_LABEL[state.source] }));
     } else if (state.relaxedSearch) {
+      const params = { mc: state.ctx.mc_version, count: state.hits.length, loader: state.ctx.loader };
       note(
-        `Nessun${state.ctx.content === 'plugin' ? ' plugin' : 'a mod'} per Minecraft ${state.ctx.mc_version}: mostro ${state.hits.length} progetti ${state.ctx.loader} per altre versioni — controlla la compatibilità prima di installare.`,
+        state.ctx.content === 'plugin'
+          ? t('msg.modbrowser.relaxed_plugins', params)
+          : t('msg.modbrowser.relaxed_mods', params),
         'warn',
       );
     } else {
-      note(`${state.hits.length} risultati per Minecraft ${state.ctx.mc_version} · ${state.ctx.loader}`);
+      note(tp('msg.modbrowser.results_count', state.hits.length, { mc: state.ctx.mc_version, loader: state.ctx.loader }));
     }
   } catch (err) {
     el('mb-results').innerHTML = '';
@@ -177,10 +182,10 @@ async function selectHit(projectId) {
   renderVersions();
   if (hit.distribution_allowed === false) {
     el('mb-versions-box').classList.add('hidden');
-    note(`${hit.name}: l'autore non consente il download da app di terze parti. Scaricala dal sito e aggiungila con "Da file".`, 'warn');
+    note(t('msg.modbrowser.download_blocked', { name: hit.name }), 'warn');
     return;
   }
-  note(`Carico le versioni di ${hit.name}…`);
+  note(t('msg.modbrowser.loading_versions', { name: hit.name }));
   try {
     const res = await call('get_mod_versions', { id: state.server.id, provider: state.source, projectId });
     state.versions = res.files || [];
@@ -188,9 +193,9 @@ async function selectHit(projectId) {
     state.fileId = state.versions[0]?.id || null;
     renderVersions();
     if (!state.versions.length) {
-      note(`${hit.name} non ha build ${state.ctx.loader}`, 'warn');
+      note(t('msg.modbrowser.no_loader_builds', { name: hit.name, loader: state.ctx.loader }), 'warn');
     } else if (state.relaxedVersions) {
-      note(`${hit.name} non ha ancora una build per Minecraft ${state.ctx.mc_version}: le versioni elencate sono per altre versioni del gioco e potrebbero non avviarsi.`, 'warn');
+      note(t('msg.modbrowser.no_mc_build_yet', { name: hit.name, mc: state.ctx.mc_version }), 'warn');
     } else {
       note('');
     }
@@ -202,7 +207,7 @@ async function selectHit(projectId) {
 async function install() {
   if (!state.selected || !state.fileId || state.busy) return;
   setBusy(true);
-  note(`Installazione di ${state.selected.name}…`);
+  note(t('msg.modbrowser.installing', { name: state.selected.name }));
   try {
     const mods = await call('install_mod', {
       id: state.server.id,
@@ -210,7 +215,7 @@ async function install() {
       projectId: state.selected.project_id,
       fileId: state.fileId,
     });
-    note(`${state.selected.name} installata`, 'ok');
+    note(t('msg.modbrowser.installed_ok', { name: state.selected.name }), 'ok');
     await onInstalled?.(state.server, mods);
     // Resta aperta: di solito se ne installano più di una di fila.
     state.selected = null;
@@ -239,7 +244,7 @@ export async function openModBrowser(server) {
   el('mb-query').value = '';
   renderVersions();
   el('modal-mods').classList.remove('hidden');
-  note('Lettura del server…');
+  note(t('msg.modbrowser.reading_server'));
 
   try {
     state.ctx = await call('get_mod_context', { id: server.id });
@@ -248,13 +253,15 @@ export async function openModBrowser(server) {
     return;
   }
 
-  const word = state.ctx.content === 'plugin' ? 'plugin' : 'mod';
-  el('mb-title').textContent = `Aggiungi ${word}`;
-  el('mb-query').placeholder = state.ctx.content === 'plugin' ? 'Cerca un plugin (es. EssentialsX, WorldEdit)' : 'Cerca una mod (es. JEI, Create)';
+  const isPlugin = state.ctx.content === 'plugin';
+  el('mb-title').textContent = isPlugin ? t('msg.modbrowser.title_add_plugin') : t('msg.modbrowser.title_add_mod');
+  el('mb-query').placeholder = isPlugin
+    ? t('msg.modbrowser.search_placeholder_plugin')
+    : t('msg.modbrowser.search_placeholder_mod');
   el('mb-ctx').textContent = `Minecraft ${state.ctx.mc_version} · ${state.ctx.loader} · ${state.ctx.folder}/`;
 
   if (!state.ctx.supports_content) {
-    note('Questo server è vanilla: non carica mod né plugin. Creane uno con Paper (plugin) o con un loader (mod).', 'warn');
+    note(t('msg.modbrowser.vanilla_warning'), 'warn');
     el('btn-mb-search').disabled = true;
     return;
   }

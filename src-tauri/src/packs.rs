@@ -12,6 +12,7 @@ use crate::paths;
 use crate::process;
 use crate::providers::{self, curseforge, ftb, modrinth, PackFile, PackInfo, Provider};
 use crate::service;
+use crate::tr;
 use crate::utils;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -71,7 +72,7 @@ pub fn safe_rel_path(p: &str) -> Result<PathBuf, String> {
     let cleaned = cleaned.trim_start_matches("./");
     let path = Path::new(cleaned);
     if unsafe_root || cleaned.is_empty() || path.components().any(|c| matches!(c, Component::ParentDir)) {
-        return Err(format!("Percorso non sicuro nel pack: {}", p));
+        return Err(tr!("errors.pack.unsafe_path", "path" => p));
     }
     Ok(path.to_path_buf())
 }
@@ -82,7 +83,7 @@ pub fn safe_rel_path(p: &str) -> Result<PathBuf, String> {
 
 /// Installa un pack in un nuovo server. Ritorna l'id (nome cartella).
 pub fn install(app: &AppHandle, name: &str, provider: Provider, project_id: &str, file_id: &str, progress: Progress) -> Result<String, String> {
-    progress("resolve", 0, "Lettura informazioni del pack…");
+    progress("resolve", 0, &tr!("progress.pack.resolving"));
     let (pack, file) = providers::file_by_id(app, provider, project_id, file_id)?;
     let (id, dir) = create::prepare_server_dir(app, name)?;
 
@@ -98,7 +99,7 @@ pub fn install(app: &AppHandle, name: &str, provider: Provider, project_id: &str
 
     match result {
         Ok(()) => {
-            progress("done", 100, "Server pronto");
+            progress("done", 100, &tr!("progress.pack.ready"));
             Ok(id)
         }
         Err(e) => {
@@ -116,38 +117,38 @@ fn install_into(app: &AppHandle, dir: &Path, pack: &PackInfo, file: &PackFile, p
         "mrpack" => install_mrpack(app, dir, file, progress),
         "ftb" => install_ftb(app, dir, pack, file, progress),
         "cf_build" => install_cf_build(app, dir, pack, file, progress),
-        other => Err(format!("Tipo di pack non supportato: {}", other)),
+        other => Err(tr!("errors.pack.unsupported_kind", "kind" => other)),
     }?;
 
     // Verifica che il risultato sia avviabile e rileva jar/args file
     let (_, launch) = create::detect_imported_server(dir);
-    crate::launch::resolve(dir, &launch).map_err(|e| format!("Il pack installato non è avviabile: {}", e))?;
+    crate::launch::resolve(dir, &launch).map_err(|e| tr!("errors.pack.not_startable", "error" => e))?;
     Ok(launch)
 }
 
 fn install_server_pack(app: &AppHandle, dir: &Path, pack: &PackInfo, file: &PackFile, progress: Progress) -> Result<(), String> {
     let url = match pack.provider {
         Provider::Curseforge => curseforge::download_url(app, &pack.project_id, file)?,
-        _ => file.download_url.clone().ok_or("URL di download mancante")?,
+        _ => file.download_url.clone().ok_or_else(|| tr!("errors.pack.missing_download_url"))?,
     };
     let zip_path = dir.join(".download.zip");
-    progress("download", 0, "Download del server pack…");
+    progress("download", 0, &tr!("progress.pack.download_server_pack"));
     providers::download_file(&url, &zip_path, file.sha1.as_deref(), Some(file.size), &mut |d, t| {
-        progress("download", pct(d, t), &format!("Download {} / {} MB", d / MB, t / MB));
+        progress("download", pct(d, t), &tr!("progress.download.mb", "done" => d / MB, "total" => t / MB));
     })?;
 
-    progress("extract", 0, "Estrazione…");
+    progress("extract", 0, &tr!("progress.extract.running"));
     create::extract_zip_to(&zip_path, dir, &mut |p, msg| progress("extract", p, msg))?;
     let _ = fs::remove_file(&zip_path);
     Ok(())
 }
 
 fn install_mrpack(app: &AppHandle, dir: &Path, file: &PackFile, progress: Progress) -> Result<(), String> {
-    let url = file.download_url.clone().ok_or("URL del .mrpack mancante")?;
+    let url = file.download_url.clone().ok_or_else(|| tr!("errors.pack.missing_mrpack_url"))?;
     let mrpack = dir.join(".pack.mrpack");
-    progress("download", 0, "Download del .mrpack…");
+    progress("download", 0, &tr!("progress.pack.download_mrpack"));
     providers::download_file(&url, &mrpack, file.sha1.as_deref(), Some(file.size), &mut |d, t| {
-        progress("download", pct(d, t), &format!("Download pack {} / {} MB", d / MB, t / MB));
+        progress("download", pct(d, t), &tr!("progress.pack.download_mb", "done" => d / MB, "total" => t / MB));
     })?;
 
     let index = modrinth::read_index(&mrpack)?;
@@ -158,14 +159,14 @@ fn install_mrpack(app: &AppHandle, dir: &Path, file: &PackFile, progress: Progre
 
     for (i, f) in files.iter().enumerate() {
         let rel = safe_rel_path(&f.path)?;
-        let url = f.downloads.first().ok_or_else(|| format!("URL mancante per {}", f.path))?;
-        progress("download", pct(done, total), &format!("File {}/{}: {}", i + 1, files.len(), rel.display()));
+        let url = f.downloads.first().ok_or_else(|| tr!("errors.pack.missing_file_url", "name" => f.path))?;
+        progress("download", pct(done, total), &tr!("progress.pack.file", "done" => i + 1, "total" => files.len(), "name" => rel.display()));
         let sha1 = if f.hashes.sha1.is_empty() { None } else { Some(f.hashes.sha1.as_str()) };
         providers::download_file(url, &dir.join(&rel), sha1, Some(f.file_size), &mut |_, _| {})?;
         done += f.file_size;
     }
 
-    progress("extract", 0, "Applicazione degli override…");
+    progress("extract", 0, &tr!("progress.pack.applying_overrides"));
     extract_prefix_skipping(&mrpack, dir, "overrides/", CLIENT_ONLY_OVERRIDES)?;
     extract_prefix_skipping(&mrpack, dir, "server-overrides/", &[])?;
     let _ = fs::remove_file(&mrpack);
@@ -174,14 +175,14 @@ fn install_mrpack(app: &AppHandle, dir: &Path, file: &PackFile, progress: Progre
 }
 
 fn install_ftb(app: &AppHandle, dir: &Path, pack: &PackInfo, file: &PackFile, progress: Progress) -> Result<(), String> {
-    progress("resolve", 0, "Lettura della versione FTB…");
+    progress("resolve", 0, &tr!("progress.pack.reading_ftb_version"));
     let detail = ftb::version_detail(&pack.project_id, &file.id)?;
     install_from_ftb_detail(app, dir, &detail, progress)
 }
 
 /// Pack CurseForge senza server pack: lista file (URL diretti) dall'API FTB + loader.
 fn install_cf_build(app: &AppHandle, dir: &Path, pack: &PackInfo, file: &PackFile, progress: Progress) -> Result<(), String> {
-    progress("resolve", 0, "Lettura della lista file (API FTB)…");
+    progress("resolve", 0, &tr!("progress.pack.reading_ftb_files"));
     let detail = ftb::curseforge_version_detail(&pack.project_id, &file.id)?;
     install_from_ftb_detail(app, dir, &detail, progress)
 }
@@ -201,9 +202,9 @@ fn install_from_ftb_detail(app: &AppHandle, dir: &Path, detail: &ftb::VersionDet
         } else if let Some(cf) = &f.curseforge {
             curseforge::file_download_url(app, cf.project, cf.file)?
         } else {
-            return Err(format!("URL mancante per {}", f.name));
+            return Err(tr!("errors.pack.missing_file_url", "name" => f.name));
         };
-        progress("download", pct(done, total), &format!("File {}/{}: {}", i + 1, files.len(), rel.display()));
+        progress("download", pct(done, total), &tr!("progress.pack.file", "done" => i + 1, "total" => files.len(), "name" => rel.display()));
         let sha1 = if f.sha1.is_empty() { None } else { Some(f.sha1.as_str()) };
         let size = if f.size > 0 { Some(f.size) } else { None };
         providers::download_file(&url, &dir.join(&rel), sha1, size, &mut |_, _| {})?;
@@ -212,18 +213,18 @@ fn install_from_ftb_detail(app: &AppHandle, dir: &Path, detail: &ftb::VersionDet
 
     for f in &extracts {
         if f.url.is_empty() {
-            return Err("URL mancante per lo zip delle overrides".to_string());
+            return Err(tr!("errors.pack.missing_overrides_url"));
         }
         let tmp = dir.join(".overrides-download.zip");
         let _ = fs::remove_file(&tmp);
-        progress("download", 100, "Scarico il pack client per le overrides…");
+        progress("download", 100, &tr!("progress.pack.client_pack"));
         let mut report = |got: u64, tot: u64| {
             if tot > 0 {
-                progress("download", 100, &format!("Pack client per le overrides: {} / {} MB", got / 1_048_576, tot / 1_048_576));
+                progress("download", 100, &tr!("progress.pack.client_pack_mb", "done" => got / 1_048_576, "total" => tot / 1_048_576));
             }
         };
         providers::download_file(&f.url, &tmp, None, None, &mut report)?;
-        progress("extract", 100, "Estraggo le overrides (config, script, …)…");
+        progress("extract", 100, &tr!("progress.pack.extracting_overrides"));
         let r = extract_prefix_skipping(&tmp, dir, "overrides/", CLIENT_ONLY_OVERRIDES);
         let _ = fs::remove_file(&tmp);
         r?;
@@ -279,10 +280,14 @@ fn fabric_latest(path: &str) -> Result<String, String> {
         .get(format!("https://meta.fabricmc.net/v2/versions/{}", path))
         .send()
         .and_then(|r| r.error_for_status())
-        .map_err(|e| format!("Fabric meta non raggiungibile: {}", e))?
+        .map_err(|e| tr!("errors.fabric.meta_unreachable", "error" => e))?
         .json()
-        .map_err(|e| format!("Fabric meta non valida: {}", e))?;
-    list.iter().find(|e| e.stable).or(list.first()).map(|e| e.version.clone()).ok_or("Nessuna versione Fabric disponibile".to_string())
+        .map_err(|e| tr!("errors.fabric.meta_invalid", "error" => e))?;
+    list.iter()
+        .find(|e| e.stable)
+        .or(list.first())
+        .map(|e| e.version.clone())
+        .ok_or_else(|| tr!("errors.fabric.no_version"))
 }
 
 /// Installa il loader del server in `dir`: Fabric (launcher jar), Forge/NeoForge (installer ufficiale).
@@ -294,21 +299,21 @@ pub fn install_loader(app: &AppHandle, dir: &Path, mc: &str, loader: &str, loade
 /// Come `install_loader`, ma con il percorso Java già risolto (None = non serve, es. Fabric).
 pub fn install_loader_with(java: Option<&str>, dir: &Path, mc: &str, loader: &str, loader_version: &str, progress: Progress) -> Result<(), String> {
     if mc.is_empty() {
-        return Err("Il pack non indica la versione di Minecraft".to_string());
+        return Err(tr!("errors.pack.no_mc_version"));
     }
     match loader {
         "fabric" => {
-            progress("install", 0, "Fabric: scarico il launcher del server…");
+            progress("install", 0, &tr!("progress.loader.fabric_download"));
             let installer = fabric_latest("installer")?;
             let lv = if loader_version.is_empty() { fabric_latest(&format!("loader/{}", mc))? } else { loader_version.to_string() };
             let url = format!("https://meta.fabricmc.net/v2/versions/loader/{}/{}/{}/server/jar", mc, lv, installer);
             providers::download_file(&url, &dir.join("server.jar"), None, None, &mut |_, _| {})?;
-            progress("install", 100, "Fabric pronto (scarica Minecraft al primo avvio)");
+            progress("install", 100, &tr!("progress.loader.fabric_ready"));
             Ok(())
         }
         "forge" | "neoforge" => {
             if loader_version.is_empty() {
-                return Err(format!("Il pack non indica la versione di {}", loader));
+                return Err(tr!("errors.pack.no_loader_version", "loader" => loader));
             }
             let (url, flag, label) = if loader == "neoforge" {
                 (
@@ -324,24 +329,24 @@ pub fn install_loader_with(java: Option<&str>, dir: &Path, mc: &str, loader: &st
                 )
             };
             let installer = dir.join(".installer.jar");
-            progress("install", 0, &format!("{}: scarico l'installer…", label));
+            progress("install", 0, &tr!("progress.loader.installer_download", "loader" => label));
             providers::download_file(&url, &installer, None, None, &mut |d, t| {
-                progress("install", pct(d, t).min(10), &format!("{}: installer {} / {} MB", label, d / MB, t / MB));
+                progress("install", pct(d, t).min(10), &tr!("progress.loader.installer_mb", "loader" => label, "done" => d / MB, "total" => t / MB));
             })?;
 
-            let java = java.ok_or("Java non disponibile per l'installer")?;
-            progress("install", 12, &format!("{}: installazione del server (scarica librerie, può richiedere minuti)…", label));
+            let java = java.ok_or_else(|| tr!("errors.loader.java_missing"))?;
+            progress("install", 12, &tr!("progress.loader.installing", "loader" => label));
             run_installer(java, &installer, flag, dir, progress)?;
 
             let _ = fs::remove_file(&installer);
             let _ = fs::remove_file(dir.join(".installer.jar.log"));
             let _ = fs::remove_file(dir.join("installer.log"));
-            progress("install", 100, &format!("{} installato", label));
+            progress("install", 100, &tr!("progress.loader.installed", "loader" => label));
             Ok(())
         }
-        "" => Err("Il pack non indica il mod loader".to_string()),
-        "quilt" => Err("Quilt non è ancora supportato: scegli un pack Fabric, Forge o NeoForge".to_string()),
-        other => Err(format!("Loader non supportato: {}", other)),
+        "" => Err(tr!("errors.pack.no_loader")),
+        "quilt" => Err(tr!("errors.loader.quilt_unsupported")),
+        other => Err(tr!("errors.loader.unsupported", "loader" => other)),
     }
 }
 
@@ -360,7 +365,7 @@ fn run_installer(java: &str, installer: &Path, flag: &str, dir: &Path, progress:
         use std::os::windows::process::CommandExt;
         cmd.creation_flags(0x0800_0000);
     }
-    let mut child = cmd.spawn().map_err(|e| format!("Impossibile avviare l'installer: {}", e))?;
+    let mut child = cmd.spawn().map_err(|e| tr!("errors.loader.installer_spawn_failed", "error" => e))?;
 
     let stderr = child.stderr.take();
     let err_thread = thread::spawn(move || {
@@ -389,7 +394,7 @@ fn run_installer(java: &str, installer: &Path, flag: &str, dir: &Path, progress:
     let err_out = err_thread.join().unwrap_or_default();
     if !status.success() {
         let tail: String = err_out.lines().rev().take(5).collect::<Vec<_>>().into_iter().rev().collect::<Vec<_>>().join(" | ");
-        return Err(format!("Installer terminato con errore ({}): {}", status, tail));
+        return Err(tr!("errors.loader.installer_failed", "status" => status, "detail" => tail));
     }
     Ok(())
 }
@@ -454,7 +459,7 @@ fn check_one(app: &AppHandle, id: &str, source: &SourceInfo) -> UpdateInfo {
         error: None,
     };
     let Some(provider) = Provider::from_str(&source.provider) else {
-        info.error = Some(format!("Provider sconosciuto: {}", source.provider));
+        info.error = Some(tr!("errors.provider.unknown_detail", "provider" => source.provider));
         return info;
     };
     match providers::latest_compatible(app, provider, &source.project_id, &source.mc_version, &source.loader, &source.kind) {
@@ -538,7 +543,7 @@ fn copy_dir_all(src: &Path, dst: &Path) -> Result<(), String> {
         if p.is_dir() {
             copy_dir_all(&p, &target)?;
         } else {
-            fs::copy(&p, &target).map_err(|e| format!("{}: {}", p.display(), e))?;
+            fs::copy(&p, &target).map_err(|e| tr!("errors.file.generic", "path" => p.display(), "error" => e))?;
         }
     }
     Ok(())
@@ -554,7 +559,7 @@ pub fn migrate_user_data(old: &Path, new: &Path) -> Result<Vec<String>, String> 
     for f in USER_FILES {
         let src = old.join(f);
         if src.is_file() {
-            fs::copy(&src, new.join(f)).map_err(|e| format!("{}: {}", f, e))?;
+            fs::copy(&src, new.join(f)).map_err(|e| tr!("errors.file.generic", "path" => f, "error" => e))?;
         }
     }
     for d in USER_DIRS {
@@ -607,27 +612,27 @@ pub fn migrate_user_data(old: &Path, new: &Path) -> Result<Vec<String>, String> 
 /// Aggiorna un server installato da link all'ultima versione compatibile.
 pub fn update_server(app: &AppHandle, id: &str, progress: Progress) -> Result<UpdateResult, String> {
     if process::is_running(id) {
-        return Err("Ferma il server prima di aggiornarlo".to_string());
+        return Err(tr!("errors.pack.stop_before_update"));
     }
     let dir = service::server_dir(app, id)?;
     let mut data = service::read_server_data(&dir)?;
-    let source = data.source.clone().ok_or("Questo server non è stato installato da un link")?;
-    let provider = Provider::from_str(&source.provider).ok_or("Provider sconosciuto")?;
+    let source = data.source.clone().ok_or_else(|| tr!("errors.pack.not_from_link"))?;
+    let provider = Provider::from_str(&source.provider).ok_or_else(|| tr!("errors.provider.unknown"))?;
 
-    progress("resolve", 0, "Cerco l'ultima versione…");
+    progress("resolve", 0, &tr!("progress.pack.latest"));
     let latest = providers::latest_compatible(app, provider, &source.project_id, &source.mc_version, &source.loader, &source.kind)?
-        .ok_or("Nessuna versione disponibile")?;
+        .ok_or_else(|| tr!("errors.pack.no_version_available"))?;
     if latest.id == source.file_id {
-        return Err("Il server è già aggiornato".to_string());
+        return Err(tr!("errors.pack.already_updated"));
     }
     let (pack, file) = providers::file_by_id(app, provider, &source.project_id, &latest.id)?;
 
     // 1. Backup del mondo (se esiste)
-    progress("backup", 2, "Backup del mondo…");
+    progress("backup", 2, &tr!("progress.pack.backup"));
     match backup::create_backup(app, id, &dir) {
-        Ok(info) => progress("backup", 5, &format!("Backup creato: {}", info.file)),
-        Err(e) if e.contains("Nessuna cartella mondo") => progress("backup", 5, "Nessun mondo da salvare"),
-        Err(e) => return Err(format!("Backup fallito, aggiornamento annullato: {}", e)),
+        Ok(info) => progress("backup", 5, &tr!("progress.pack.backup_created", "file" => info.file)),
+        Err(e) if e == tr!("errors.backup.no_world_dir") => progress("backup", 5, &tr!("progress.pack.no_world")),
+        Err(e) => return Err(tr!("errors.pack.backup_failed", "error" => e)),
     }
 
     // 2. Installazione in cartella temporanea
@@ -646,7 +651,7 @@ pub fn update_server(app: &AppHandle, id: &str, progress: Progress) -> Result<Up
     };
 
     // 3. Migrazione dati utente + server-data.json
-    progress("migrate", 90, "Migrazione mondo e impostazioni…");
+    progress("migrate", 90, &tr!("progress.pack.migrating"));
     let extra_mods = migrate_user_data(&dir, &tmp).map_err(|e| {
         let _ = fs::remove_dir_all(&tmp);
         e
@@ -663,7 +668,7 @@ pub fn update_server(app: &AppHandle, id: &str, progress: Progress) -> Result<Up
     service::write_server_data(&tmp, &data)?;
 
     // 4. Scambio cartelle (la vecchia resta come rollback)
-    progress("swap", 96, "Scambio delle cartelle…");
+    progress("swap", 96, &tr!("progress.pack.swapping"));
     if let Ok(rd) = fs::read_dir(dir.parent().unwrap_or(&dir)) {
         for e in rd.flatten() {
             let n = e.file_name().to_string_lossy().to_string();
@@ -673,14 +678,14 @@ pub fn update_server(app: &AppHandle, id: &str, progress: Progress) -> Result<Up
         }
     }
     let old = dir.with_file_name(format!(".old-{}-{}", id, now_secs()));
-    fs::rename(&dir, &old).map_err(|e| format!("Impossibile spostare la cartella attuale: {}", e))?;
+    fs::rename(&dir, &old).map_err(|e| tr!("errors.pack.move_current_failed", "error" => e))?;
     if let Err(e) = fs::rename(&tmp, &dir) {
         let _ = fs::rename(&old, &dir);
-        return Err(format!("Impossibile attivare la nuova cartella: {}", e));
+        return Err(tr!("errors.pack.activate_new_failed", "error" => e));
     }
 
-    progress("done", 100, &format!("Aggiornato alla versione {}", file.version));
-    process::emit_line(app, id, &format!("[Mineger] Pack aggiornato a {} ({})", file.version, file.name));
+    progress("done", 100, &tr!("progress.pack.updated", "version" => file.version));
+    process::emit_line(app, id, &tr!("console.pack_updated", "version" => file.version, "file" => file.name));
     Ok(UpdateResult {
         server_id: id.to_string(),
         new_version: file.version.clone(),

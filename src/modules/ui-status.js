@@ -6,15 +6,16 @@
 
 import { formatUptime } from './utils.js';
 import { isRemoteId } from './api.js';
+import { t, tp } from './i18n.js';
 
 const { listen } = window.__TAURI__.event;
 
-export const STATUS_LABEL = {
-  offline: 'OFFLINE',
-  starting: 'AVVIO',
-  online: 'ONLINE',
-  stopping: 'ARRESTO',
-};
+/** Etichetta della pill di stato ("offline" → "OFFLINE"). */
+export function statusLabel(status) {
+  const key = `msg2.status.label.${status}`;
+  const label = t(key);
+  return label === key ? String(status).toUpperCase() : label;
+}
 
 const PLAY_ICON = `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>`;
 
@@ -55,24 +56,23 @@ export function resetSession(rt) {
 
 export function statusSlotHtml(status) {
   if (status === 'offline') {
-    return `<button class="btn-play" data-action="start" title="Avvia server">${PLAY_ICON}</button>`;
+    return `<button class="btn-play" data-action="start" title="${t('msg2.status.start_server_title')}">${PLAY_ICON}</button>`;
   }
   return `<span class="status-dot ${status}"></span>`;
 }
 
 export function itemSubText(server, rt) {
   if (isActive(rt)) {
-    const n = rt.players.size;
-    return n === 1 ? '1 in gioco' : `${n} in gioco`;
+    return tp('msg2.status.players_in_game', rt.players.size);
   }
-  if (rt.status === 'stopping') return 'arresto...';
-  return server?.last_played ?? 'Mai';
+  if (rt.status === 'stopping') return t('msg2.status.stopping_short');
+  return server?.last_played ?? t('msg2.status.never_played');
 }
 
 export function updateActiveCount(state) {
   const active = [...state.runtime.values()].filter((rt) => rt.status !== 'offline').length;
   const el = document.getElementById('server-active');
-  el.textContent = active === 1 ? '1 ATTIVO' : `${active} ATTIVI`;
+  el.textContent = tp('msg2.status.active_count', active);
   el.classList.toggle('text-accent', active > 0);
   el.classList.toggle('text-text-faint', active === 0);
 }
@@ -80,7 +80,7 @@ export function updateActiveCount(state) {
 function pillFor(status) {
   const dot = `<span class="status-dot ${status}"></span>`;
   const cls = status === 'online' ? 'pill-online' : status === 'offline' ? 'pill-offline' : 'pill-busy';
-  return `<span class="${cls}">${dot}${STATUS_LABEL[status] ?? status.toUpperCase()}</span>`;
+  return `<span class="${cls}">${dot}${statusLabel(status)}</span>`;
 }
 
 /** Riporta sulla UI lo stato runtime del server `id`. */
@@ -110,14 +110,14 @@ export function applyStatus(state, id) {
   switch (rt.status) {
     case 'starting':
     case 'online':
-      btnStart.textContent = 'Arresta Server';
+      btnStart.textContent = t('msg2.status.btn_stop');
       break;
     case 'stopping':
-      btnStart.textContent = 'Spegnimento...';
+      btnStart.textContent = t('msg2.status.btn_shutting_down');
       btnStart.disabled = true;
       break;
     default:
-      btnStart.textContent = 'Avvia Server';
+      btnStart.textContent = t('msg2.status.btn_start');
   }
   btnKill.classList.toggle('hidden', rt.status === 'offline');
   document.getElementById('btn-open-folder').classList.toggle('hidden', isRemoteId(id));
@@ -129,7 +129,7 @@ export function applyStatus(state, id) {
   // Tab Mods: nota "effetto al riavvio"
   const running = rt.status !== 'offline';
   const modsFooter = document.getElementById('mods-footer-note');
-  if (modsFooter) modsFooter.textContent = running ? 'Il server è online — le modifiche alle mod avranno effetto al riavvio.' : '';
+  if (modsFooter) modsFooter.textContent = running ? t('msg2.status.mods_restart_note') : '';
 }
 
 /** Aggiorna i testi di uptime (topbar + tile) del server attivo. */

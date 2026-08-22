@@ -11,6 +11,7 @@ use crate::metrics;
 use crate::models::{AddModsResult, AppInfo, BackupInfo, ModEntry, ServerDataFile, ServerEntry, ServerMetrics};
 use crate::paths;
 use crate::process::{self, LaunchSpec};
+use crate::tr;
 use crate::utils::{
     accept_eula as write_eula, ensure_server_properties, eula_accepted, mod_path, parse_server_properties, rescan_mods,
     save_server_properties as save_props_file, server_port, update_mods_list, valid_mod_name,
@@ -30,11 +31,11 @@ pub const EULA_REQUIRED: &str = "EULA_REQUIRED";
 pub fn server_dir(app: &AppHandle, id: &str) -> Result<PathBuf, String> {
     // L'id è il nome della cartella: niente path traversal.
     if id.is_empty() || id.contains(['/', '\\']) || id == "." || id == ".." {
-        return Err("Id server non valido".to_string());
+        return Err(tr!("errors.server.invalid_id"));
     }
     let dir = paths::servers_dir(app)?.join(id);
     if !dir.is_dir() {
-        return Err(format!("Cartella del server non trovata: {}", dir.display()));
+        return Err(tr!("errors.server.folder_not_found", "path" => dir.display()));
     }
     Ok(dir)
 }
@@ -42,14 +43,14 @@ pub fn server_dir(app: &AppHandle, id: &str) -> Result<PathBuf, String> {
 pub fn read_server_data(dir: &Path) -> Result<ServerDataFile, String> {
     let path = dir.join("server-data.json");
     let content = fs::read_to_string(&path)
-        .map_err(|e| format!("Impossibile leggere {}: {}", path.display(), e))?;
-    serde_json::from_str(&content).map_err(|e| format!("JSON non valido in {}: {}", path.display(), e))
+        .map_err(|e| tr!("errors.file.read_failed", "path" => path.display(), "error" => e))?;
+    serde_json::from_str(&content).map_err(|e| tr!("errors.file.invalid_json", "path" => path.display(), "error" => e))
 }
 
 pub fn write_server_data(dir: &Path, data: &ServerDataFile) -> Result<(), String> {
     let path = dir.join("server-data.json");
     let json = serde_json::to_string_pretty(data).map_err(|e| e.to_string())?;
-    fs::write(&path, json).map_err(|e| format!("Impossibile scrivere {}: {}", path.display(), e))
+    fs::write(&path, json).map_err(|e| tr!("errors.file.write_failed", "path" => path.display(), "error" => e))
 }
 
 fn now_string() -> String {
@@ -72,14 +73,14 @@ fn build_entry(app: &AppHandle, path: &Path, data: ServerDataFile) -> ServerEntr
 
     let (launch_info, launch_ok) = match launch::resolve(path, &data.launch) {
         Ok(plan) => (plan.description, true),
-        Err(e) => (format!("non avviabile: {}", e), false),
+        Err(e) => (tr!("errors.launch.not_startable", "error" => e), false),
     };
 
     let (java_info, java_state) = match java::resolve(app, &data.version) {
         Ok(choice) => {
             let base = format!("Java {} ({})", choice.runtime.major, choice.runtime.version);
             match choice.warning {
-                Some(_) => (format!("{} — richiesta Java {}", base, choice.required_major), "warn"),
+                Some(_) => (tr!("errors.java.required_hint", "info" => base, "major" => choice.required_major), "warn"),
                 None => (base, "ok"),
             }
         }
@@ -151,7 +152,7 @@ pub fn start_server(app: &AppHandle, id: &str) -> Result<String, String> {
     println!("[Mineger] Avvio server: {}", id);
 
     if process::is_running(id) {
-        return Err("Il server è già in esecuzione".to_string());
+        return Err(tr!("errors.server.already_running"));
     }
 
     // 1. Tutti i controlli PRIMA di qualsiasi effetto collaterale
@@ -169,7 +170,7 @@ pub fn start_server(app: &AppHandle, id: &str) -> Result<String, String> {
     let port = server_port(&dir);
 
     if let Some(w) = &java.warning {
-        process::emit_line(app, id, &format!("[Mineger] Attenzione: {}", w));
+        process::emit_line(app, id, &tr!("console.warning", "message" => w));
     }
 
     // 2. Spawn (UPnP parte in background dentro spawn_server)
@@ -217,7 +218,7 @@ pub fn update_server_info(app: &AppHandle, id: &str, name: &str, icon: Option<&s
 
     let name = name.trim();
     if name.is_empty() {
-        return Err("Il nome non può essere vuoto".to_string());
+        return Err(tr!("errors.server.empty_name"));
     }
     data.name = name.to_string();
 
@@ -238,7 +239,7 @@ pub fn update_launch_config(app: &AppHandle, id: &str, max_ram_mb: Option<u32>, 
 
     if let Some(ram) = max_ram_mb {
         if ram < launch::MIN_RAM_MB {
-            return Err(format!("La RAM minima è {} MB", launch::MIN_RAM_MB));
+            return Err(tr!("errors.launch.min_ram", "min" => launch::MIN_RAM_MB));
         }
     }
     data.launch.max_ram_mb = max_ram_mb;
@@ -246,7 +247,7 @@ pub fn update_launch_config(app: &AppHandle, id: &str, max_ram_mb: Option<u32>, 
 
     Ok(match launch::resolve(&dir, &data.launch) {
         Ok(plan) => plan.description,
-        Err(e) => format!("non avviabile: {}", e),
+        Err(e) => tr!("errors.launch.not_startable", "error" => e),
     })
 }
 
@@ -258,12 +259,12 @@ fn validate_properties(props: &HashMap<String, String>) -> Result<(), String> {
     if let Some(p) = props.get("server-port") {
         match p.trim().parse::<u16>() {
             Ok(n) if n > 0 => {}
-            _ => return Err("Porta non valida (1-65535)".to_string()),
+            _ => return Err(tr!("errors.properties.invalid_port")),
         }
     }
     if let Some(m) = props.get("max-players") {
         if m.trim().parse::<u32>().is_err() {
-            return Err("Max players deve essere un numero".to_string());
+            return Err(tr!("errors.properties.max_players_not_a_number"));
         }
     }
     Ok(())
@@ -304,7 +305,7 @@ fn persist_mods(dir: &Path) -> Result<Vec<ModEntry>, String> {
 pub fn toggle_mod(app: &AppHandle, id: &str, name: &str, enabled: bool) -> Result<Vec<ModEntry>, String> {
     let dir = server_dir(app, id)?;
     if !valid_mod_name(name) {
-        return Err("Nome mod non valido".to_string());
+        return Err(tr!("errors.mods.invalid_name"));
     }
 
     let from = mod_path(&dir, name, !enabled);
@@ -314,32 +315,32 @@ pub fn toggle_mod(app: &AppHandle, id: &str, name: &str, enabled: bool) -> Resul
         if to.is_file() {
             return persist_mods(&dir); // già nello stato richiesto
         }
-        return Err(format!("Mod non trovata: {}", name));
+        return Err(tr!("errors.mods.not_found", "name" => name));
     }
     if to.exists() {
-        return Err(format!("Esiste già un file {}", to.file_name().unwrap_or_default().to_string_lossy()));
+        return Err(tr!("errors.mods.file_exists", "name" => to.file_name().unwrap_or_default().to_string_lossy()));
     }
 
-    fs::rename(&from, &to).map_err(|e| format!("Rinomina fallita: {}", e))?;
+    fs::rename(&from, &to).map_err(|e| tr!("errors.mods.rename_failed", "error" => e))?;
     persist_mods(&dir)
 }
 
 pub fn delete_mod(app: &AppHandle, id: &str, name: &str) -> Result<Vec<ModEntry>, String> {
     let dir = server_dir(app, id)?;
     if !valid_mod_name(name) {
-        return Err("Nome mod non valido".to_string());
+        return Err(tr!("errors.mods.invalid_name"));
     }
 
     let mut removed = false;
     for enabled in [true, false] {
         let p = mod_path(&dir, name, enabled);
         if p.is_file() {
-            fs::remove_file(&p).map_err(|e| format!("Eliminazione fallita: {}", e))?;
+            fs::remove_file(&p).map_err(|e| tr!("errors.mods.delete_failed", "error" => e))?;
             removed = true;
         }
     }
     if !removed {
-        return Err(format!("Mod non trovata: {}", name));
+        return Err(tr!("errors.mods.not_found", "name" => name));
     }
 
     persist_mods(&dir)
@@ -365,7 +366,7 @@ pub fn add_mods_from_paths(app: &AppHandle, id: &str, files: Vec<PathBuf>) -> Re
             continue;
         }
         if mod_exists(&dir, &fname) {
-            skipped.push(format!("{} (già presente)", fname));
+            skipped.push(tr!("errors.mods.skipped_already_present", "name" => fname));
             continue;
         }
         match fs::copy(&src, mods_dir.join(&fname)) {
@@ -382,14 +383,14 @@ pub fn add_mods_from_paths(app: &AppHandle, id: &str, files: Vec<PathBuf>) -> Re
 pub fn add_mod_bytes(app: &AppHandle, id: &str, name: &str, bytes: &[u8]) -> Result<Vec<ModEntry>, String> {
     let dir = server_dir(app, id)?;
     if !valid_mod_name(name) {
-        return Err(format!("Nome mod non valido: {}", name));
+        return Err(tr!("errors.mods.invalid_name_detail", "name" => name));
     }
     if mod_exists(&dir, name) {
-        return Err(format!("{} è già presente", name));
+        return Err(tr!("errors.mods.already_present", "name" => name));
     }
     let mods_dir = dir.join("mods");
     fs::create_dir_all(&mods_dir).map_err(|e| e.to_string())?;
-    fs::write(mods_dir.join(name), bytes).map_err(|e| format!("Scrittura fallita: {}", e))?;
+    fs::write(mods_dir.join(name), bytes).map_err(|e| tr!("errors.mods.write_failed", "error" => e))?;
     persist_mods(&dir)
 }
 
@@ -441,14 +442,14 @@ pub fn get_server_icon(app: &AppHandle, id: &str) -> Result<Option<crate::server
 pub fn set_server_icon_bytes(app: &AppHandle, id: &str, bytes: &[u8]) -> Result<crate::servericon::ServerIconInfo, String> {
     let dir = server_dir(app, id)?;
     let info = crate::servericon::write(&dir, bytes)?;
-    process::emit_line(app, id, "[Mineger] server-icon.png aggiornato (64×64): visibile nella lista multiplayer al prossimo avvio");
+    process::emit_line(app, id, &tr!("console.server_icon_updated"));
     Ok(info)
 }
 
 pub fn set_server_icon_path(app: &AppHandle, id: &str, src: &Path) -> Result<crate::servericon::ServerIconInfo, String> {
     let dir = server_dir(app, id)?;
     let info = crate::servericon::write_from_path(&dir, src)?;
-    process::emit_line(app, id, "[Mineger] server-icon.png aggiornato (64×64): visibile nella lista multiplayer al prossimo avvio");
+    process::emit_line(app, id, &tr!("console.server_icon_updated"));
     Ok(info)
 }
 
@@ -498,11 +499,11 @@ pub fn is_inside(root: &Path, dir: &Path) -> bool {
 pub fn delete_server(app: &AppHandle, id: &str) -> Result<(), String> {
     let dir = server_dir(app, id)?;
     if crate::process::is_active(id) {
-        return Err("Il server è in esecuzione: fermalo prima di eliminarlo".to_string());
+        return Err(tr!("errors.server.running_stop_first"));
     }
     let root = paths::servers_dir(app)?;
     if !is_inside(&root, &dir) {
-        return Err("La cartella del server è fuori dalla cartella dei server: eliminazione rifiutata".to_string());
+        return Err(tr!("errors.server.folder_outside_root"));
     }
 
     // Su Windows un file appena chiuso può risultare ancora bloccato: qualche tentativo.
@@ -522,7 +523,7 @@ pub fn delete_server(app: &AppHandle, id: &str) -> Result<(), String> {
         }
     }
     if let Some(e) = last_err.filter(|_| dir.exists()) {
-        return Err(format!("Impossibile eliminare la cartella del server: {}", e));
+        return Err(tr!("errors.server.delete_folder_failed", "error" => e));
     }
 
     crate::process::forget(id);

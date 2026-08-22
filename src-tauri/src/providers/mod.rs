@@ -12,6 +12,7 @@ pub mod ftb;
 pub mod mods;
 pub mod modrinth;
 
+use crate::tr;
 use serde::{Deserialize, Serialize};
 use sha1::{Digest, Sha1};
 use std::fs;
@@ -118,7 +119,7 @@ fn strip_scheme(url: &str) -> &str {
 pub fn parse_link(url: &str) -> Result<ParsedLink, String> {
     let raw = url.trim();
     if raw.is_empty() {
-        return Err("Incolla il link del modpack".to_string());
+        return Err(tr!("errors.pack.empty_link"));
     }
 
     for (prefix, provider) in [("cf:", Provider::Curseforge), ("curseforge:", Provider::Curseforge), ("modrinth:", Provider::Modrinth), ("ftb:", Provider::Ftb)] {
@@ -141,7 +142,7 @@ pub fn parse_link(url: &str) -> Result<ParsedLink, String> {
             };
             return Ok(ParsedLink { provider: Provider::Curseforge, key: slug, file_id });
         }
-        return Err("Link CurseForge non riconosciuto: serve la pagina di un modpack (curseforge.com/minecraft/modpacks/…)".to_string());
+        return Err(tr!("errors.pack.bad_curseforge_link"));
     }
 
     // modrinth.com/modpack/<slug>[/version/<id>]   (anche /project/<slug>)
@@ -154,7 +155,7 @@ pub fn parse_link(url: &str) -> Result<ParsedLink, String> {
             };
             return Ok(ParsedLink { provider: Provider::Modrinth, key: slug, file_id });
         }
-        return Err("Link Modrinth non riconosciuto: serve la pagina di un modpack (modrinth.com/modpack/…)".to_string());
+        return Err(tr!("errors.pack.bad_modrinth_link"));
     }
 
     // feed-the-beast.com/modpacks/<id>-<slug>[/…]
@@ -166,10 +167,10 @@ pub fn parse_link(url: &str) -> Result<ParsedLink, String> {
             }
             return Ok(ParsedLink { provider: Provider::Ftb, key: seg.to_string(), file_id: None });
         }
-        return Err("Link FTB non riconosciuto: serve la pagina di un modpack (feed-the-beast.com/modpacks/…)".to_string());
+        return Err(tr!("errors.pack.bad_ftb_link"));
     }
 
-    Err("Link non supportato: usa un modpack di CurseForge, Modrinth o FTB".to_string())
+    Err(tr!("errors.pack.unsupported_link"))
 }
 
 // ---------------------------------------------------------------------------
@@ -197,7 +198,7 @@ pub fn file_by_id(app: &AppHandle, provider: Provider, project_id: &str, file_id
         .iter()
         .find(|f| f.id == file_id)
         .cloned()
-        .ok_or_else(|| format!("Versione {} non trovata su {}", file_id, provider.label()))?;
+        .ok_or_else(|| tr!("errors.pack.file_not_found", "file" => file_id, "provider" => provider.label()))?;
     Ok((res.pack, file))
 }
 
@@ -227,7 +228,7 @@ pub fn http(timeout: Duration) -> Result<reqwest::blocking::Client, String> {
         .connect_timeout(Duration::from_secs(15))
         .timeout(timeout)
         .build()
-        .map_err(|e| format!("HTTP client: {}", e))
+        .map_err(|e| tr!("errors.http.client", "error" => e))
 }
 
 pub fn sha1_hex(bytes: &[u8]) -> String {
@@ -250,7 +251,7 @@ pub fn download_file(
         .get(url)
         .send()
         .and_then(|r| r.error_for_status())
-        .map_err(|e| format!("Download fallito ({}): {}", url, e))?;
+        .map_err(|e| tr!("errors.download.failed_url", "url" => url, "error" => e))?;
 
     let total = resp.content_length().or(expected_size).unwrap_or(0).max(1);
     if let Some(parent) = dest.parent() {
@@ -264,7 +265,7 @@ pub fn download_file(
     let mut last_pct: u64 = u64::MAX;
 
     loop {
-        let n = resp.read(&mut buf).map_err(|e| format!("Download interrotto: {}", e))?;
+        let n = resp.read(&mut buf).map_err(|e| tr!("errors.download.interrupted", "error" => e))?;
         if n == 0 {
             break;
         }
@@ -283,7 +284,7 @@ pub fn download_file(
     if let Some(expected) = expected_sha1.map(|s| s.to_ascii_lowercase()).filter(|s| !s.is_empty()) {
         if actual != expected {
             let _ = fs::remove_file(&part);
-            return Err(format!("SHA1 non corrispondente per {} (atteso {}, ottenuto {})", dest.display(), expected, actual));
+            return Err(tr!("errors.download.sha1_mismatch_named", "name" => dest.display(), "expected" => expected, "actual" => actual));
         }
     }
     fs::rename(&part, dest).map_err(|e| e.to_string())?;

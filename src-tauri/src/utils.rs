@@ -3,6 +3,7 @@
 // Helper su file: server.properties, lista mod, EULA.
 
 use crate::models::{ModEntry, ServerDataFile};
+use crate::tr;
 use sha1::{Digest, Sha1};
 use std::collections::HashMap;
 use std::fs;
@@ -87,10 +88,10 @@ fn valid_property_key(key: &str) -> bool {
 pub fn save_server_properties(server_path: &Path, updates: &HashMap<String, String>) -> Result<(), String> {
     for (k, v) in updates {
         if !valid_property_key(k) {
-            return Err(format!("Chiave non valida: {:?}", k));
+            return Err(tr!("errors.properties.invalid_key", "key" => format!("{:?}", k)));
         }
         if v.contains('\n') || v.contains('\r') {
-            return Err(format!("Valore non valido per {}", k));
+            return Err(tr!("errors.properties.invalid_value", "key" => k));
         }
     }
 
@@ -123,7 +124,7 @@ pub fn save_server_properties(server_path: &Path, updates: &HashMap<String, Stri
 
     let mut text = out.join("\n");
     text.push('\n');
-    fs::write(&path, text).map_err(|e| format!("Impossibile scrivere {}: {}", path.display(), e))
+    fs::write(&path, text).map_err(|e| tr!("errors.file.write_failed", "path" => path.display(), "error" => e))
 }
 
 // ---------------------------------------------------------------------------

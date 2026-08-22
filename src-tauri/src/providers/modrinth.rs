@@ -6,6 +6,7 @@
 // L'installazione del loader (Fabric/Forge/NeoForge) la fa `packs.rs`.
 
 use super::{http, iso_to_epoch, normalize_loader, PackFile, PackInfo, PackResolution, ParsedLink, Provider};
+use crate::tr;
 use serde::Deserialize;
 use std::time::Duration;
 
@@ -130,14 +131,14 @@ fn get<T: serde::de::DeserializeOwned>(path: &str) -> Result<T, String> {
         .get(format!("{}{}", API, path))
         .header("Accept", "application/json")
         .send()
-        .map_err(|e| format!("Modrinth non raggiungibile: {}", e))?;
+        .map_err(|e| tr!("errors.http.unreachable", "who" => "Modrinth", "error" => e))?;
     if resp.status().as_u16() == 404 {
-        return Err("Progetto non trovato su Modrinth".to_string());
+        return Err(tr!("errors.modrinth.project_not_found"));
     }
     if !resp.status().is_success() {
-        return Err(format!("Modrinth: HTTP {}", resp.status()));
+        return Err(tr!("errors.http.status", "who" => "Modrinth", "status" => resp.status()));
     }
-    resp.json().map_err(|e| format!("Risposta Modrinth non valida: {}", e))
+    resp.json().map_err(|e| tr!("errors.http.invalid_response", "who" => "Modrinth", "error" => e))
 }
 
 fn to_pack_file(slug: &str, v: &Version) -> Option<PackFile> {
@@ -167,7 +168,7 @@ fn to_pack_file(slug: &str, v: &Version) -> Option<PackFile> {
 pub fn resolve(link: &ParsedLink) -> Result<PackResolution, String> {
     let project: Project = get(&format!("/project/{}", link.key))?;
     if project.project_type != "modpack" && !project.project_type.is_empty() {
-        return Err(format!("\"{}\" su Modrinth non è un modpack ({})", project.title, project.project_type));
+        return Err(tr!("errors.modrinth.not_a_modpack", "name" => project.title, "kind" => project.project_type));
     }
     let versions: Vec<Version> = get(&format!("/project/{}/version", project.id))?;
 
@@ -181,9 +182,9 @@ pub fn resolve(link: &ParsedLink) -> Result<PackResolution, String> {
         .or_else(|| files.first().map(|f| f.id.clone()));
 
     let warning = if files.is_empty() {
-        Some("Nessuna versione .mrpack pubblicata per questo progetto".to_string())
+        Some(tr!("errors.pack.warn_no_mrpack"))
     } else {
-        Some("Modpack Modrinth: Mineger scaricherà i file lato server e installerà il loader (Fabric/Forge/NeoForge); serve qualche minuto.".to_string())
+        Some(tr!("errors.pack.warn_modrinth_install"))
     };
 
     Ok(PackResolution {
@@ -207,11 +208,11 @@ pub fn resolve(link: &ParsedLink) -> Result<PackResolution, String> {
 /// Legge `modrinth.index.json` da un `.mrpack`.
 pub fn read_index(mrpack: &std::path::Path) -> Result<MrpackIndex, String> {
     let file = std::fs::File::open(mrpack).map_err(|e| e.to_string())?;
-    let mut archive = zip::ZipArchive::new(file).map_err(|e| format!("mrpack non valido: {}", e))?;
-    let mut entry = archive.by_name("modrinth.index.json").map_err(|_| "modrinth.index.json mancante nel .mrpack".to_string())?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|e| tr!("errors.modrinth.invalid_mrpack", "error" => e))?;
+    let mut entry = archive.by_name("modrinth.index.json").map_err(|_| tr!("errors.modrinth.index_missing"))?;
     let mut text = String::new();
     std::io::Read::read_to_string(&mut entry, &mut text).map_err(|e| e.to_string())?;
-    serde_json::from_str(&text).map_err(|e| format!("modrinth.index.json non valido: {}", e))
+    serde_json::from_str(&text).map_err(|e| tr!("errors.modrinth.index_invalid", "error" => e))
 }
 
 #[cfg(test)]

@@ -5,6 +5,7 @@ pub mod commands;
 pub mod create;
 pub mod events;
 pub mod host;
+pub mod i18n;
 pub mod icons;
 pub mod java;
 pub mod launch;
@@ -42,6 +43,11 @@ pub fn run() {
             // Host remoto, se abilitato nelle impostazioni
             let handle = app.handle().clone();
             let s = settings::load(&handle);
+
+            // Lingua dei messaggi del backend: preferenza salvata o, se assente,
+            // quella del sistema operativo (con riserva sull'inglese).
+            i18n::set_language(&i18n::resolve(&s.language));
+
             if let Err(e) = host::apply(&handle, &s) {
                 println!("[Mineger] Listener HTTP non avviato: {}", e);
             }
@@ -115,6 +121,10 @@ pub fn run() {
             commands::update_pack_server,
             commands::set_curseforge_key,
             commands::curseforge_configured,
+            commands::get_language,
+            commands::get_system_language,
+            commands::set_language,
+            commands::list_languages,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

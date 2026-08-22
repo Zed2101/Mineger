@@ -9,6 +9,7 @@
 //   - override espliciti:      launch.jar / launch.args_file / launch.extra_jvm_args
 
 use crate::models::LaunchConfig;
+use crate::tr;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -85,12 +86,12 @@ pub fn resolve(dir: &Path, cfg: &LaunchConfig) -> Result<LaunchPlan, String> {
 
     let (main_args, what): (Vec<String>, String) = if let Some(af) = &cfg.args_file {
         if !dir.join(af).is_file() {
-            return Err(format!("file argomenti non trovato: {}", af));
+            return Err(tr!("errors.launch.args_file_not_found", "file" => af));
         }
         (vec![format!("@{}", af)], format!("args file: {}", af))
     } else if let Some(jar) = &cfg.jar {
         if !dir.join(jar).is_file() {
-            return Err(format!("jar non trovato: {}", jar));
+            return Err(tr!("errors.launch.jar_not_found", "jar" => jar));
         }
         (vec!["-jar".into(), jar.clone()], format!("java -jar {}", jar))
     } else if dir.join("server.jar").is_file() {
@@ -100,11 +101,7 @@ pub fn resolve(dir: &Path, cfg: &LaunchConfig) -> Result<LaunchPlan, String> {
         let loader = if rel.contains("neoforged") { "NeoForge" } else { "Forge" };
         (vec![format!("@{}", rel)], format!("{} args: {}", loader, rel))
     } else {
-        return Err(
-            "nessun server.jar e nessun file argomenti Forge/NeoForge. Rinomina il jar del server in server.jar \
-             oppure imposta launch.jar / launch.args_file in server-data.json"
-                .to_string(),
-        );
+        return Err(tr!("errors.launch.nothing_to_run"));
     };
 
     args.extend(main_args);

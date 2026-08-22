@@ -10,6 +10,7 @@
 use crate::launch;
 use crate::models::{LaunchConfig, ServerDataFile};
 use crate::paths;
+use crate::tr;
 use crate::utils::ensure_server_properties;
 use serde::{Deserialize, Serialize};
 use sha1::{Digest, Sha1};
@@ -84,7 +85,7 @@ fn http(timeout: Duration) -> Result<reqwest::blocking::Client, String> {
         .connect_timeout(Duration::from_secs(15))
         .timeout(timeout)
         .build()
-        .map_err(|e| format!("HTTP client: {}", e))
+        .map_err(|e| tr!("errors.http.client", "error" => e))
 }
 
 fn load_manifest(force: bool) -> Result<(), String> {
@@ -95,9 +96,9 @@ fn load_manifest(force: bool) -> Result<(), String> {
         .get(MANIFEST_URL)
         .send()
         .and_then(|r| r.error_for_status())
-        .map_err(|e| format!("Impossibile contattare Mojang: {}", e))?
+        .map_err(|e| tr!("errors.mojang.unreachable", "error" => e))?
         .json()
-        .map_err(|e| format!("Manifest Mojang non valido: {}", e))?;
+        .map_err(|e| tr!("errors.mojang.invalid_manifest", "error" => e))?;
 
     *MANIFEST.lock().unwrap_or_else(|e| e.into_inner()) =
         Some(ManifestCache { latest_release: manifest.latest.release, versions: manifest.versions });
@@ -108,7 +109,7 @@ fn load_manifest(force: bool) -> Result<(), String> {
 pub fn vanilla_versions(force: bool) -> Result<Vec<VanillaVersion>, String> {
     load_manifest(force)?;
     let guard = MANIFEST.lock().unwrap_or_else(|e| e.into_inner());
-    let cache = guard.as_ref().ok_or("Manifest non caricato")?;
+    let cache = guard.as_ref().ok_or_else(|| tr!("errors.mojang.manifest_not_loaded"))?;
     Ok(cache
         .versions
         .iter()
@@ -120,13 +121,13 @@ pub fn vanilla_versions(force: bool) -> Result<Vec<VanillaVersion>, String> {
 fn find_version(id: &str) -> Result<ManifestVersion, String> {
     load_manifest(false)?;
     let guard = MANIFEST.lock().unwrap_or_else(|e| e.into_inner());
-    let cache = guard.as_ref().ok_or("Manifest non caricato")?;
+    let cache = guard.as_ref().ok_or_else(|| tr!("errors.mojang.manifest_not_loaded"))?;
     cache
         .versions
         .iter()
         .find(|v| v.id == id)
         .cloned()
-        .ok_or_else(|| format!("Versione {} non trovata nel manifest Mojang", id))
+        .ok_or_else(|| tr!("errors.mojang.version_not_found", "version" => id))
 }
 
 // ---------------------------------------------------------------------------
@@ -150,10 +151,10 @@ pub fn folder_id_from_name(name: &str) -> Result<String, String> {
     let cleaned = cleaned.trim_matches(|c| c == '.' || c == ' ').to_string();
 
     if cleaned.is_empty() {
-        return Err("Il nome del server non è valido".to_string());
+        return Err(tr!("errors.server.invalid_name"));
     }
     if cleaned.chars().count() > 64 {
-        return Err("Il nome del server è troppo lungo (max 64 caratteri)".to_string());
+        return Err(tr!("errors.server.name_too_long"));
     }
 
     const RESERVED: &[&str] = &[
@@ -161,7 +162,7 @@ pub fn folder_id_from_name(name: &str) -> Result<String, String> {
         "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
     ];
     if RESERVED.contains(&cleaned.to_ascii_uppercase().as_str()) {
-        return Err("Nome riservato dal sistema operativo".to_string());
+        return Err(tr!("errors.server.reserved_name"));
     }
     Ok(cleaned)
 }
@@ -182,9 +183,9 @@ pub fn prepare_server_dir(app: &AppHandle, name: &str) -> Result<(String, PathBu
     let id = folder_id_from_name(name)?;
     let dir = paths::servers_dir(app)?.join(&id);
     if dir.exists() {
-        return Err(format!("Esiste già un server nella cartella \"{}\"", id));
+        return Err(tr!("errors.folder_exists", "id" => id));
     }
-    fs::create_dir_all(&dir).map_err(|e| format!("Impossibile creare {}: {}", dir.display(), e))?;
+    fs::create_dir_all(&dir).map_err(|e| tr!("errors.file.create_failed", "path" => dir.display(), "error" => e))?;
     Ok((id, dir))
 }
 
@@ -233,7 +234,7 @@ fn download_server_jar(app: &AppHandle, name: &str, dl: &Download, dest: &Path) 
         .get(&dl.url)
         .send()
         .and_then(|r| r.error_for_status())
-        .map_err(|e| format!("Download fallito: {}", e))?;
+        .map_err(|e| tr!("errors.download.failed", "error" => e))?;
 
     let total = resp.content_length().unwrap_or(dl.size).max(1);
     let mut file = fs::File::create(&part).map_err(|e| e.to_string())?;
@@ -243,7 +244,7 @@ fn download_server_jar(app: &AppHandle, name: &str, dl: &Download, dest: &Path) 
     let mut last_pct: u8 = 255;
 
     loop {
-        let n = resp.read(&mut buf).map_err(|e| format!("Download interrotto: {}", e))?;
+        let n = resp.read(&mut buf).map_err(|e| tr!("errors.download.interrupted", "error" => e))?;
         if n == 0 {
             break;
         }
@@ -254,7 +255,7 @@ fn download_server_jar(app: &AppHandle, name: &str, dl: &Download, dest: &Path) 
         let pct = ((downloaded * 100) / total).min(100) as u8;
         if pct != last_pct {
             last_pct = pct;
-            emit_progress(app, name, "download", pct, &format!("Download server.jar {} / {} MB", downloaded / 1_048_576, total / 1_048_576));
+            emit_progress(app, name, "download", pct, &tr!("progress.download.server_jar", "done" => downloaded / 1_048_576, "total" => total / 1_048_576));
         }
     }
     drop(file);
@@ -262,7 +263,7 @@ fn download_server_jar(app: &AppHandle, name: &str, dl: &Download, dest: &Path) 
     let actual = hex::encode(hasher.finalize());
     if actual != dl.sha1.to_lowercase() {
         let _ = fs::remove_file(&part);
-        return Err(format!("SHA1 non corrispondente (atteso {}, ottenuto {})", dl.sha1, actual));
+        return Err(tr!("errors.download.sha1_mismatch", "expected" => dl.sha1, "actual" => actual));
     }
 
     fs::rename(&part, dest).map_err(|e| e.to_string())
@@ -272,7 +273,7 @@ fn download_server_jar(app: &AppHandle, name: &str, dl: &Download, dest: &Path) 
 pub fn create_vanilla_server(app: &AppHandle, name: &str, version: &str) -> Result<String, String> {
     let version = version.trim();
     if version.is_empty() {
-        return Err("Scegli una versione di Minecraft".to_string());
+        return Err(tr!("errors.create.choose_version"));
     }
 
     let entry = find_version(version)?;
@@ -280,16 +281,16 @@ pub fn create_vanilla_server(app: &AppHandle, name: &str, version: &str) -> Resu
         .get(&entry.url)
         .send()
         .and_then(|r| r.error_for_status())
-        .map_err(|e| format!("Impossibile leggere i metadati della versione: {}", e))?
+        .map_err(|e| tr!("errors.mojang.metadata_unreachable", "error" => e))?
         .json()
-        .map_err(|e| format!("Metadati versione non validi: {}", e))?;
+        .map_err(|e| tr!("errors.mojang.metadata_invalid", "error" => e))?;
     let dl = meta
         .downloads
         .server
-        .ok_or_else(|| format!("Mojang non distribuisce un server.jar per la versione {}", version))?;
+        .ok_or_else(|| tr!("errors.mojang.no_server_jar", "version" => version))?;
 
     let (id, dir) = prepare_server_dir(app, name)?;
-    emit_progress(app, name, "download", 0, "Inizio download...");
+    emit_progress(app, name, "download", 0, &tr!("progress.download.starting"));
 
     let result = (|| -> Result<(), String> {
         download_server_jar(app, name, &dl, &dir.join("server.jar"))?;
@@ -299,7 +300,7 @@ pub fn create_vanilla_server(app: &AppHandle, name: &str, version: &str) -> Resu
 
     match result {
         Ok(()) => {
-            emit_progress(app, name, "done", 100, "Server creato");
+            emit_progress(app, name, "done", 100, &tr!("progress.create.done"));
             Ok(id)
         }
         Err(e) => {
@@ -337,8 +338,8 @@ fn single_root_prefix(names: &[String]) -> Option<String> {
 
 /// Estrae uno zip in `dest` (gestisce la cartella radice singola, protegge da zip-slip).
 pub fn extract_zip_to(zip_path: &Path, dest: &Path, progress: &mut dyn FnMut(u8, &str)) -> Result<(), String> {
-    let file = fs::File::open(zip_path).map_err(|e| format!("Impossibile aprire lo zip: {}", e))?;
-    let mut archive = zip::ZipArchive::new(file).map_err(|e| format!("Zip non valido: {}", e))?;
+    let file = fs::File::open(zip_path).map_err(|e| tr!("errors.zip.open_failed", "error" => e))?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|e| tr!("errors.zip.invalid", "error" => e))?;
 
     let names: Vec<String> = (0..archive.len())
         .filter_map(|i| archive.by_index(i).ok().map(|f| f.name().to_string()))
@@ -364,7 +365,7 @@ pub fn extract_zip_to(zip_path: &Path, dest: &Path, progress: &mut dyn FnMut(u8,
         // Zip-slip: rifiuta percorsi che escono dalla destinazione
         let safe = Path::new(&rel);
         if safe.components().any(|c| matches!(c, std::path::Component::ParentDir | std::path::Component::RootDir | std::path::Component::Prefix(_))) {
-            return Err(format!("Percorso non sicuro nello zip: {}", raw_name));
+            return Err(tr!("errors.zip.unsafe_path", "path" => raw_name));
         }
         let out_path = dest.join(safe);
 
@@ -374,14 +375,14 @@ pub fn extract_zip_to(zip_path: &Path, dest: &Path, progress: &mut dyn FnMut(u8,
             if let Some(parent) = out_path.parent() {
                 fs::create_dir_all(parent).map_err(|e| e.to_string())?;
             }
-            let mut out = fs::File::create(&out_path).map_err(|e| format!("{}: {}", out_path.display(), e))?;
+            let mut out = fs::File::create(&out_path).map_err(|e| tr!("errors.file.generic", "path" => out_path.display(), "error" => e))?;
             std::io::copy(&mut entry, &mut out).map_err(|e| e.to_string())?;
         }
 
         let pct = (((i + 1) * 100) / total).min(100) as u8;
         if pct != last_pct {
             last_pct = pct;
-            progress(pct, &format!("Estrazione {}/{}", i + 1, total));
+            progress(pct, &tr!("progress.extract.files", "done" => i + 1, "total" => total));
         }
     }
     Ok(())
@@ -490,11 +491,11 @@ pub fn detect_imported_server(dir: &Path) -> (Option<String>, LaunchConfig) {
 /// Ritorna l'id (nome cartella).
 pub fn import_server_zip(app: &AppHandle, name: &str, zip_path: &Path, version_hint: Option<&str>) -> Result<String, String> {
     if !zip_path.is_file() {
-        return Err("File zip non trovato".to_string());
+        return Err(tr!("errors.zip.not_found"));
     }
 
     let (id, dir) = prepare_server_dir(app, name)?;
-    emit_progress(app, name, "extract", 0, "Estrazione in corso...");
+    emit_progress(app, name, "extract", 0, &tr!("progress.extract.starting"));
 
     let result = (|| -> Result<(), String> {
         extract_zip(app, name, zip_path, &dir)?;
@@ -504,10 +505,10 @@ pub fn import_server_zip(app: &AppHandle, name: &str, zip_path: &Path, version_h
             .map(|v| v.trim().to_string())
             .filter(|v| !v.is_empty())
             .or(detected)
-            .ok_or("Impossibile rilevare la versione di Minecraft: indicala nel campo \"Versione\" e riprova")?;
+            .ok_or_else(|| tr!("errors.create.version_not_detected"))?;
 
         if launch::resolve(&dir, &launch).is_err() {
-            return Err("Nello zip non c'è un server avviabile (nessun server.jar, jar singolo o file argomenti Forge/NeoForge)".to_string());
+            return Err(tr!("errors.create.zip_not_startable"));
         }
 
         ensure_server_properties(&dir)?;
@@ -516,7 +517,7 @@ pub fn import_server_zip(app: &AppHandle, name: &str, zip_path: &Path, version_h
 
     match result {
         Ok(()) => {
-            emit_progress(app, name, "done", 100, "Server importato");
+            emit_progress(app, name, "done", 100, &tr!("progress.create.imported"));
             Ok(id)
         }
         Err(e) => {

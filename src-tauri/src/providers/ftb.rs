@@ -8,6 +8,7 @@
 // l'URL diretto manca e si passa dall'API CurseForge.
 
 use super::{epoch_to_iso, normalize_loader, http, PackFile, PackInfo, PackResolution, ParsedLink, Provider};
+use crate::tr;
 use serde::Deserialize;
 use std::time::Duration;
 
@@ -143,11 +144,11 @@ fn get<T: serde::de::DeserializeOwned>(path: &str) -> Result<T, String> {
         .get(format!("{}{}", API, path))
         .header("Accept", "application/json")
         .send()
-        .map_err(|e| format!("FTB non raggiungibile: {}", e))?;
+        .map_err(|e| tr!("errors.http.unreachable", "who" => "FTB", "error" => e))?;
     if !resp.status().is_success() {
-        return Err(format!("FTB: HTTP {}", resp.status()));
+        return Err(tr!("errors.http.status", "who" => "FTB", "status" => resp.status()));
     }
-    resp.json().map_err(|e| format!("Risposta FTB non valida: {}", e))
+    resp.json().map_err(|e| tr!("errors.http.invalid_response", "who" => "FTB", "error" => e))
 }
 
 /// (mc_version, loader, loader_version) dai target di una versione
@@ -182,16 +183,16 @@ fn to_pack_file(pack_id: u64, v: &VersionSummary) -> PackFile {
 
 pub fn resolve(link: &ParsedLink) -> Result<PackResolution, String> {
     let id: u64 = if link.key.chars().all(|c| c.is_ascii_digit()) {
-        link.key.parse().map_err(|_| "Id FTB non valido".to_string())?
+        link.key.parse().map_err(|_| tr!("errors.ftb.invalid_id"))?
     } else {
         let term = link.key.replace(['-', '_'], " ");
         let res: SearchResult = get(&format!("/modpack/search/5?term={}", urlencode(&term)))?;
-        *res.packs.first().ok_or_else(|| format!("Modpack FTB \"{}\" non trovato", link.key))?
+        *res.packs.first().ok_or_else(|| tr!("errors.ftb.pack_not_found_by_name", "name" => link.key))?
     };
 
     let pack: Pack = get(&format!("/modpack/{}", id))?;
     if pack.status == "error" {
-        return Err(format!("Modpack FTB {} non trovato", id));
+        return Err(tr!("errors.ftb.pack_not_found", "id" => id));
     }
 
     let mut files: Vec<PackFile> = pack.versions.iter().map(|v| to_pack_file(pack.id, v)).collect();
@@ -212,7 +213,7 @@ pub fn resolve(link: &ParsedLink) -> Result<PackResolution, String> {
         },
         files,
         suggested_file_id: suggested,
-        warning: Some("Modpack FTB: Mineger scaricherà i file lato server e installerà il loader; serve qualche minuto.".to_string()),
+        warning: Some(tr!("errors.pack.warn_ftb_install")),
     })
 }
 
@@ -303,7 +304,7 @@ pub struct CfVersion {
 pub fn curseforge_versions(cf_project: &str) -> Result<Vec<CfVersion>, String> {
     let pack: CfPack = get(&format!("/curseforge/{}", cf_project))?;
     if pack.status == "error" {
-        return Err("Pack non conosciuto dall'API FTB".to_string());
+        return Err(tr!("errors.ftb.unknown_pack"));
     }
     Ok(pack
         .versions
@@ -320,7 +321,7 @@ pub fn curseforge_versions(cf_project: &str) -> Result<Vec<CfVersion>, String> {
 pub fn curseforge_version_detail(cf_project: &str, file_id: &str) -> Result<VersionDetail, String> {
     let d: VersionDetail = get(&format!("/curseforge/{}/{}", cf_project, file_id))?;
     if d.files.is_empty() {
-        return Err("L'API FTB non ha la lista dei file per questa versione".to_string());
+        return Err(tr!("errors.ftb.no_file_list"));
     }
     Ok(d)
 }

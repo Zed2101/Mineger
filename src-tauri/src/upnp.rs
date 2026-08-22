@@ -7,6 +7,7 @@
 // Allineato a `upnp_test`: bind sull'IP dell'interfaccia che esce verso internet
 // (evita adattatori VPN/VirtualBox), timeout generoso, lease con fallback.
 
+use crate::tr;
 use igd_next::{search_gateway, Gateway, PortMappingProtocol, SearchOptions};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, SocketAddrV4, UdpSocket};
 use std::time::Duration;
@@ -15,8 +16,10 @@ const GATEWAY_TIMEOUT: Duration = Duration::from_secs(6);
 /// Alcuni router rifiutano il lease 0 ("permanente"): si riprova con 7 giorni.
 const FALLBACK_LEASE_SECS: u32 = 7 * 24 * 3600;
 
-pub const HINT: &str =
-    "Controlla che UPnP sia attivo sul router e che la rete in Windows sia impostata su \"Privata\".";
+/// Suggerimento allegato agli errori UPnP.
+pub fn hint() -> String {
+    tr!("errors.upnp.hint")
+}
 
 /// IP locale dell'interfaccia usata per uscire verso internet.
 /// Non invia dati: `connect` su UDP serve solo al SO per scegliere l'interfaccia.
@@ -35,7 +38,7 @@ fn find_gateway(ip: Ipv4Addr) -> Result<Gateway, String> {
         timeout: Some(GATEWAY_TIMEOUT),
         ..Default::default()
     };
-    search_gateway(options).map_err(|e| format!("nessun gateway UPnP trovato ({}). {}", e, HINT))
+    search_gateway(options).map_err(|e| tr!("errors.upnp.no_gateway", "error" => e, "hint" => hint()))
 }
 
 /// IP privato / CGNAT: dall'esterno il mapping potrebbe non essere raggiungibile.
@@ -52,7 +55,7 @@ fn is_private_ip(ip: IpAddr) -> bool {
 /// Apre `port` (TCP + UDP) verso questa macchina. Successo se almeno TCP va a buon fine.
 /// Il messaggio include l'IP pubblico visto dal router.
 pub fn map_port(port: u16) -> Result<String, String> {
-    let ip = local_ip().ok_or("impossibile rilevare l'IP locale (sei connesso a internet?)")?;
+    let ip = local_ip().ok_or_else(|| tr!("errors.upnp.no_local_ip"))?;
     let gateway = find_gateway(ip)?;
 
     let local_addr = SocketAddr::V4(SocketAddrV4::new(ip, port));
@@ -72,7 +75,8 @@ pub fn map_port(port: u16) -> Result<String, String> {
                     }
                 }
                 // Alcuni router rifiutano il lease 0: riprova con lease lungo.
-                attempt(FALLBACK_LEASE_SECS).map_err(|e1| format!("{} (con lease permanente: {})", e1, text0))
+                attempt(FALLBACK_LEASE_SECS)
+                    .map_err(|e1| tr!("errors.upnp.lease_retry", "error" => e1, "first_error" => text0))
             }
         }
     };
@@ -84,24 +88,21 @@ pub fn map_port(port: u16) -> Result<String, String> {
     // (port-forward manuale): UPnP non serve e la porta è quasi certamente già raggiungibile.
     if let Err(e) = &tcp {
         if e.contains("729") || e.contains("ConflictWithOtherMechanisms") {
-            return Err(format!(
-                "la porta {} è già gestita da una regola del router (port-forward manuale?): UPnP non necessario, la porta dovrebbe essere già raggiungibile dall'esterno",
-                port
-            ));
+            return Err(tr!("errors.upnp.port_managed_by_router", "port" => port));
         }
     }
 
     let public = match gateway.get_external_ip() {
-        Ok(ext) if is_private_ip(ext) => format!("IP pubblico {} (sembra CGNAT/doppio NAT: dall'esterno potrebbe non essere raggiungibile)", ext),
-        Ok(ext) => format!("IP pubblico {}", ext),
-        Err(_) => "IP pubblico non disponibile".to_string(),
+        Ok(ext) if is_private_ip(ext) => tr!("console.upnp.public_ip_cgnat", "ip" => ext),
+        Ok(ext) => tr!("console.upnp.public_ip", "ip" => ext),
+        Err(_) => tr!("console.upnp.public_ip_unavailable"),
     };
 
     match (tcp, udp) {
-        (Ok(_), Ok(_)) => Ok(format!("porta {} (TCP+UDP) aperta su {} · {}", port, gateway.addr, public)),
-        (Ok(_), Err(e)) => Ok(format!("porta {} TCP aperta su {} (UDP fallito: {}) · {}", port, gateway.addr, e, public)),
-        (Err(e), Ok(_)) => Ok(format!("porta {} UDP aperta su {} (TCP fallito: {}) · {}", port, gateway.addr, e, public)),
-        (Err(e1), Err(e2)) => Err(format!("apertura porta {} fallita. TCP: {}; UDP: {}. {}", port, e1, e2, HINT)),
+        (Ok(_), Ok(_)) => Ok(tr!("console.upnp.port_open", "port" => port, "gateway" => gateway.addr, "public" => public)),
+        (Ok(_), Err(e)) => Ok(tr!("console.upnp.port_open_tcp_only", "port" => port, "gateway" => gateway.addr, "error" => e, "public" => public)),
+        (Err(e), Ok(_)) => Ok(tr!("console.upnp.port_open_udp_only", "port" => port, "gateway" => gateway.addr, "error" => e, "public" => public)),
+        (Err(e1), Err(e2)) => Err(tr!("errors.upnp.open_failed", "port" => port, "tcp" => e1, "udp" => e2, "hint" => hint())),
     }
 }
 
@@ -119,9 +120,9 @@ pub fn unmap_port(port: u16) -> Result<String, String> {
 /// Chiude più porte con una sola ricerca del gateway (usato allo shutdown dell'app).
 pub fn unmap_ports(ports: &[u16]) -> Result<String, String> {
     if ports.is_empty() {
-        return Ok("nessuna porta da chiudere".to_string());
+        return Ok(tr!("console.upnp.no_ports_to_close"));
     }
-    let ip = local_ip().ok_or("impossibile rilevare l'IP locale")?;
+    let ip = local_ip().ok_or_else(|| tr!("errors.upnp.no_local_ip_short"))?;
     let gateway = find_gateway(ip)?;
 
     let mut report = Vec::new();
@@ -129,10 +130,10 @@ pub fn unmap_ports(ports: &[u16]) -> Result<String, String> {
         let tcp = gateway.remove_port(PortMappingProtocol::TCP, port);
         let udp = gateway.remove_port(PortMappingProtocol::UDP, port);
         match (tcp, udp) {
-            (Ok(_), Ok(_)) => report.push(format!("porta {} chiusa", port)),
-            (Ok(_), Err(_)) => report.push(format!("porta {} TCP chiusa (UDP non trovata)", port)),
-            (Err(_), Ok(_)) => report.push(format!("porta {} UDP chiusa (TCP non trovata)", port)),
-            (Err(e1), Err(e2)) => report.push(format!("porta {} non chiusa (TCP {}, UDP {})", port, e1, e2)),
+            (Ok(_), Ok(_)) => report.push(tr!("console.upnp.port_closed", "port" => port)),
+            (Ok(_), Err(_)) => report.push(tr!("console.upnp.port_closed_tcp_only", "port" => port)),
+            (Err(_), Ok(_)) => report.push(tr!("console.upnp.port_closed_udp_only", "port" => port)),
+            (Err(e1), Err(e2)) => report.push(tr!("console.upnp.port_not_closed", "port" => port, "tcp" => e1, "udp" => e2)),
         }
     }
     Ok(report.join("; "))

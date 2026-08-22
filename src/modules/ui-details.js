@@ -9,6 +9,7 @@
 import { getRuntime, isActive, applyStatus } from './ui-status.js';
 import { escapeHtml, formatBytes, formatUptime, formatClock, formatRelativeDay, initials, avatarClass } from './utils.js';
 import { call } from './api.js';
+import { t, tp } from './i18n.js';
 
 const { listen } = window.__TAURI__.event;
 
@@ -71,31 +72,33 @@ export function renderStats(state, id) {
   const last = rt.samples[rt.samples.length - 1];
   const running = rt.status !== 'offline';
 
+  const ramSub = t('msg2.details.ram_assigned', { max: maxRam });
+
   if (!running) {
-    setTile('cpu', '—', 'server offline');
-    setTile('ram', '—', `di ${maxRam} MB assegnati`);
-    setTile('tick', '—', 'server offline');
-    setTile('uptime', '—', 'non in esecuzione');
+    setTile('cpu', '—', t('msg2.details.stat_offline'));
+    setTile('ram', '—', ramSub);
+    setTile('tick', '—', t('msg2.details.stat_offline'));
+    setTile('uptime', '—', t('msg2.details.not_running'));
   } else {
     if (last) {
-      setTile('cpu', `${Math.round(last.cpu)}%`, `processo Java · picco ${Math.round(rt.peakCpu)}%`);
+      setTile('cpu', `${Math.round(last.cpu)}%`, t('msg2.details.cpu_sub', { peak: Math.round(rt.peakCpu) }));
       const gb = last.mem / 1024 ** 3;
-      setTile('ram', gb >= 1 ? `${gb.toFixed(1)} GB` : `${Math.round(last.mem / 1024 ** 2)} MB`, `di ${maxRam} MB assegnati`);
+      setTile('ram', gb >= 1 ? `${gb.toFixed(1)} GB` : `${Math.round(last.mem / 1024 ** 2)} MB`, ramSub);
     } else {
-      setTile('cpu', '…', 'in attesa del primo campione');
-      setTile('ram', '…', `di ${maxRam} MB assegnati`);
+      setTile('cpu', '…', t('msg2.details.waiting_first_sample'));
+      setTile('ram', '…', ramSub);
     }
 
     if (rt.lagAt) {
-      setTile('tick', 'LAG', `ultimo alle ${formatClock(rt.lagAt)} · ${rt.lagTicks} tick indietro`, 'text-warning');
+      setTile('tick', 'LAG', t('msg2.details.tick_lag_sub', { clock: formatClock(rt.lagAt), ticks: rt.lagTicks }), 'text-warning');
     } else if (rt.status === 'online') {
-      setTile('tick', 'OK', 'nessun lag rilevato', 'text-accent');
+      setTile('tick', 'OK', t('msg2.details.tick_ok'), 'text-accent');
     } else {
-      setTile('tick', '…', rt.status === 'starting' ? 'avvio in corso' : 'arresto in corso');
+      setTile('tick', '…', rt.status === 'starting' ? t('msg2.details.starting') : t('msg2.details.stopping'));
     }
 
     if (rt.startedAt) {
-      setTile('uptime', formatUptime(Date.now() - rt.startedAt), `avviato alle ${formatClock(rt.startedAt)}`);
+      setTile('uptime', formatUptime(Date.now() - rt.startedAt), t('msg2.details.started_at', { clock: formatClock(rt.startedAt) }));
     }
   }
 
@@ -108,8 +111,8 @@ function renderChart(rt, maxRam) {
   chart.innerHTML = '';
 
   if (rt.samples.length === 0) {
-    range.textContent = rt.status === 'offline' ? 'server offline' : 'in attesa di dati';
-    chart.innerHTML = `<div class="flex h-full w-full items-center justify-center note">Nessun campione</div>`;
+    range.textContent = rt.status === 'offline' ? t('msg2.details.stat_offline') : t('msg2.details.chart_waiting');
+    chart.innerHTML = `<div class="flex h-full w-full items-center justify-center note">${escapeHtml(t('msg2.details.chart_empty'))}</div>`;
     return;
   }
 
@@ -129,7 +132,9 @@ function renderChart(rt, maxRam) {
 
   const span = rt.samples[rt.samples.length - 1].t - rt.samples[0].t;
   const minutes = Math.round(span / 60000);
-  range.textContent = minutes >= 1 ? `ultimi ${minutes} min` : `ultimi ${Math.round(span / 1000)} s`;
+  range.textContent = minutes >= 1
+    ? t('msg2.details.chart_range_min', { count: minutes })
+    : t('msg2.details.chart_range_sec', { count: Math.round(span / 1000) });
 }
 
 // ---------------------------------------------------------------------------
@@ -148,7 +153,7 @@ export function renderPlayers(state, id) {
   list.innerHTML = '';
 
   if (rt.players.size === 0) {
-    empty.textContent = rt.status === 'offline' ? 'Server offline' : 'Nessun giocatore connesso';
+    empty.textContent = rt.status === 'offline' ? t('msg2.details.players_offline') : t('msg2.details.players_empty');
     empty.classList.remove('hidden');
     return;
   }
@@ -161,7 +166,7 @@ export function renderPlayers(state, id) {
     li.innerHTML =
       `<span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md font-mono text-[10px] font-bold ${avatarClass(name)}">${initials(name)}</span>` +
       `<span class="min-w-0 flex-1 truncate text-[13px] font-semibold">${escapeHtml(name)}</span>` +
-      `<span class="font-mono text-[10px] text-text-faint" title="Entrato alle ${formatClock(joinedAt)}">${formatClock(joinedAt)}</span>`;
+      `<span class="font-mono text-[10px] text-text-faint" title="${escapeHtml(t('msg2.details.player_joined_at', { clock: formatClock(joinedAt) }))}">${formatClock(joinedAt)}</span>`;
     frag.appendChild(li);
   }
   list.appendChild(frag);
@@ -209,10 +214,10 @@ function renderBackups(id) {
   const noteEl = el('backup-note');
   if (last) {
     lastEl.textContent = `${formatRelativeDay(last.modified * 1000)} · ${formatBytes(last.size)}`;
-    noteEl.textContent = list.length === 1 ? '1 backup in backups/' : `${list.length} backup in backups/`;
+    noteEl.textContent = tp('msg2.details.backup_count', list.length);
   } else {
-    lastEl.textContent = 'nessun backup';
-    noteEl.textContent = 'manuale · salvato in backups/';
+    lastEl.textContent = t('msg2.details.backup_none');
+    noteEl.textContent = t('msg2.details.backup_manual_note');
   }
 }
 
@@ -232,18 +237,18 @@ async function handleCreateBackup(state) {
   const btn = el('btn-backup');
   const note = el('backup-note');
   btn.disabled = true;
-  btn.textContent = 'Backup in corso…';
-  note.textContent = 'preparazione…';
+  btn.textContent = t('msg2.details.backup_running');
+  note.textContent = t('msg2.details.backup_preparing');
   try {
     const info = await call('create_backup', { id });
     const list = backupsCache.get(id) || [];
     backupsCache.set(id, [info, ...list]);
     if (state.activeServerId === id) renderBackups(id);
   } catch (err) {
-    note.textContent = `Errore: ${err}`;
+    note.textContent = t('msg2.details.backup_error', { error: err });
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Crea backup';
+    btn.textContent = t('msg2.details.backup_create');
   }
 }
 

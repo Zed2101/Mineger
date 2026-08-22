@@ -14,6 +14,8 @@ import { loadIcons, iconUrl } from './modules/icons.js';
 import { setupWebhooksTab, renderWebhooksTab } from './modules/ui-webhooks.js';
 import { setupPacks, renderPackCard, loadCachedUpdates, applyUpdatesToSidebar, hasUpdate } from './modules/ui-packs.js';
 import { escapeHtml, formatGB } from './modules/utils.js';
+import { t, initI18n, onLanguageChange } from './modules/i18n.js';
+import { setupLanguage } from './modules/ui-language.js';
 
 const { invoke } = window.__TAURI__.core;
 
@@ -82,7 +84,7 @@ function serverItem(server, group) {
     <div class="min-w-0 flex-1">
       <div class="flex items-center gap-1.5">
         <span class="truncate text-[13px] font-semibold text-text-main">${escapeHtml(server.name)}</span>
-        <span class="item-update ${hasUpdate(server.id) ? '' : 'hidden'} shrink-0 rounded bg-accent/15 px-1 font-mono text-[9px] font-semibold uppercase tracking-[1px] text-accent" title="Aggiornamento del modpack disponibile">agg.</span>
+        <span class="item-update ${hasUpdate(server.id) ? '' : 'hidden'} shrink-0 rounded bg-accent/15 px-1 font-mono text-[9px] font-semibold uppercase tracking-[1px] text-accent" title="${escapeHtml(t('msg2.app.update_available_title'))}">${escapeHtml(t('msg2.app.update_badge'))}</span>
       </div>
       <div class="truncate font-mono text-[11px] text-text-muted">${escapeHtml(server.version)} • <span class="item-sub">${escapeHtml(itemSubText(server, rt))}</span></div>
     </div>
@@ -106,7 +108,7 @@ function groupNote(text) {
 
 function renderSidebar() {
   serverListEl.innerHTML = '';
-  document.getElementById('server-count').textContent = `SERVER · ${state.serverList.length}`;
+  document.getElementById('server-count').textContent = t('msg2.app.server_count', { count: state.serverList.length });
   updateActiveCount(state);
 
   const q = state.search.toLowerCase();
@@ -115,9 +117,9 @@ function renderSidebar() {
   const hasRemote = state.hosts.size > 0;
   const frag = document.createDocumentFragment();
 
-  if (hasRemote) frag.appendChild(groupHeader('Locale'));
+  if (hasRemote) frag.appendChild(groupHeader(escapeHtml(t('msg2.app.group_local'))));
   if (local.length === 0) {
-    frag.appendChild(groupNote(state.serverList.some((s) => !s.remote) ? 'Nessun server corrisponde' : 'Nessun server locale'));
+    frag.appendChild(groupNote(state.serverList.some((s) => !s.remote) ? t('msg2.app.no_server_match') : t('msg2.app.no_local_server')));
   }
   for (const s of local) frag.appendChild(serverItem(s, 'local'));
 
@@ -125,13 +127,13 @@ function renderSidebar() {
     const dot = `<span class="status-dot ${h.connected ? 'online' : 'offline'}"></span>`;
     frag.appendChild(
       groupHeader(
-        `${dot}Remoto · ${escapeHtml(h.meta.name)}`,
-        `<button class="text-[15px] leading-none text-text-faint hover:text-danger" data-remove-host="${escapeHtml(hostId)}" title="Rimuovi host">&times;</button>`,
+        `${dot}${escapeHtml(t('msg2.app.group_remote', { name: h.meta.name }))}`,
+        `<button class="text-[15px] leading-none text-text-faint hover:text-danger" data-remove-host="${escapeHtml(hostId)}" title="${escapeHtml(t('msg2.app.remove_host_title'))}">&times;</button>`,
       ),
     );
     const servers = sortByOrder(state.serverList.filter((s) => s.remote?.hostId === hostId && match(s)));
-    if (!h.connected) frag.appendChild(groupNote(h.error || 'connessione in corso…'));
-    else if (servers.length === 0) frag.appendChild(groupNote('Nessun server sull\'host'));
+    if (!h.connected) frag.appendChild(groupNote(h.error || t('msg2.app.connecting')));
+    else if (servers.length === 0) frag.appendChild(groupNote(t('msg2.app.no_server_on_host')));
     for (const s of servers) frag.appendChild(serverItem(s, `host:${hostId}`));
   }
 
@@ -265,7 +267,7 @@ async function removeRemoteHost(hostId) {
   try {
     await invoke('remove_remote_host', { id: hostId });
   } catch (err) {
-    alert('Errore: ' + err);
+    alert(t('msg2.app.error_generic', { error: err }));
     return;
   }
   h.client.close();
@@ -276,15 +278,28 @@ async function removeRemoteHost(hostId) {
   renderSidebar();
 }
 
-async function loadSettingsState() {
+async function loadSettings() {
   try {
-    const settings = await invoke('get_settings');
-    state.order = settings.server_order || [];
-    for (const meta of settings.remote_hosts || []) {
-      if (!state.hosts.has(meta.id)) attachHost(meta);
-    }
+    return await invoke('get_settings');
   } catch (err) {
     console.warn('get_settings', err);
+    return null;
+  }
+}
+
+function applySettingsState(settings) {
+  if (!settings) return;
+  state.order = settings.server_order || [];
+  for (const meta of settings.remote_hosts || []) {
+    if (!state.hosts.has(meta.id)) attachHost(meta);
+  }
+}
+
+/** Ridisegna le viste costruite in JS dopo un cambio lingua. */
+function redrawForLanguage() {
+  renderSidebar();
+  if (state.activeServerId && state.serverList.some((s) => s.id === state.activeServerId)) {
+    selectServer(state.activeServerId);
   }
 }
 
@@ -301,7 +316,7 @@ async function startServer(id) {
   const btn = document.getElementById('btn-start');
   if (state.activeServerId === id) {
     btn.disabled = true;
-    btn.textContent = 'Avvio...';
+    btn.textContent = t('msg2.app.starting_button');
   }
   try {
     await call('start_server', { id });
@@ -309,7 +324,7 @@ async function startServer(id) {
     if (String(err) === 'EULA_REQUIRED') {
       showEulaModal(id, startServer);
     } else {
-      alert('Errore avvio: ' + err);
+      alert(t('msg2.app.error_start', { error: err }));
     }
   }
   applyStatus(state, id);
@@ -329,7 +344,7 @@ async function handleToggle() {
     try {
       await call('stop_server', { id });
     } catch (err) {
-      alert('Errore stop: ' + err);
+      alert(t('msg2.app.error_stop', { error: err }));
     }
     applyStatus(state, id);
   }
@@ -338,11 +353,11 @@ async function handleToggle() {
 async function handleKill() {
   const id = state.activeServerId;
   if (!id) return;
-  if (!confirm('Terminare forzatamente il processo?\nIl mondo potrebbe non essere salvato correttamente.')) return;
+  if (!confirm(t('msg2.app.kill_confirm'))) return;
   try {
     await call('kill_server', { id });
   } catch (err) {
-    alert('Errore: ' + err);
+    alert(t('msg2.app.error_generic', { error: err }));
   }
 }
 
@@ -352,7 +367,7 @@ async function handleOpenFolder() {
   try {
     await call('open_server_folder', { id, sub: null });
   } catch (err) {
-    alert('Impossibile aprire la cartella: ' + err);
+    alert(t('msg2.app.error_open_folder', { error: err }));
   }
 }
 
@@ -364,7 +379,7 @@ async function handleSaveProps() {
   const { properties, maxRamMb, upnp } = readPropertiesForm();
   const btn = document.getElementById('btn-save-props');
   btn.disabled = true;
-  setPropsNote('Salvataggio...');
+  setPropsNote(t('msg2.app.props_saving'));
 
   try {
     server.properties = await call('save_server_properties', { id, properties });
@@ -382,9 +397,9 @@ async function handleSaveProps() {
     renderPlayers(state, id);
 
     const running = getRuntime(state, id).status !== 'offline';
-    setPropsNote(running ? 'Salvato — le modifiche avranno effetto al riavvio del server' : 'Salvato', 'ok');
+    setPropsNote(running ? t('msg2.app.props_saved_restart') : t('msg2.app.props_saved'), 'ok');
   } catch (err) {
-    setPropsNote('Errore: ' + err, 'err');
+    setPropsNote(t('msg2.app.error_generic', { error: err }), 'err');
   } finally {
     btn.disabled = false;
   }
@@ -424,7 +439,7 @@ async function loadServers() {
       else showEmptyState();
     }
   } catch (e) {
-    serverListEl.innerHTML = `<li class="py-6 text-center note-err">Errore: ${escapeHtml(String(e))}</li>`;
+    serverListEl.innerHTML = `<li class="py-6 text-center note-err">${escapeHtml(t('msg2.app.error_generic', { error: String(e) }))}</li>`;
   } finally {
     loadingEl.classList.add('hidden');
     serverListEl.classList.remove('hidden');
@@ -440,6 +455,11 @@ async function loadServers() {
 // ---------------------------------------------------------------------------
 
 async function initApp() {
+  const settings = await loadSettings();
+  await initI18n(settings?.language || (await invoke('get_language').catch(() => null)));
+  onLanguageChange(redrawForLanguage);
+  setupLanguage(redrawForLanguage);
+
   setupTabs();
   setupModals(state, renderSidebar, updateBannerUI, {
     onServerCreated: async (newId) => {
@@ -488,7 +508,7 @@ async function initApp() {
     const removeHost = e.target.closest('[data-remove-host]');
     if (removeHost) {
       const h = state.hosts.get(removeHost.dataset.removeHost);
-      if (h && confirm(`Rimuovere l'host "${h.meta.name}"?`)) removeRemoteHost(removeHost.dataset.removeHost);
+      if (h && confirm(t('msg2.app.remove_host_confirm', { name: h.meta.name }))) removeRemoteHost(removeHost.dataset.removeHost);
       return;
     }
     const item = e.target.closest('.sidebar-item');
@@ -516,7 +536,7 @@ async function initApp() {
   });
 
   await loadIcons();
-  await loadSettingsState();
+  applySettingsState(settings);
   await loadServers();
   await loadCachedUpdates();
 }

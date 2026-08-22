@@ -4,6 +4,8 @@
 // locale (`invoke`) oppure, se l'id è `remote:<hostId>:<serverId>`, all'host
 // remoto registrato (HTTP/WebSocket, vedi remote.js). La UI non deve saperlo.
 
+import { t } from './i18n.js';
+
 const { invoke } = window.__TAURI__.core;
 
 const remoteHosts = new Map(); // hostId -> RemoteHost
@@ -44,7 +46,7 @@ export async function call(cmd, args = {}) {
 
   const { hostId, serverId } = splitRemoteId(id);
   const host = remoteHosts.get(hostId);
-  if (!host) throw 'Host remoto non collegato';
+  if (!host) throw t('msg2.remote.not_connected');
   return host.call(cmd, { ...args, id: serverId });
 }
 

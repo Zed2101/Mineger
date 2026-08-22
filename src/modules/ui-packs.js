@@ -7,6 +7,7 @@
 import { escapeHtml, formatBytes, formatRelativeDay } from './utils.js';
 import { isRemoteId } from './api.js';
 import { getRuntime } from './ui-status.js';
+import { t } from './i18n.js';
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -22,11 +23,11 @@ export function providerLabel(p) {
   return PROVIDER_LABEL[p] || p;
 }
 
-const KIND_LABEL = { server_pack: 'Server pack', cf_build: 'Build dal client', mrpack: 'Modrinth pack', ftb: 'FTB' };
+const KINDS = ['server_pack', 'cf_build', 'mrpack', 'ftb'];
 
 /** Tipo di installazione di un PackFile ("server_pack" → "Server pack"). */
 export function kindLabel(k) {
-  return KIND_LABEL[k] || k || '';
+  return KINDS.includes(k) ? t(`msg2.packs.kind.${k}`) : k || '';
 }
 
 export function describeFile(f) {
@@ -76,26 +77,26 @@ function renderUpdateBlock(server) {
 
   if (!u) {
     block.classList.add('hidden');
-    el('pack-check-status').textContent = 'Aggiornamenti non ancora controllati';
+    el('pack-check-status').textContent = t('msg2.packs.not_checked');
     return;
   }
   if (u.error) {
     block.classList.add('hidden');
-    el('pack-check-status').textContent = `Controllo fallito: ${u.error}`;
+    el('pack-check-status').textContent = t('msg2.packs.check_failed', { error: u.error });
     return;
   }
   const when = u.checked_at ? formatRelativeDay(u.checked_at * 1000) : '';
   if (u.available && u.latest) {
     block.classList.remove('hidden');
-    el('pack-update-title').textContent = `Disponibile: ${u.latest.version || u.latest.name}`;
+    el('pack-update-title').textContent = t('msg2.packs.available', { version: u.latest.version || u.latest.name });
     el('pack-update-meta').textContent = describeFile(u.latest);
     note.textContent = '';
-    el('pack-check-status').textContent = `Controllato ${when}`;
+    el('pack-check-status').textContent = t('msg2.packs.checked_at', { when });
     el('btn-pack-changelog').classList.toggle('hidden', !u.latest.changelog_url);
     el('btn-pack-changelog').dataset.url = u.latest.changelog_url || '';
   } else {
     block.classList.add('hidden');
-    el('pack-check-status').textContent = `Aggiornato all'ultima versione · controllato ${when}`;
+    el('pack-check-status').textContent = t('msg2.packs.up_to_date', { when });
   }
 }
 
@@ -141,14 +142,14 @@ export function setupPacks(state, hooks = {}) {
     if (!server) return;
     const btn = el('btn-pack-check');
     btn.disabled = true;
-    el('pack-check-status').textContent = 'Controllo in corso…';
+    el('pack-check-status').textContent = t('msg2.packs.checking');
     try {
       const res = await invoke('check_updates', { serverId: server.id });
       for (const u of res) updates.set(u.server_id, u);
       applyUpdatesToSidebar();
       renderUpdateBlock(server);
     } catch (err) {
-      el('pack-check-status').textContent = `Errore: ${err}`;
+      el('pack-check-status').textContent = t('msg2.packs.error_generic', { error: err });
     } finally {
       btn.disabled = false;
     }
@@ -156,11 +157,11 @@ export function setupPacks(state, hooks = {}) {
 
   el('btn-pack-page').addEventListener('click', (e) => {
     const url = e.currentTarget.dataset.url;
-    if (url) invoke('open_url', { url }).catch((err) => alert('Impossibile aprire: ' + err));
+    if (url) invoke('open_url', { url }).catch((err) => alert(t('msg2.packs.open_failed', { error: err })));
   });
   el('btn-pack-changelog').addEventListener('click', (e) => {
     const url = e.currentTarget.dataset.url;
-    if (url) invoke('open_url', { url }).catch((err) => alert('Impossibile aprire: ' + err));
+    if (url) invoke('open_url', { url }).catch((err) => alert(t('msg2.packs.open_failed', { error: err })));
   });
 
   el('btn-pack-update').addEventListener('click', async () => {
@@ -170,12 +171,14 @@ export function setupPacks(state, hooks = {}) {
 
     const rt = getRuntime(state, server.id);
     const running = rt.status !== 'offline';
-    const msg = `Aggiornare "${server.name}" a ${u.latest.version || u.latest.name}?\n\n` +
-      (running ? '• Il server verrà fermato\n' : '') +
-      '• Il mondo viene salvato in un backup e spostato nella nuova versione\n' +
-      '• Impostazioni, whitelist, op e icona vengono mantenuti\n' +
-      '• Le mod aggiunte a mano finiscono in mods-precedenti/\n' +
-      '• La cartella attuale resta come rollback (.old-…)';
+    const bullets = [
+      ...(running ? [t('msg2.packs.update_confirm_stop')] : []),
+      t('msg2.packs.update_confirm_world'),
+      t('msg2.packs.update_confirm_settings'),
+      t('msg2.packs.update_confirm_mods'),
+      t('msg2.packs.update_confirm_rollback'),
+    ];
+    const msg = `${t('msg2.packs.update_confirm_title', { name: server.name, version: u.latest.version || u.latest.name })}\n\n${bullets.join('\n')}`;
     if (!confirm(msg)) return;
 
     updating = server.id;
@@ -183,20 +186,20 @@ export function setupPacks(state, hooks = {}) {
     el('pack-update-note').className = 'note mt-2';
     try {
       if (running) {
-        setProgress(0, 'Arresto del server…');
+        setProgress(0, t('msg2.packs.stopping_server'));
         await hooks.stopServer?.(server.id);
-        if (!(await waitOffline(state, server.id))) throw 'Il server non si è fermato in tempo';
+        if (!(await waitOffline(state, server.id))) throw t('msg2.packs.stop_timeout');
       }
-      setProgress(0, 'Avvio aggiornamento…');
+      setProgress(0, t('msg2.packs.starting_update'));
       const res = await invoke('update_pack_server', { id: server.id });
-      let text = `Aggiornato a ${res.new_version}. Rollback: ${res.rollback_dir}`;
-      if (res.extra_mods?.length) text += ` · mod non incluse nel nuovo pack (in mods-precedenti/): ${res.extra_mods.join(', ')}`;
+      let text = t('msg2.packs.updated_to', { version: res.new_version, dir: res.rollback_dir });
+      if (res.extra_mods?.length) text += t('msg2.packs.extra_mods', { list: res.extra_mods.join(', ') });
       el('pack-update-note').textContent = text;
       el('pack-update-note').className = 'note-ok mt-2';
       updates.delete(server.id);
       await hooks.onUpdated?.(server.id);
     } catch (err) {
-      el('pack-update-note').textContent = `Errore: ${err}`;
+      el('pack-update-note').textContent = t('msg2.packs.error_generic', { error: err });
       el('pack-update-note').className = 'note-err mt-2';
     } finally {
       updating = null;

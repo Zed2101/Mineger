@@ -8,6 +8,7 @@ import { escapeHtml, formatGB, formatBytes, formatRelativeDay } from './utils.js
 import { call } from './api.js';
 import { loadIcons, allIcons, iconUrl, rememberIcon, forgetIcon, DEFAULT_ICON } from './icons.js';
 import { kindLabel, providerLabel } from './ui-packs.js';
+import { t, tp, onLanguageChange } from './i18n.js';
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -56,7 +57,8 @@ function flashButton(btn, text) {
 // Elimina server (conferma scrivendo CONFERMA)
 // ---------------------------------------------------------------------------
 
-const DELETE_WORD = 'CONFERMA';
+/** Parola da digitare per confermare: tradotta, deve combaciare con il markup. */
+const deleteWord = () => t('msg.delete.confirm_word');
 
 function setupDelete(state, hooks) {
   const input = document.getElementById('delete-confirm-input');
@@ -66,8 +68,14 @@ function setupDelete(state, hooks) {
   let target = null;
 
   const describe = (server, size) =>
-    [server.version, server.remote ? `remoto · ${server.remote.hostName}` : 'locale', size].filter(Boolean).join(' · ');
-  const canDelete = () => !!target && input.value.trim() === DELETE_WORD && !hooks.isServerActive?.(target.id);
+    [
+      server.version,
+      server.remote ? t('msg.delete.remote', { host: server.remote.hostName }) : t('msg.delete.local'),
+      size,
+    ]
+      .filter(Boolean)
+      .join(' · ');
+  const canDelete = () => !!target && input.value.trim() === deleteWord() && !hooks.isServerActive?.(target.id);
   const close = () => {
     hide('modal-delete');
     target = null;
@@ -80,15 +88,16 @@ function setupDelete(state, hooks) {
     hide('modal-edit');
     input.value = '';
     btn.disabled = true;
-    note.textContent = hooks.isServerActive?.(server.id) ? 'Il server è in esecuzione: fermalo prima di eliminarlo.' : '';
+    note.textContent = hooks.isServerActive?.(server.id) ? t('msg.delete.server_running') : '';
     document.getElementById('delete-icon').src = iconUrl(server.icon || DEFAULT_ICON);
     document.getElementById('delete-name').textContent = server.name;
-    meta.textContent = describe(server, 'calcolo dimensione…');
+    meta.textContent = describe(server, t('msg.delete.computing_size'));
     show('modal-delete');
     input.focus();
     try {
       const u = await call('get_server_disk_usage', { id: server.id });
-      if (target?.id === server.id) meta.textContent = describe(server, `${formatBytes(u.bytes)} · ${u.files} file`);
+      if (target?.id === server.id)
+        meta.textContent = describe(server, tp('msg.delete.size_files', u.files, { size: formatBytes(u.bytes) }));
     } catch {
       if (target?.id === server.id) meta.textContent = describe(server, '');
     }
@@ -108,7 +117,7 @@ function setupDelete(state, hooks) {
     if (!canDelete()) return;
     const server = target;
     btn.disabled = true;
-    btn.textContent = 'Eliminazione…';
+    btn.textContent = t('msg.delete.deleting_button');
     try {
       await call('delete_server', { id: server.id });
       close();
@@ -117,7 +126,7 @@ function setupDelete(state, hooks) {
       note.textContent = String(err);
       btn.disabled = !canDelete();
     } finally {
-      btn.textContent = 'Elimina definitivamente';
+      btn.textContent = t('msg.delete.confirm_button');
     }
   });
 }
@@ -138,7 +147,7 @@ function setupEula() {
   document.getElementById('btn-eula-cancel').addEventListener('click', () => hide('modal-eula'));
   document.getElementById('btn-close-eula').addEventListener('click', () => hide('modal-eula'));
   document.getElementById('btn-eula-open').addEventListener('click', () => {
-    invoke('open_url', { url: EULA_URL }).catch((err) => alert('Impossibile aprire il link: ' + err));
+    invoke('open_url', { url: EULA_URL }).catch((err) => alert(t('msg.eula.open_link_error', { error: err })));
   });
   document.getElementById('btn-eula-accept').addEventListener('click', async () => {
     const id = document.getElementById('modal-eula').dataset.serverId;
@@ -147,7 +156,7 @@ function setupEula() {
     try {
       await call('accept_eula_cmd', { id });
     } catch (err) {
-      alert('Impossibile scrivere eula.txt: ' + err);
+      alert(t('msg.eula.write_error', { error: err }));
       return;
     }
     if (eulaOnAccept) await eulaOnAccept(id);
@@ -176,19 +185,19 @@ function renderIconGrid(selected) {
     .map(
       (i) => `<div class="icon-thumb${i.name === selected ? ' selected' : ''}" data-icon="${escapeHtml(i.name)}" title="${escapeHtml(i.name)}">
         <img src="${escapeHtml(iconUrl(i.name))}" alt="" draggable="false" />
-        ${i.builtin ? '' : `<button type="button" class="icon-del" data-del-icon="${escapeHtml(i.name)}" title="Elimina icona">&times;</button>`}
+        ${i.builtin ? '' : `<button type="button" class="icon-del" data-del-icon="${escapeHtml(i.name)}" title="${escapeHtml(t('msg.edit.delete_icon_title'))}">&times;</button>`}
       </div>`,
     )
     .join('');
 }
 
 async function importIconFromPath(path) {
-  setIconNote('Importazione…');
+  setIconNote(t('msg.edit.importing'));
   try {
     const info = await invoke('import_icon_from_path', { path });
     rememberIcon(info);
     renderIconGrid(info.name);
-    setIconNote(`Aggiunta ${info.name}`, 'ok');
+    setIconNote(t('msg.edit.icon_added', { name: info.name }), 'ok');
   } catch (err) {
     setIconNote(String(err), 'err');
   }
@@ -218,12 +227,12 @@ function setupEdit(state, refreshCallback, updateBannerCallback) {
     const del = e.target.closest('[data-del-icon]');
     if (del) {
       const name = del.dataset.delIcon;
-      if (!confirm(`Eliminare l'icona "${name}"?`)) return;
+      if (!confirm(t('msg.edit.delete_icon_confirm', { name }))) return;
       try {
         await invoke('delete_icon', { name });
         forgetIcon(name);
         renderIconGrid(selectedIcon() === name ? DEFAULT_ICON : selectedIcon());
-        setIconNote(`Eliminata ${name}`, 'ok');
+        setIconNote(t('msg.edit.icon_deleted', { name }), 'ok');
       } catch (err) {
         setIconNote(String(err), 'err');
       }
@@ -239,7 +248,7 @@ function setupEdit(state, refreshCallback, updateBannerCallback) {
       if (!info) return;
       rememberIcon(info);
       renderIconGrid(info.name);
-      setIconNote(`Aggiunta ${info.name}`, 'ok');
+      setIconNote(t('msg.edit.icon_added', { name: info.name }), 'ok');
     } catch (err) {
       setIconNote(String(err), 'err');
     }
@@ -262,7 +271,7 @@ function setupEdit(state, refreshCallback, updateBannerCallback) {
     const name = nameInput.value.trim();
     const icon = selectedIcon();
     if (!name) {
-      alert('Il nome non può essere vuoto');
+      alert(t('msg.edit.name_empty'));
       return;
     }
 
@@ -275,7 +284,7 @@ function setupEdit(state, refreshCallback, updateBannerCallback) {
       updateBannerCallback(server);
       hide('modal-edit');
     } catch (err) {
-      alert('Salvataggio fallito: ' + err);
+      alert(t('msg.edit.save_failed', { error: err }));
     } finally {
       btnConfirm.disabled = false;
     }
@@ -296,20 +305,21 @@ function renderHostStatus(status) {
 
   if (!status.running) {
     if (status.listener_running) {
-      statusEl.textContent = `Controllo remoto disattivato · porta ${status.port} attiva per ${status.webhooks_active} webhook`;
+      statusEl.textContent = tp('msg.settings.host_webhooks_only', status.webhooks_active, { port: status.port });
       statusEl.className = 'note';
     } else {
-      statusEl.textContent = enabled.checked ? 'Host non attivo' : 'Host disattivato';
+      statusEl.textContent = enabled.checked ? t('msg.settings.host_not_running') : t('msg.settings.host_disabled');
       statusEl.className = 'note';
     }
     invites.classList.add('hidden');
     return;
   }
 
-  let text = `In ascolto sulla porta ${status.port}`;
-  if (status.upnp_ok === true) text += ` · UPnP ok${status.public_ip ? ` · IP pubblico ${status.public_ip}` : ''}`;
-  else if (status.upnp_ok === false) text += ' · UPnP non disponibile (solo LAN/VPN, oppure apri la porta sul router)';
-  else text += ' · UPnP in corso…';
+  let text = t('msg.settings.host_listening', { port: status.port });
+  if (status.upnp_ok === true)
+    text += ` · ${t('msg.settings.upnp_ok')}${status.public_ip ? ` · ${t('msg.settings.public_ip', { ip: status.public_ip })}` : ''}`;
+  else if (status.upnp_ok === false) text += ` · ${t('msg.settings.upnp_unavailable')}`;
+  else text += ` · ${t('msg.settings.upnp_pending')}`;
   statusEl.textContent = text;
   statusEl.className = status.upnp_ok === false ? 'note-warn' : 'note-ok';
 
@@ -319,27 +329,37 @@ function renderHostStatus(status) {
   document.getElementById('host-invite-public-row').classList.toggle('hidden', !status.invite_public);
 }
 
+/** Aggiorna la pill accanto al titolo "Controllo remoto". */
+function renderHostPill(active) {
+  const pill = document.getElementById('host-state-pill');
+  if (!pill) return;
+  pill.className = active ? 'pill-online' : 'pill-offline';
+  pill.textContent = t(active ? 'ui.settings.remote_on' : 'ui.settings.remote_off');
+}
+
 async function refreshHostStatus() {
   try {
-    renderHostStatus(await invoke('get_host_status'));
+    const status = await invoke('get_host_status');
+    renderHostStatus(status);
+    renderHostPill(!!status?.enabled);
   } catch (err) {
-    document.getElementById('host-status').textContent = `Errore: ${err}`;
+    document.getElementById('host-status').textContent = t('msg.settings.error', { error: err });
   }
 }
 
 function renderRemoteHosts(state) {
   const list = document.getElementById('settings-hosts-list');
   if (state.hosts.size === 0) {
-    list.innerHTML = `<li class="note">Nessun host collegato. Usa "+ Aggiungi Server → Connetti Remoto".</li>`;
+    list.innerHTML = `<li class="settings-empty note">${escapeHtml(t('msg.settings.no_hosts'))}</li>`;
     return;
   }
   list.innerHTML = [...state.hosts.values()]
     .map(
-      (h) => `<li class="flex items-center gap-3 rounded-md bg-bg-inset px-3 py-2">
+      (h) => `<li class="java-row">
         <span class="status-dot ${h.connected ? 'online' : 'offline'}"></span>
         <span class="text-[12px] font-semibold">${escapeHtml(h.meta.name)}</span>
         <span class="min-w-0 flex-1 truncate font-mono text-[10px] text-text-faint">${escapeHtml(h.meta.url)}</span>
-        <button class="btn-small" data-remove-host="${escapeHtml(h.meta.id)}">Rimuovi</button>
+        <button class="btn-small" data-remove-host="${escapeHtml(h.meta.id)}">${escapeHtml(t('msg.settings.remove_host_button'))}</button>
       </li>`,
     )
     .join('');
@@ -347,18 +367,21 @@ function renderRemoteHosts(state) {
 
 async function renderSettings(state, refreshJava = false) {
   const javaList = document.getElementById('settings-java-list');
-  javaList.innerHTML = `<li class="note">Scansione in corso…</li>`;
+  javaList.innerHTML = `<li class="note">${escapeHtml(t('msg.settings.scanning'))}</li>`;
 
   try {
     const info = await invoke('get_app_info');
     document.getElementById('settings-version').textContent = `v${info.version}`;
     document.getElementById('settings-servers-dir').textContent = info.servers_dir;
     document.getElementById('settings-config-path').textContent = info.config_path;
+    const used = info.disk_total - info.disk_free;
     document.getElementById('settings-disk').textContent = info.disk_total
-      ? `${formatGB(info.disk_total - info.disk_free)} / ${formatGB(info.disk_total, 0)} GB usati`
-      : 'n/d';
+      ? t('msg.settings.disk_used', { used: formatGB(used), total: formatGB(info.disk_total, 0) })
+      : t('msg.settings.not_available');
+    const fill = document.getElementById('settings-disk-fill');
+    if (fill) fill.style.width = info.disk_total ? `${Math.min(100, Math.round((used / info.disk_total) * 100))}%` : '0%';
   } catch (err) {
-    document.getElementById('settings-servers-dir').textContent = `Errore: ${err}`;
+    document.getElementById('settings-servers-dir').textContent = t('msg.settings.error', { error: err });
   }
 
   try {
@@ -368,7 +391,7 @@ async function renderSettings(state, refreshJava = false) {
     document.getElementById('host-port').value = settings.host.port;
     document.getElementById('cf-api-key').value = settings.curseforge_api_key || '';
   } catch (err) {
-    document.getElementById('host-status').textContent = `Errore: ${err}`;
+    document.getElementById('host-status').textContent = t('msg.settings.error', { error: err });
   }
   await refreshHostStatus();
   renderRemoteHosts(state);
@@ -376,20 +399,22 @@ async function renderSettings(state, refreshJava = false) {
   try {
     const runtimes = await invoke('get_java_runtimes', { refresh: refreshJava });
     if (runtimes.length === 0) {
-      javaList.innerHTML = `<li class="note-warn">Nessuna Java trovata. Installa Java 21 (es. Adoptium Temurin).</li>`;
+      javaList.innerHTML = `<li class="note-warn">${escapeHtml(t('msg.settings.no_java'))}</li>`;
     } else {
       javaList.innerHTML = runtimes
         .map(
-          (r) => `<li class="flex items-center gap-3 rounded-md bg-bg-inset px-3 py-2">
-            <span class="pill-online">Java ${r.major}</span>
-            <span class="font-mono text-[10px] text-text-muted">${escapeHtml(r.version)}</span>
+          (r) => `<li class="java-row">
+            <span class="java-badge">Java ${r.major}</span>
+            <span class="shrink-0 font-mono text-[11px] font-semibold text-text-main">${escapeHtml(r.version)}</span>
             <span class="min-w-0 flex-1 truncate font-mono text-[10px] text-text-faint" title="${escapeHtml(r.path)}">${escapeHtml(r.path)}</span>
           </li>`,
         )
         .join('');
     }
+    const count = document.getElementById('settings-java-count');
+    if (count) count.textContent = runtimes.length ? tp('ui.settings.java_installs', runtimes.length) : '';
   } catch (err) {
-    javaList.innerHTML = `<li class="note-err">Errore: ${escapeHtml(String(err))}</li>`;
+    javaList.innerHTML = `<li class="note-err">${escapeHtml(t('msg.settings.error', { error: String(err) }))}</li>`;
   }
 }
 
@@ -400,6 +425,12 @@ function setupCurseforgeLink() {
 }
 
 function setupSettings(state, hooks) {
+  // I testi generati in JS (conteggi, elenchi) non hanno data-i18n: al cambio
+  // lingua il pannello aperto va ridisegnato.
+  onLanguageChange(() => {
+    if (isShown('modal-settings')) renderSettings(state, false);
+  });
+
   document.getElementById('btn-settings').addEventListener('click', () => {
     show('modal-settings');
     renderSettings(state, false);
@@ -408,17 +439,17 @@ function setupSettings(state, hooks) {
   document.getElementById('btn-settings-ok').addEventListener('click', () => hide('modal-settings'));
   document.getElementById('btn-settings-rescan').addEventListener('click', () => renderSettings(state, true));
   document.getElementById('btn-open-servers-dir').addEventListener('click', () => {
-    invoke('open_app_folder', { kind: 'servers' }).catch((err) => alert('Impossibile aprire: ' + err));
+    invoke('open_app_folder', { kind: 'servers' }).catch((err) => alert(t('msg.settings.open_failed', { error: err })));
   });
   document.getElementById('btn-open-config-dir').addEventListener('click', () => {
-    invoke('open_app_folder', { kind: 'config' }).catch((err) => alert('Impossibile aprire: ' + err));
+    invoke('open_app_folder', { kind: 'config' }).catch((err) => alert(t('msg.settings.open_failed', { error: err })));
   });
 
   // --- Host remoto ---
   const applyHost = async () => {
     const btn = document.getElementById('btn-host-apply');
     btn.disabled = true;
-    document.getElementById('host-status').textContent = 'Applico…';
+    document.getElementById('host-status').textContent = t('msg.settings.applying');
     try {
       const status = await invoke('set_host_config', {
         enabled: document.getElementById('host-enabled').checked,
@@ -428,7 +459,7 @@ function setupSettings(state, hooks) {
       renderHostStatus(status);
       if (status.listener_running) setTimeout(refreshHostStatus, 7000); // esito UPnP
     } catch (err) {
-      document.getElementById('host-status').textContent = `Errore: ${err}`;
+      document.getElementById('host-status').textContent = t('msg.settings.error', { error: err });
       document.getElementById('host-status').className = 'note-err';
       document.getElementById('host-enabled').checked = false;
     } finally {
@@ -439,11 +470,11 @@ function setupSettings(state, hooks) {
   document.getElementById('host-enabled').addEventListener('change', applyHost);
 
   document.getElementById('btn-host-regenerate').addEventListener('click', async () => {
-    if (!confirm('Generare un nuovo token?\nI link d\'invito già condivisi smetteranno di funzionare.')) return;
+    if (!confirm(t('msg.settings.regenerate_token_confirm'))) return;
     try {
       renderHostStatus(await invoke('regenerate_host_token'));
     } catch (err) {
-      alert('Errore: ' + err);
+      alert(t('msg.settings.error', { error: err }));
     }
   });
 
@@ -451,7 +482,7 @@ function setupSettings(state, hooks) {
     const btn = e.target.closest('[data-copy]');
     if (!btn) return;
     const ok = await copyText(document.getElementById(btn.dataset.copy).value);
-    flashButton(btn, ok ? 'Copiato!' : 'Errore');
+    flashButton(btn, ok ? t('msg.settings.copied') : t('msg.settings.copy_failed'));
   });
 
   // --- Chiave CurseForge ---
@@ -459,9 +490,9 @@ function setupSettings(state, hooks) {
     try {
       await invoke('set_curseforge_key', { key: document.getElementById('cf-api-key').value });
       refreshCurseforgeWarning();
-      flashButton(e.currentTarget, 'Salvata');
+      flashButton(e.currentTarget, t('msg.settings.key_saved'));
     } catch (err) {
-      alert('Errore: ' + err);
+      alert(t('msg.settings.error', { error: err }));
     }
   });
 
@@ -471,7 +502,7 @@ function setupSettings(state, hooks) {
     if (!btn) return;
     const hostId = btn.dataset.removeHost;
     const h = state.hosts.get(hostId);
-    if (!h || !confirm(`Rimuovere l'host "${h.meta.name}"?`)) return;
+    if (!h || !confirm(t('msg.settings.remove_host_confirm', { name: h.meta.name }))) return;
     await hooks.onRemoveHost?.(hostId);
     renderRemoteHosts(state);
   });
@@ -495,13 +526,18 @@ const createState = {
   reqId: 0,
 };
 
-const HINTS = {
-  vanilla: 'Il server.jar ufficiale viene scaricato da Mojang e verificato (SHA1). La EULA verrà chiesta al primo avvio.',
-  paper: 'Paper è il server ottimizzato compatibile con i plugin Bukkit/Spigot: i plugin si installano dal tab Mods e finiscono in plugins/.',
-  forge: 'Forge viene installato con l\'installer ufficiale (scarica le librerie: può richiedere qualche minuto). Le mod si installano dal tab Mods.',
-  neoforge: 'NeoForge viene installato con l\'installer ufficiale (scarica le librerie: può richiedere qualche minuto). Le mod si installano dal tab Mods.',
-  fabric: 'Fabric usa il server launcher ufficiale. Ricordati di aggiungere la Fabric API se le tue mod la richiedono.',
+const HINT_KEYS = {
+  vanilla: 'msg.wizard.hint_vanilla',
+  paper: 'msg.wizard.hint_paper',
+  forge: 'msg.wizard.hint_forge',
+  neoforge: 'msg.wizard.hint_neoforge',
+  fabric: 'msg.wizard.hint_fabric',
 };
+
+/** Nota descrittiva del tipo di server scelto (vuota per i tipi senza nota). */
+function hintFor(kind) {
+  return HINT_KEYS[kind] ? t(HINT_KEYS[kind]) : '';
+}
 
 /** Tipo effettivo da mandare al backend: "modded" diventa il loader scelto. */
 function effectiveKind() {
@@ -516,7 +552,7 @@ function pickRow(value, label, { selected, tag = '', meta = '' } = {}) {
   return `<button type="button" class="pick-row${selected ? ' selected' : ''}" data-value="${escapeHtml(value)}" role="radio" aria-checked="${selected}">
     <span class="pick-radio"></span>
     <span class="pick-name">${escapeHtml(label)}</span>
-    ${tag ? `<span class="tag-pill ${escapeHtml(tag)}">${escapeHtml(tag === 'recommended' ? 'consigliata' : tag)}</span>` : ''}
+    ${tag ? `<span class="tag-pill ${escapeHtml(tag)}">${escapeHtml(tag === 'recommended' ? t('msg.wizard.recommended') : tag)}</span>` : ''}
     ${meta ? `<span class="pick-meta">${escapeHtml(meta)}</span>` : ''}
   </button>`;
 }
@@ -527,8 +563,8 @@ function renderMcList() {
   const box = createEl('mc-list');
   box.innerHTML = list.length
     ? list.map((v, i) => pickRow(v, v, { selected: v === createState.mc, tag: i === 0 && !q ? 'latest' : '' })).join('')
-    : '<div class="pick-empty note">Nessuna versione trovata</div>';
-  createEl('mc-count').textContent = createState.mcVersions.length ? `${list.length} versioni` : '';
+    : `<div class="pick-empty note">${escapeHtml(t('msg.wizard.no_versions_found'))}</div>`;
+  createEl('mc-count').textContent = createState.mcVersions.length ? tp('msg.wizard.versions_count', list.length) : '';
   const sel = box.querySelector('.pick-row.selected');
   if (sel) sel.scrollIntoView({ block: 'nearest' });
 }
@@ -537,14 +573,14 @@ function renderLoaderList() {
   const kind = effectiveKind();
   const isVanilla = kind === 'vanilla';
   createEl('loader-col').classList.toggle('hidden', isVanilla);
-  createEl('loader-label').textContent = kind === 'paper' ? 'Build Paper' : 'Versione loader';
+  createEl('loader-label').textContent = kind === 'paper' ? t('msg.wizard.paper_build_label') : t('msg.wizard.loader_version_label');
   if (isVanilla) return;
 
   const box = createEl('lv-list');
   box.innerHTML = createState.loaderVersions.length
     ? createState.loaderVersions
         .map((v) =>
-          pickRow(v.version, kind === 'paper' ? `build ${v.version}` : v.version, {
+          pickRow(v.version, kind === 'paper' ? t('msg.wizard.build_label', { version: v.version }) : v.version, {
             selected: v.version === createState.loaderVersion,
             tag: v.recommended ? 'recommended' : v.tag === 'stable' ? '' : v.tag,
             meta: v.date ? formatRelativeDay(Date.parse(v.date)) : '',
@@ -552,7 +588,9 @@ function renderLoaderList() {
         )
         .join('')
     : '<div class="pick-empty note">—</div>';
-  createEl('lv-count').textContent = createState.loaderVersions.length ? `${createState.loaderVersions.length} build` : '';
+  createEl('lv-count').textContent = createState.loaderVersions.length
+    ? tp('msg.wizard.builds_count', createState.loaderVersions.length)
+    : '';
   const sel = box.querySelector('.pick-row.selected');
   if (sel) sel.scrollIntoView({ block: 'nearest' });
 }
@@ -568,7 +606,7 @@ async function loadMcVersions() {
   const req = ++createState.reqId;
   createState.mcVersions = [];
   createState.mc = null;
-  createEl('mc-list').innerHTML = '<div class="pick-empty note">Caricamento…</div>';
+  createEl('mc-list').innerHTML = `<div class="pick-empty note">${escapeHtml(t('msg.wizard.loading'))}</div>`;
   try {
     const list = await invoke('get_mc_versions', { kind });
     if (req !== createState.reqId) return;
@@ -578,7 +616,7 @@ async function loadMcVersions() {
     await loadLoaderVersions();
   } catch (err) {
     if (req !== createState.reqId) return;
-    createEl('mc-list').innerHTML = '<div class="pick-empty note-err">Lista non disponibile</div>';
+    createEl('mc-list').innerHTML = `<div class="pick-empty note-err">${escapeHtml(t('msg.wizard.list_unavailable'))}</div>`;
     setCreateNote(String(err), 'err');
   }
 }
@@ -592,7 +630,7 @@ async function loadLoaderVersions() {
     return;
   }
   const req = ++createState.reqId;
-  createEl('lv-list').innerHTML = '<div class="pick-empty note">Caricamento…</div>';
+  createEl('lv-list').innerHTML = `<div class="pick-empty note">${escapeHtml(t('msg.wizard.loading'))}</div>`;
   createEl('loader-col').classList.remove('hidden');
   try {
     const list = await invoke('get_loader_versions', { kind, mcVersion: createState.mc });
@@ -600,12 +638,12 @@ async function loadLoaderVersions() {
     createState.loaderVersions = list;
     createState.loaderVersion = (list.find((v) => v.recommended) || list[0])?.version || null;
     renderLoaderList();
-    setCreateNote(HINTS[kind] || '');
+    setCreateNote(hintFor(kind));
   } catch (err) {
     if (req !== createState.reqId) return;
     createState.loaderVersions = [];
     renderLoaderList();
-    createEl('lv-list').innerHTML = '<div class="pick-empty note-err">Nessuna build</div>';
+    createEl('lv-list').innerHTML = `<div class="pick-empty note-err">${escapeHtml(t('msg.wizard.no_builds'))}</div>`;
     setCreateNote(String(err), 'warn');
   }
 }
@@ -623,7 +661,7 @@ function setupCreateFields() {
         c.setAttribute('aria-checked', String(on));
       });
     createEl('create-loader-row').classList.toggle('hidden', createState.kind !== 'modded');
-    setCreateNote(HINTS[effectiveKind()] || '');
+    setCreateNote(hintFor(effectiveKind()));
     loadMcVersions();
   });
 
@@ -638,7 +676,7 @@ function setupCreateFields() {
         p.classList.toggle('selected', on);
         p.setAttribute('aria-checked', String(on));
       });
-    setCreateNote(HINTS[effectiveKind()] || '');
+    setCreateNote(hintFor(effectiveKind()));
     loadMcVersions();
   });
 
@@ -680,7 +718,13 @@ function setupWizard(hooks) {
   let creationType = null;
   let busy = false;
 
-  const LABELS = { create: 'Crea Server', import: 'Scegli zip e importa', remote: 'Connetti', link: 'Installa' };
+  const LABEL_KEYS = {
+    create: 'msg.wizard.btn_create',
+    import: 'msg.wizard.btn_import',
+    remote: 'msg.wizard.btn_remote',
+    link: 'msg.wizard.btn_link',
+  };
+  const confirmLabel = () => (LABEL_KEYS[creationType] ? t(LABEL_KEYS[creationType]) : t('msg.wizard.btn_confirm'));
   const linkState = { resolution: null, fileId: null, showAll: false };
 
   /// Mostra l'avviso sotto il campo link finché manca la chiave CurseForge.
@@ -709,13 +753,13 @@ function setupWizard(hooks) {
     if (f.loader) tags.push(`<span class="perm-pill on">${escapeHtml(f.loader)}</span>`);
     const meta = [];
     if (f.timestamp) meta.push(formatRelativeDay(f.timestamp * 1000));
-    meta.push(f.size ? formatBytes(f.size) : 'download per file');
+    meta.push(f.size ? formatBytes(f.size) : t('msg.wizard.download_per_file'));
     return `<button type="button" class="version-row${selected ? ' selected' : ''}" data-id="${escapeHtml(f.id)}" role="radio" aria-checked="${selected}" tabindex="${selected ? 0 : -1}">
       <span class="version-radio"></span>
       <span class="min-w-0 flex-1">
         <span class="flex items-center gap-2">
           <span class="font-mono text-[13px] font-bold text-text-main">${escapeHtml(f.version || f.name)}</span>
-          ${suggested ? '<span class="pill-online">consigliata</span>' : ''}
+          ${suggested ? `<span class="pill-online">${escapeHtml(t('msg.wizard.recommended'))}</span>` : ''}
           <span class="kind-pill ${escapeHtml(f.kind)}">${escapeHtml(kindLabel(f.kind))}</span>
           <span class="ml-auto flex shrink-0 items-center gap-1">${tags.join('')}</span>
         </span>
@@ -743,9 +787,9 @@ function setupWizard(hooks) {
     const shown = showAll ? files : files.slice(0, VERSIONS_PREVIEW);
     list.innerHTML = files.length
       ? shown.map((f) => versionRow(f, f.id === linkState.fileId, f.id === res.suggested_file_id)).join('')
-      : '<div class="note px-1 py-2">Nessuna versione installabile</div>';
+      : `<div class="note px-1 py-2">${escapeHtml(t('msg.wizard.no_installable_versions'))}</div>`;
     more.classList.toggle('hidden', showAll);
-    more.textContent = `Mostra tutte le ${files.length} versioni`;
+    more.textContent = t('msg.wizard.show_all_versions', { count: files.length });
     linkEl('link-version-count').textContent = countLabel(files);
   }
 
@@ -778,19 +822,21 @@ function setupWizard(hooks) {
     const btn = document.getElementById('btn-link-search');
     resetLink();
     if (!url) {
-      note.textContent = 'Incolla il link del modpack';
+      note.textContent = t('msg.wizard.paste_pack_link');
       return;
     }
     btn.disabled = true;
     btnConfirm.disabled = true;
-    note.textContent = 'Cerco il modpack…';
+    note.textContent = t('msg.wizard.searching_pack');
     try {
       const res = await invoke('resolve_pack_link', { url });
       linkState.resolution = res;
       document.getElementById('link-pack-icon').src = res.pack.icon_url || './assets/mc-img.jpg';
       document.getElementById('link-pack-name').textContent = res.pack.name;
       document.getElementById('link-pack-provider').textContent = providerLabel(res.pack.provider);
-      document.getElementById('link-pack-author').textContent = res.pack.author ? `di ${res.pack.author}` : '';
+      document.getElementById('link-pack-author').textContent = res.pack.author
+        ? t('msg.wizard.by_author', { author: res.pack.author })
+        : '';
       document.getElementById('link-pack-summary').textContent = res.pack.summary || '';
 
       linkState.fileId = res.suggested_file_id || res.files[0]?.id || null;
@@ -803,7 +849,9 @@ function setupWizard(hooks) {
       if (!nameInput.value.trim()) nameInput.value = res.pack.name;
       document.getElementById('link-result').classList.remove('hidden');
       btnConfirm.disabled = !(linkState.fileId && res.pack.distribution_allowed);
-      note.textContent = res.files.length ? `${res.files.length} versioni trovate` : 'Nessuna versione installabile';
+      note.textContent = res.files.length
+        ? tp('msg.wizard.versions_found', res.files.length)
+        : t('msg.wizard.no_installable_versions');
     } catch (err) {
       note.textContent = String(err);
       note.className = 'note-err mt-1.5 block min-h-[14px]';
@@ -815,17 +863,17 @@ function setupWizard(hooks) {
   async function installFromLink() {
     const res = linkState.resolution;
     if (!res || !linkState.fileId) {
-      setError('Cerca prima il modpack e scegli una versione');
+      setError(t('msg.wizard.pick_pack_first'));
       return;
     }
     const name = nameInput.value.trim();
     if (!name) {
-      setError('Inserisci un nome per il server');
+      setError(t('msg.wizard.name_required'));
       nameInput.focus();
       return;
     }
     setBusy(true);
-    setProgress(true, 0, 'Preparazione…');
+    setProgress(true, 0, t('msg.wizard.preparing'));
     try {
       const newId = await invoke('install_pack', { name, provider: res.pack.provider, projectId: res.pack.project_id, fileId: linkState.fileId });
       hide('modal-new');
@@ -863,7 +911,7 @@ function setupWizard(hooks) {
     renderVersions();
   });
 
-  const setError = (t) => (errorEl.textContent = t || '');
+  const setError = (text) => (errorEl.textContent = text || '');
   const setProgress = (visible, percent = 0, text = '') => {
     progressBox.classList.toggle('hidden', !visible);
     progressFill.style.width = `${Math.max(0, Math.min(100, percent))}%`;
@@ -872,7 +920,7 @@ function setupWizard(hooks) {
   const setBusy = (v) => {
     busy = v;
     [btnConfirm, btnBack, btnCancel, btnClose, nameInput].forEach((b) => (b.disabled = v));
-    btnConfirm.textContent = v ? 'In corso...' : LABELS[creationType] ?? 'Conferma';
+    btnConfirm.textContent = v ? t('msg.wizard.in_progress') : confirmLabel();
     if (!v && creationType === 'link') btnConfirm.disabled = !(linkState.fileId && linkState.resolution?.pack.distribution_allowed);
   };
   const showSelection = () => {
@@ -905,11 +953,11 @@ function setupWizard(hooks) {
       stepForm.classList.remove('hidden');
       btnBack.classList.remove('hidden');
       btnConfirm.classList.remove('hidden');
-      btnConfirm.textContent = LABELS[creationType];
+      btnConfirm.textContent = confirmLabel();
       btnConfirm.disabled = creationType === 'link' && !(linkState.fileId && linkState.resolution?.pack.distribution_allowed);
       nameField.classList.toggle('hidden', creationType === 'remote');
-      for (const t of ['create', 'import', 'remote', 'link']) {
-        document.getElementById(`fields-${t}`).classList.toggle('hidden', creationType !== t);
+      for (const type of ['create', 'import', 'remote', 'link']) {
+        document.getElementById(`fields-${type}`).classList.toggle('hidden', creationType !== type);
       }
       if (creationType === 'create' && !createState.mcVersions.length) loadMcVersions();
       if (creationType === 'link') refreshCurseforgeWarning();
@@ -936,11 +984,11 @@ function setupWizard(hooks) {
       const input = document.getElementById('remote-link').value.trim();
       const token = document.getElementById('remote-token').value.trim() || null;
       if (!input) {
-        setError('Inserisci il link d\'invito o l\'indirizzo dell\'host');
+        setError(t('msg.wizard.remote_input_required'));
         return;
       }
       setBusy(true);
-      setProgress(true, 50, 'Verifica dell\'host in corso…');
+      setProgress(true, 50, t('msg.wizard.checking_host'));
       try {
         const host = await invoke('add_remote_host', { input, token });
         hide('modal-new');
@@ -957,7 +1005,7 @@ function setupWizard(hooks) {
 
     const name = nameInput.value.trim();
     if (!name) {
-      setError('Inserisci un nome per il server');
+      setError(t('msg.wizard.name_required'));
       nameInput.focus();
       return;
     }
@@ -968,14 +1016,14 @@ function setupWizard(hooks) {
       if (creationType === 'create') {
         const kind = effectiveKind();
         if (!createState.mc) {
-          setError('Scegli una versione di Minecraft');
+          setError(t('msg.wizard.pick_mc_version'));
           return;
         }
         if (kind !== 'vanilla' && !createState.loaderVersion) {
-          setError(kind === 'paper' ? 'Scegli una build di Paper' : 'Scegli una versione del loader');
+          setError(kind === 'paper' ? t('msg.wizard.pick_paper_build') : t('msg.wizard.pick_loader_version'));
           return;
         }
-        setProgress(true, 0, 'Preparazione...');
+        setProgress(true, 0, t('msg.wizard.preparing'));
         newId = await invoke('create_server', {
           name,
           kind,
@@ -984,14 +1032,14 @@ function setupWizard(hooks) {
         });
       } else if (creationType === 'import') {
         const version = document.getElementById('import-version').value.trim() || null;
-        setProgress(true, 0, 'Seleziona il file zip...');
+        setProgress(true, 0, t('msg.wizard.select_zip'));
         newId = await invoke('import_server_zip', { name, version });
         if (newId === null) {
           setProgress(false);
           return;
         }
       } else {
-        setError('Modalità non disponibile');
+        setError(t('msg.wizard.mode_unavailable'));
         return;
       }
       hide('modal-new');

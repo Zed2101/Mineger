@@ -14,7 +14,7 @@ use tauri::Manager;
 /// Cartella che contiene una sottocartella per ogni server. Viene creata se manca.
 pub fn servers_dir(app: &AppHandle) -> Result<PathBuf, String> {
     let dir = servers_dir_uncreated(app)?;
-    fs::create_dir_all(&dir).map_err(|e| format!("Impossibile creare {}: {}", dir.display(), e))?;
+    fs::create_dir_all(&dir).map_err(|e| crate::tr!("errors.file.create_failed", "path" => dir.display(), "error" => e))?;
     Ok(dir)
 }
 
@@ -40,7 +40,7 @@ pub fn config_path(_app: &AppHandle) -> Result<PathBuf, String> {
 /// debug: `<repo>/icons` (gitignored) · release: `app_data_dir/icons`
 pub fn icons_dir(app: &AppHandle) -> Result<PathBuf, String> {
     let dir = icons_dir_uncreated(app)?;
-    fs::create_dir_all(&dir).map_err(|e| format!("Impossibile creare {}: {}", dir.display(), e))?;
+    fs::create_dir_all(&dir).map_err(|e| crate::tr!("errors.file.create_failed", "path" => dir.display(), "error" => e))?;
     Ok(dir)
 }
 
@@ -77,6 +77,6 @@ pub fn settings_path(app: &AppHandle) -> Result<PathBuf, String> {
 #[cfg(not(debug_assertions))]
 pub fn config_path(app: &AppHandle) -> Result<PathBuf, String> {
     let dir = app.path().app_config_dir().map_err(|e| format!("app_config_dir: {}", e))?;
-    fs::create_dir_all(&dir).map_err(|e| format!("Impossibile creare {}: {}", dir.display(), e))?;
+    fs::create_dir_all(&dir).map_err(|e| crate::tr!("errors.file.create_failed", "path" => dir.display(), "error" => e))?;
     Ok(dir.join("config.json"))
 }

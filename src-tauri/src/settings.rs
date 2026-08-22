@@ -9,6 +9,7 @@
 // Link d'invito: `mineger://<host>:<porta>/#<token>`
 
 use crate::paths;
+use crate::tr;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use tauri::AppHandle;
@@ -111,9 +112,13 @@ pub struct Settings {
     pub webhooks: Vec<Webhook>,
     #[serde(default)]
     pub server_order: Vec<String>,
-    /// Chiave API CurseForge (vuota = quella inclusa nel build)
+    /// Chiave API CurseForge personale (vuota = CurseForge non disponibile)
     #[serde(default)]
     pub curseforge_api_key: String,
+    /// Lingua dell'interfaccia e dei messaggi ("it", "en", …).
+    /// Vuota = segui la lingua del sistema operativo.
+    #[serde(default)]
+    pub language: String,
 }
 
 impl Settings {
@@ -168,7 +173,7 @@ pub fn load(app: &AppHandle) -> Settings {
 pub fn save(app: &AppHandle, settings: &Settings) -> Result<(), String> {
     let path = paths::settings_path(app)?;
     let json = serde_json::to_string_pretty(settings).map_err(|e| e.to_string())?;
-    fs::write(&path, json).map_err(|e| format!("Impossibile scrivere {}: {}", path.display(), e))
+    fs::write(&path, json).map_err(|e| tr!("errors.file.write_failed", "path" => path.display(), "error" => e))
 }
 
 pub fn invite_link(host: &str, port: u16, token: &str) -> String {
@@ -183,7 +188,7 @@ pub fn invite_link(host: &str, port: u16, token: &str) -> String {
 pub fn parse_invite(input: &str, separate_token: Option<&str>) -> Result<(String, String), String> {
     let raw = input.trim();
     if raw.is_empty() {
-        return Err("Inserisci il link d'invito o l'indirizzo dell'host".to_string());
+        return Err(tr!("errors.host.missing_invite"));
     }
 
     let (addr_part, link_token) = match raw.split_once('#') {
@@ -202,21 +207,21 @@ pub fn parse_invite(input: &str, separate_token: Option<&str>) -> Result<(String
     let (host, port) = match addr.rsplit_once(':') {
         // attenzione agli IPv6 senza porta: se contiene ']' dopo i due punti non è una porta
         Some((h, p)) if !p.contains(']') && !p.is_empty() => {
-            let port: u16 = p.parse().map_err(|_| format!("Porta non valida: {}", p))?;
+            let port: u16 = p.parse().map_err(|_| tr!("errors.host.invalid_port", "port" => p))?;
             (h.to_string(), port)
         }
         _ => (addr.clone(), DEFAULT_PORT),
     };
 
     if host.is_empty() {
-        return Err("Indirizzo host mancante".to_string());
+        return Err(tr!("errors.host.missing_address"));
     }
 
     let token = separate_token
         .map(str::trim)
         .filter(|t| !t.is_empty())
         .or(link_token.filter(|t| !t.is_empty()))
-        .ok_or("Token mancante: usa il link d'invito completo oppure inserisci il token")?
+        .ok_or_else(|| tr!("errors.host.missing_token"))?
         .to_string();
 
     Ok((format!("http://{}:{}", host, port), token))

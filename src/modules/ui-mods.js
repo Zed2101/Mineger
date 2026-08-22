@@ -8,6 +8,7 @@
 import { formatBytes, escapeHtml } from './utils.js';
 import { call, isRemoteId } from './api.js';
 import { openModBrowser } from './ui-modbrowser.js';
+import { t, tp } from './i18n.js';
 
 const TRASH_ICON = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
 
@@ -43,9 +44,9 @@ function renderToolbar() {
   const off = currentMods.length - on;
   const total = currentMods.reduce((s, m) => s + (m.size || 0), 0);
 
-  const label = contentWord() === 'plugin' ? 'Plugin installati' : 'Mod installate';
+  const label = contentWord() === 'plugin' ? t('msg.mods.installed_plugins') : t('msg.mods.installed_mods');
   document.getElementById('mods-title').textContent = `${label} (${currentMods.length})`;
-  document.getElementById('mods-total').textContent = `${formatBytes(total)} totali`;
+  document.getElementById('mods-total').textContent = t('msg.mods.total_size', { size: formatBytes(total) });
   document.getElementById('mods-on-count').textContent = on;
   document.getElementById('mods-off-count').textContent = off;
   document.getElementById('tab-mods-count').textContent = currentMods.length;
@@ -58,9 +59,10 @@ const SOURCE_LABEL = { modrinth: 'Modrinth', curseforge: 'CurseForge' };
 /** Badge della fonte: Modrinth / CurseForge / Manuale (jar copiato a mano). */
 function sourceBadge(mod) {
   const p = mod.source?.provider;
-  if (!p) return `<span class="src-badge manual" title="Aggiunta a mano: non aggiornabile dall'app">manuale</span>`;
+  if (!p)
+    return `<span class="src-badge manual" title="${escapeHtml(t('msg.mods.source_manual_title'))}">${escapeHtml(t('msg.mods.source_manual'))}</span>`;
   const label = SOURCE_LABEL[p] || p;
-  return `<span class="src-badge ${escapeHtml(p)}" title="Installata da ${escapeHtml(label)}">${escapeHtml(label)}</span>`;
+  return `<span class="src-badge ${escapeHtml(p)}" title="${escapeHtml(t('msg.mods.source_installed_from', { source: label }))}">${escapeHtml(label)}</span>`;
 }
 
 function renderGrid() {
@@ -69,7 +71,12 @@ function renderGrid() {
   const mods = visibleMods();
 
   if (mods.length === 0) {
-    const msg = currentMods.length === 0 ? `Nessun${contentWord() === 'plugin' ? ' plugin installato' : 'a mod installata'}` : 'Nessun risultato per i filtri';
+    const msg =
+      currentMods.length === 0
+        ? contentWord() === 'plugin'
+          ? t('msg.mods.empty_plugins')
+          : t('msg.mods.empty_mods')
+        : t('msg.mods.no_filter_results');
     list.innerHTML = `<li class="col-span-2 py-10 text-center note">${msg}</li>`;
     return;
   }
@@ -88,16 +95,20 @@ function renderGrid() {
         <div class="mt-1 flex items-center gap-1.5">
           ${sourceBadge(mod)}
           ${version ? `<span class="font-mono text-[10px] text-text-muted">${version}</span>` : ''}
-          <span class="font-mono text-[10px] text-text-faint">${formatBytes(mod.size)}${enabled ? '' : ' · disattivata'}</span>
+          <span class="font-mono text-[10px] text-text-faint">${formatBytes(mod.size)}${enabled ? '' : ` · ${escapeHtml(t('msg.mods.disabled_tag'))}`}</span>
         </div>
       </div>
       <div class="flex shrink-0 items-center gap-3">
-        ${up?.available ? `<button class="btn-update-mod" data-update="${safeName}" title="Aggiorna a ${escapeHtml(up.latest_version)}">aggiorna → ${escapeHtml(up.latest_version)}</button>` : ''}
-        <label class="toggle" title="${enabled ? 'Disattiva' : 'Attiva'}">
+        ${
+          up?.available
+            ? `<button class="btn-update-mod" data-update="${safeName}" title="${escapeHtml(t('msg.mods.update_to_title', { version: up.latest_version }))}">${escapeHtml(t('msg.mods.update_button', { version: up.latest_version }))}</button>`
+            : ''
+        }
+        <label class="toggle" title="${escapeHtml(enabled ? t('msg.mods.toggle_disable') : t('msg.mods.toggle_enable'))}">
           <input type="checkbox" class="mod-toggle-input" data-name="${safeName}" ${enabled ? 'checked' : ''}>
           <span class="toggle-track"></span>
         </label>
-        <button class="btn-delete-mod text-text-faint transition-colors hover:text-danger" title="Elimina" data-name="${safeName}">${TRASH_ICON}</button>
+        <button class="btn-delete-mod text-text-faint transition-colors hover:text-danger" title="${escapeHtml(t('msg.mods.delete_title'))}" data-name="${safeName}">${TRASH_ICON}</button>
       </div>`;
     frag.appendChild(li);
   }
@@ -115,7 +126,7 @@ export function renderModsList(mods, serverId = null, server = null) {
   document.getElementById('btn-add-mod').classList.toggle('hidden', !!vanilla);
   document.getElementById('btn-check-mod-updates').classList.toggle('hidden', !!vanilla);
   document.getElementById('btn-open-mods-folder').textContent =
-    contentWord() === 'plugin' ? 'Apri cartella plugins' : 'Apri cartella mods';
+    contentWord() === 'plugin' ? t('msg.mods.open_plugins_folder') : t('msg.mods.open_mods_folder');
   document.getElementById('btn-open-mods-folder').classList.toggle('hidden', !!serverId && isRemoteId(serverId));
 }
 
@@ -137,8 +148,8 @@ export function setupMods(state, isRunning) {
     const server = state.serverList.find((s) => s.id === state.activeServerId);
     if (!server) return;
     btnUpdates.disabled = true;
-    btnUpdates.textContent = 'Controllo…';
-    setNote(`Controllo aggiornamenti su Modrinth e CurseForge…`);
+    btnUpdates.textContent = t('msg.mods.checking_button');
+    setNote(t('msg.mods.checking_updates'));
     try {
       const list = await call('check_mod_updates', { id: server.id });
       updates = new Map(list.map((u) => [u.name, u]));
@@ -146,21 +157,21 @@ export function setupMods(state, isRunning) {
       const n = list.filter((u) => u.available).length;
       const errs = list.filter((u) => u.error).length;
       setNote(
-        (n ? `${n} aggiornament${n === 1 ? 'o disponibile' : 'i disponibili'}` : 'Tutto aggiornato') +
-          (errs ? ` · ${errs} controll${errs === 1 ? 'o fallito' : 'i falliti'}` : '') +
-          (list.length === 0 ? ' (nessuna installata dall\'app: le mod manuali non si aggiornano)' : ''),
+        (n ? tp('msg.mods.updates_available', n) : t('msg.mods.all_up_to_date')) +
+          (errs ? ` · ${tp('msg.mods.checks_failed', errs)}` : '') +
+          (list.length === 0 ? ` ${t('msg.mods.none_from_app')}` : ''),
         n ? 'ok' : '',
       );
     } catch (err) {
       setNote(String(err), 'err');
     } finally {
       btnUpdates.disabled = false;
-      btnUpdates.textContent = 'Aggiornamenti';
+      btnUpdates.textContent = t('msg.mods.updates_button');
     }
   });
   const fileInput = document.getElementById('mods-file-input');
   const activeServer = () => state.serverList.find((s) => s.id === state.activeServerId);
-  const restartHint = (server) => (isRunning(server.id) ? ' — effettivo al riavvio del server' : '');
+  const restartHint = (server) => (isRunning(server.id) ? ` — ${t('msg.mods.restart_hint')}` : '');
 
   function apply(server, mods) {
     server.mods = mods;
@@ -173,8 +184,8 @@ export function setupMods(state, isRunning) {
   function reportAdd(server, res) {
     apply(server, res.mods);
     if (res.added > 0 || res.skipped.length > 0) {
-      let msg = `${res.added} mod aggiunte`;
-      if (res.skipped.length) msg += ` · saltate: ${res.skipped.join(', ')}`;
+      let msg = tp('msg.mods.added_count', res.added);
+      if (res.skipped.length) msg += ` · ${t('msg.mods.skipped', { list: res.skipped.join(', ') })}`;
       setNote(msg + restartHint(server), res.skipped.length ? 'warn' : 'ok');
     }
   }
@@ -204,11 +215,14 @@ export function setupMods(state, isRunning) {
     input.disabled = true;
     try {
       apply(server, await call('toggle_mod', { id: server.id, name, enabled }));
-      setNote(`${name} ${enabled ? 'attivata' : 'disattivata'}${restartHint(server)}`, 'ok');
+      setNote(
+        (enabled ? t('msg.mods.enabled_ok', { name }) : t('msg.mods.disabled_ok', { name })) + restartHint(server),
+        'ok',
+      );
     } catch (err) {
       input.checked = !enabled;
       input.disabled = false;
-      setNote('Errore: ' + err, 'err');
+      setNote(t('msg.mods.error', { error: err }), 'err');
     }
   });
 
@@ -220,13 +234,13 @@ export function setupMods(state, isRunning) {
       if (!server) return;
       const name = upBtn.dataset.update;
       upBtn.disabled = true;
-      upBtn.textContent = 'aggiorno…';
-      setNote(`Aggiornamento di ${name}…`);
+      upBtn.textContent = t('msg.mods.updating_button');
+      setNote(t('msg.mods.updating', { name }));
       try {
         const mods = await call('update_mod', { id: server.id, name });
         updates.delete(name);
         apply(server, mods);
-        setNote(`${name} aggiornata${restartHint(server)}`, 'ok');
+        setNote(t('msg.mods.updated_ok', { name }) + restartHint(server), 'ok');
       } catch (err) {
         setNote(String(err), 'err');
         renderGrid();
@@ -239,15 +253,15 @@ export function setupMods(state, isRunning) {
     if (!server) return;
 
     const name = btn.dataset.name;
-    if (!confirm(`Eliminare definitivamente "${name}"?\nIl file verrà rimosso dalla cartella mods.`)) return;
+    if (!confirm(t('msg.mods.delete_confirm', { name }))) return;
 
     btn.disabled = true;
     try {
       apply(server, await call('delete_mod', { id: server.id, name }));
-      setNote(`${name} eliminata${restartHint(server)}`, 'ok');
+      setNote(t('msg.mods.deleted_ok', { name }) + restartHint(server), 'ok');
     } catch (err) {
       btn.disabled = false;
-      setNote('Errore: ' + err, 'err');
+      setNote(t('msg.mods.error', { error: err }), 'err');
     }
   });
 
@@ -267,7 +281,7 @@ export function setupMods(state, isRunning) {
     try {
       reportAdd(server, await call('add_mods', { id: server.id }));
     } catch (err) {
-      setNote('Errore: ' + err, 'err');
+      setNote(t('msg.mods.error', { error: err }), 'err');
     } finally {
       btnAdd.disabled = false;
     }
@@ -279,11 +293,11 @@ export function setupMods(state, isRunning) {
     if (!server || files.length === 0) return;
 
     btnAdd.disabled = true;
-    setNote(`Upload di ${files.length} file in corso…`);
+    setNote(tp('msg.mods.uploading', files.length));
     try {
       reportAdd(server, await call('add_mods', { id: server.id, files }));
     } catch (err) {
-      setNote('Errore upload: ' + err, 'err');
+      setNote(t('msg.mods.upload_error', { error: err }), 'err');
     } finally {
       btnAdd.disabled = false;
     }
@@ -295,7 +309,7 @@ export function setupMods(state, isRunning) {
     try {
       await call('open_server_folder', { id: server.id, sub: 'mods' });
     } catch (err) {
-      setNote('Impossibile aprire la cartella: ' + err, 'err');
+      setNote(t('msg.mods.open_folder_error', { error: err }), 'err');
     }
   });
 }

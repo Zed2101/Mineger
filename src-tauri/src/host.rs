@@ -30,6 +30,7 @@ use crate::events;
 use crate::process;
 use crate::service;
 use crate::settings::{self, Settings, Webhook};
+use crate::tr;
 use crate::upnp;
 use axum::body::Bytes;
 use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
@@ -175,12 +176,12 @@ pub fn start(app: &AppHandle, settings: &Settings) -> Result<(), String> {
 
     let cfg = &settings.host;
     if cfg.token.len() < 16 {
-        return Err("Token troppo corto".to_string());
+        return Err(tr!("errors.host.token_too_short"));
     }
 
     let addr = SocketAddr::from(([0, 0, 0, 0], cfg.port));
     let std_listener = std::net::TcpListener::bind(addr)
-        .map_err(|e| format!("Porta {} non disponibile: {}", cfg.port, e))?;
+        .map_err(|e| tr!("errors.host.port_unavailable", "port" => cfg.port, "error" => e))?;
     std_listener.set_nonblocking(true).map_err(|e| e.to_string())?;
 
     let state = HostState {
@@ -301,12 +302,18 @@ pub fn status(settings: &Settings) -> HostStatus {
     }
 }
 
-/// Estrae l'IP dopo "IP pubblico " dal messaggio di upnp::map_port.
+/// Estrae l'IP dal messaggio di `upnp::map_port`: il prefisso da cercare si ricava
+/// dal modello tradotto (`console.upnp.public_ip`), così funziona in ogni lingua.
 fn extract_public_ip(msg: &str) -> Option<String> {
-    let idx = msg.find("IP pubblico ")?;
-    let rest = &msg[idx + "IP pubblico ".len()..];
+    let template = tr!("console.upnp.public_ip");
+    let prefix = template.split("{ip}").next().unwrap_or_default();
+    if prefix.is_empty() {
+        return None;
+    }
+    let idx = msg.find(prefix)?;
+    let rest = &msg[idx + prefix.len()..];
     let ip: String = rest.chars().take_while(|c| c.is_ascii_hexdigit() || *c == '.' || *c == ':').collect();
-    (!ip.is_empty() && ip != "non").then_some(ip)
+    ip.parse::<std::net::IpAddr>().ok().map(|_| ip)
 }
 
 // ---------------------------------------------------------------------------
@@ -377,11 +384,11 @@ fn bearer(headers: &HeaderMap) -> Option<&str> {
 
 async fn auth(State(state): State<HostState>, Query(q): Query<TokenQuery>, req: Request, next: Next) -> Response {
     if !state.api_enabled {
-        return (StatusCode::FORBIDDEN, Json(json!({ "error": "Controllo remoto disattivato su questo host" }))).into_response();
+        return (StatusCode::FORBIDDEN, Json(json!({ "error": tr!("errors.host.remote_control_disabled") }))).into_response();
     }
     let provided = bearer(req.headers()).or(q.token.as_deref());
     if provided != Some(state.token.as_str()) {
-        return (StatusCode::UNAUTHORIZED, Json(json!({ "error": "Token non valido" }))).into_response();
+        return (StatusCode::UNAUTHORIZED, Json(json!({ "error": tr!("errors.host.invalid_token") }))).into_response();
     }
     next.run(req).await
 }
@@ -414,7 +421,7 @@ where
 {
     tokio::task::spawn_blocking(f)
         .await
-        .map_err(|e| ApiError(format!("task fallito: {}", e)))?
+        .map_err(|e| ApiError(tr!("errors.host.task_failed", "error" => e)))?
         .map_err(ApiError)
 }
 
@@ -558,9 +565,12 @@ async fn upload_mods(State(state): State<HostState>, Path(id): Path<String>, mut
     let mut skipped = Vec::new();
     let mut last_mods = None;
 
-    while let Some(field) = multipart.next_field().await.map_err(|e| ApiError(format!("upload: {}", e)))? {
+    while let Some(field) = multipart.next_field().await.map_err(|e| ApiError(tr!("errors.host.upload_failed", "error" => e)))? {
         let Some(fname) = field.file_name().map(|s| s.to_string()) else { continue };
-        let bytes = field.bytes().await.map_err(|e| ApiError(format!("upload {}: {}", fname, e)))?;
+        let bytes = field
+            .bytes()
+            .await
+            .map_err(|e| ApiError(tr!("errors.host.upload_file_failed", "name" => fname, "error" => e)))?;
         let app = state.app.clone();
         let id = id.clone();
         let name = fname.clone();
@@ -569,7 +579,7 @@ async fn upload_mods(State(state): State<HostState>, Path(id): Path<String>, mut
                 added += 1;
                 last_mods = Some(mods);
             }
-            Err(e) => skipped.push(format!("{} ({})", fname, e.0)),
+            Err(e) => skipped.push(tr!("errors.mods.skipped_detail", "name" => fname, "error" => e.0)),
         }
     }
 
@@ -660,7 +670,7 @@ async fn hook(
     body: Bytes,
 ) -> Response {
     let Some(hook) = state.webhooks.iter().find(|h| h.id == hook_id).cloned() else {
-        return hook_error(StatusCode::NOT_FOUND, "Webhook sconosciuto");
+        return hook_error(StatusCode::NOT_FOUND, &tr!("errors.webhook.unknown"));
     };
     let from = addr.ip().to_string();
 
@@ -675,12 +685,12 @@ async fn hook(
     } else if content_type.contains("json") {
         match serde_json::from_slice(&body) {
             Ok(p) => p,
-            Err(e) => return hook_error(StatusCode::BAD_REQUEST, &format!("JSON non valido: {}", e)),
+            Err(e) => return hook_error(StatusCode::BAD_REQUEST, &tr!("errors.host.invalid_json_body", "error" => e)),
         }
     } else if content_type.contains("x-www-form-urlencoded") {
         match serde_urlencoded::from_bytes(&body) {
             Ok(p) => p,
-            Err(e) => return hook_error(StatusCode::BAD_REQUEST, &format!("Form non valido: {}", e)),
+            Err(e) => return hook_error(StatusCode::BAD_REQUEST, &tr!("errors.host.invalid_form_body", "error" => e)),
         }
     } else {
         HookParams::default()
@@ -709,16 +719,16 @@ async fn hook(
     let provided = bearer(&headers).or(req.token.as_deref());
     if provided != Some(hook.token.as_str()) {
         let app = state.app.clone();
-        let rec = CallRecord { action: "auth".into(), message: "Token non valido".into(), ..base_record };
+        let rec = CallRecord { action: "auth".into(), message: tr!("errors.host.invalid_token"), ..base_record };
         tokio::task::spawn_blocking(move || record_call(&app, rec));
-        return hook_error(StatusCode::UNAUTHORIZED, "Token non valido");
+        return hook_error(StatusCode::UNAUTHORIZED, &tr!("errors.host.invalid_token"));
     }
 
     let Some(action) = action else {
-        return hook_error(StatusCode::BAD_REQUEST, "Manca `action` (say | command | start | stop | status)");
+        return hook_error(StatusCode::BAD_REQUEST, &tr!("errors.webhook.missing_action"));
     };
     let Some(server_id) = server_id else {
-        return hook_error(StatusCode::BAD_REQUEST, "Specifica il server (campo `server`)");
+        return hook_error(StatusCode::BAD_REQUEST, &tr!("errors.webhook.missing_server"));
     };
 
     let app = state.app.clone();
@@ -748,8 +758,12 @@ fn run_hook_action(
     req: &HookParams,
 ) -> Result<Value, (StatusCode, String)> {
     let dir = service::server_dir(app, server_id).map_err(|e| (StatusCode::NOT_FOUND, e))?;
-    let denied = |what: &str| Err((StatusCode::FORBIDDEN, format!("Il webhook \"{}\" non ha il permesso `{}`", hook.name, what)));
-    let audit = |text: &str| process::emit_line(app, server_id, &format!("[Mineger] Webhook \"{}\": {}", hook.name, text));
+    let denied = |what: &str| {
+        Err((StatusCode::FORBIDDEN, tr!("errors.webhook.permission_denied", "name" => hook.name, "permission" => what)))
+    };
+    let audit = |text: &str| {
+        process::emit_line(app, server_id, &tr!("console.webhook.line", "name" => hook.name, "message" => text))
+    };
 
     match action {
         "say" => {
@@ -757,14 +771,14 @@ fn run_hook_action(
                 return denied("say");
             }
             let message = req.message.as_deref().map(str::trim).filter(|m| !m.is_empty())
-                .ok_or((StatusCode::BAD_REQUEST, "Manca `message`".to_string()))?;
+                .ok_or((StatusCode::BAD_REQUEST, tr!("errors.webhook.missing_message")))?;
             let text = match req.from.as_deref().map(str::trim).filter(|f| !f.is_empty()) {
                 Some(from) => format!("[{}] {}: {}", hook.name, from, message),
                 None => format!("[{}] {}", hook.name, message),
             };
             let payload = json!({ "text": text, "color": "aqua" });
             process::write_stdin(server_id, &format!("tellraw @a {}", payload)).map_err(|e| (StatusCode::CONFLICT, e))?;
-            audit(&format!("messaggio in chat → {}", text));
+            audit(&tr!("console.webhook.say", "message" => text));
             Ok(json!({ "ok": true, "action": "say", "server": server_id }))
         }
         "command" => {
@@ -772,23 +786,23 @@ fn run_hook_action(
                 return denied("command");
             }
             let cmd = req.command.as_deref().map(|c| c.trim().trim_start_matches('/').trim().to_string()).filter(|c| !c.is_empty())
-                .ok_or((StatusCode::BAD_REQUEST, "Manca `command`".to_string()))?;
+                .ok_or((StatusCode::BAD_REQUEST, tr!("errors.webhook.missing_command")))?;
             let lower = cmd.to_ascii_lowercase();
             if lower == "stop" || lower.starts_with("stop ") {
-                return Err((StatusCode::FORBIDDEN, "Per fermare il server usa action=stop (richiede il permesso power)".to_string()));
+                return Err((StatusCode::FORBIDDEN, tr!("errors.webhook.use_stop_action")));
             }
             if !settings::command_allowed(&hook.allowed_commands, &cmd) {
-                return Err((StatusCode::FORBIDDEN, format!("Comando non consentito da questo webhook: {}", cmd)));
+                return Err((StatusCode::FORBIDDEN, tr!("errors.webhook.command_not_allowed", "command" => cmd)));
             }
             process::write_stdin(server_id, &cmd).map_err(|e| (StatusCode::CONFLICT, e))?;
-            audit(&format!("comando → {}", cmd));
+            audit(&tr!("console.webhook.command", "command" => cmd));
             Ok(json!({ "ok": true, "action": "command", "command": cmd, "server": server_id }))
         }
         "start" => {
             if !hook.perms.power {
                 return denied("power");
             }
-            audit("richiesto avvio");
+            audit(&tr!("console.webhook.start_requested"));
             let msg = service::start_server(app, server_id).map_err(|e| (StatusCode::CONFLICT, e))?;
             Ok(json!({ "ok": true, "action": "start", "result": msg, "server": server_id }))
         }
@@ -796,7 +810,7 @@ fn run_hook_action(
             if !hook.perms.power {
                 return denied("power");
             }
-            audit("richiesto arresto");
+            audit(&tr!("console.webhook.stop_requested"));
             let msg = service::stop_server(app, server_id).map_err(|e| (StatusCode::CONFLICT, e))?;
             Ok(json!({ "ok": true, "action": "stop", "result": msg, "server": server_id }))
         }
@@ -815,7 +829,7 @@ fn run_hook_action(
                 "started_at": process::started_at_of(server_id),
             }))
         }
-        other => Err((StatusCode::BAD_REQUEST, format!("action sconosciuta: {} (usa say | command | start | stop | status)", other))),
+        other => Err((StatusCode::BAD_REQUEST, tr!("errors.webhook.unknown_action", "action" => other))),
     }
 }
 
@@ -823,11 +837,20 @@ fn run_hook_action(
 mod tests {
     use super::*;
 
+    /// L'IP va estratto dal messaggio nella lingua attiva, qualunque essa sia.
     #[test]
     fn extracts_public_ip_from_upnp_message() {
-        assert_eq!(extract_public_ip("porta 25580 (TCP+UDP) aperta su 192.168.1.1:1900 · IP pubblico 93.45.12.1").as_deref(), Some("93.45.12.1"));
-        assert_eq!(extract_public_ip("porta 1 aperta · IP pubblico 100.64.1.2 (sembra CGNAT)").as_deref(), Some("100.64.1.2"));
-        assert_eq!(extract_public_ip("porta 1 aperta · IP pubblico non disponibile"), None);
+        let _lang = crate::i18n::lock_language_for_test();
+        let open = |public: &str| format!("porta 25580 (TCP+UDP) aperta su 192.168.1.1:1900 · {}", public);
+
+        let plain = open(&tr!("console.upnp.public_ip", "ip" => "93.45.12.1"));
+        assert_eq!(extract_public_ip(&plain).as_deref(), Some("93.45.12.1"), "{}", plain);
+
+        let cgnat = open(&tr!("console.upnp.public_ip_cgnat", "ip" => "100.64.1.2"));
+        assert_eq!(extract_public_ip(&cgnat).as_deref(), Some("100.64.1.2"), "{}", cgnat);
+
+        let missing = open(&tr!("console.upnp.public_ip_unavailable"));
+        assert_eq!(extract_public_ip(&missing), None, "{}", missing);
         assert_eq!(extract_public_ip("niente"), None);
     }
 
@@ -871,7 +894,7 @@ async fn put_server_icon(State(state): State<HostState>, Path(id): Path<String>,
     let raw = body.data_base64.split(',').next_back().unwrap_or("").trim().to_string();
     let bytes = base64::engine::general_purpose::STANDARD
         .decode(raw)
-        .map_err(|e| ApiError(format!("Dati immagine non validi: {}", e)))?;
+        .map_err(|e| ApiError(tr!("errors.server_icon.invalid_data", "error" => e)))?;
     let app = state.app.clone();
     Ok(Json(blocking(move || service::set_server_icon_bytes(&app, &id, &bytes)).await?))
 }
@@ -906,7 +929,8 @@ struct InstallBody {
 
 async fn packs_install(State(state): State<HostState>, Json(body): Json<InstallBody>) -> ApiResult<Value> {
     let app = state.app.clone();
-    let prov = crate::providers::Provider::from_str(&body.provider).ok_or_else(|| ApiError("Provider sconosciuto".into()))?;
+    let prov = crate::providers::Provider::from_str(&body.provider)
+        .ok_or_else(|| ApiError(tr!("errors.provider.unknown")))?;
     let id = blocking(move || {
         let mut progress = crate::packs::progress_emitter(&app, "create-progress", "name", body.name.clone());
         crate::packs::install(&app, &body.name, prov, &body.project_id, &body.file_id, &mut progress)
@@ -932,7 +956,7 @@ struct KindBody {
 }
 
 fn kind_of(s: &str) -> Result<crate::loaders::ServerKind, ApiError> {
-    crate::loaders::ServerKind::from_str(s).ok_or_else(|| ApiError("Tipo di server sconosciuto".into()))
+    crate::loaders::ServerKind::from_str(s).ok_or_else(|| ApiError(tr!("errors.server.unknown_kind")))
 }
 
 async fn create_server(State(state): State<HostState>, Json(body): Json<CreateBody>) -> ApiResult<Value> {
@@ -984,7 +1008,7 @@ struct ModUpdateBody {
 }
 
 fn provider_of(s: &str) -> Result<crate::providers::Provider, ApiError> {
-    crate::providers::Provider::from_str(s).ok_or_else(|| ApiError("Fonte sconosciuta".into()))
+    crate::providers::Provider::from_str(s).ok_or_else(|| ApiError(tr!("errors.provider.unknown_source")))
 }
 
 async fn mod_context(State(state): State<HostState>, Path(id): Path<String>) -> ApiResult<crate::modsvc::ModContext> {

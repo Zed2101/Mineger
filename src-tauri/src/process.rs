@@ -8,6 +8,7 @@
 
 use crate::events;
 use crate::models::ServerStatus;
+use crate::tr;
 use crate::upnp;
 use lazy_static::lazy_static;
 use std::collections::{HashMap, VecDeque};
@@ -133,7 +134,7 @@ fn is_done_line(line: &str) -> bool {
 /// supporto (stdout, stderr, monitor uscita, UPnP). Ritorna subito.
 pub fn spawn_server(app: &AppHandle, id: &str, spec: LaunchSpec) -> Result<(), String> {
     if is_running(id) {
-        return Err("Il server è già in esecuzione".to_string());
+        return Err(tr!("errors.server.already_running"));
     }
 
     let mut cmd = Command::new(&spec.java);
@@ -153,7 +154,7 @@ pub fn spawn_server(app: &AppHandle, id: &str, spec: LaunchSpec) -> Result<(), S
 
     let mut child = cmd
         .spawn()
-        .map_err(|e| format!("Impossibile avviare Java ({}): {}", spec.java, e))?;
+        .map_err(|e| tr!("errors.java.spawn_failed", "java" => spec.java, "error" => e))?;
 
     let stdout = child.stdout.take();
     let stderr = child.stderr.take();
@@ -164,7 +165,7 @@ pub fn spawn_server(app: &AppHandle, id: &str, spec: LaunchSpec) -> Result<(), S
         RunningServer { child, port: spec.port, status: ServerStatus::Starting, upnp_mapped: false, started_at },
     );
     emit_status(app, id, ServerStatus::Starting, None, Some(started_at));
-    emit_line(app, id, &format!("[Mineger] Avvio: {} {}", spec.java, spec.args.join(" ")));
+    emit_line(app, id, &tr!("console.launch", "java" => spec.java, "args" => spec.args.join(" ")));
 
     // --- STDOUT: streaming + rilevamento "Done" ---
     if let Some(stdout) = stdout {
@@ -206,7 +207,7 @@ pub fn spawn_server(app: &AppHandle, id: &str, spec: LaunchSpec) -> Result<(), S
 
     // --- UPnP: in background, l'esito finisce in console ---
     if !spec.upnp {
-        emit_line(app, id, "[Mineger] UPnP disattivato per questo server (Proprietà → Server Launch Options)");
+        emit_line(app, id, &tr!("console.upnp.disabled"));
     } else {
         let app = app.clone();
         let id = id.to_string();
@@ -218,7 +219,7 @@ pub fn spawn_server(app: &AppHandle, id: &str, spec: LaunchSpec) -> Result<(), S
                     Some(rs) => {
                         rs.upnp_mapped = true;
                         drop(map);
-                        emit_line(&app, &id, &format!("[Mineger] UPnP: {}", msg));
+                        emit_line(&app, &id, &tr!("console.upnp.result", "message" => msg));
                     }
                     None => {
                         // Il server è già uscito nel frattempo: non lasciare la porta aperta.
@@ -227,7 +228,7 @@ pub fn spawn_server(app: &AppHandle, id: &str, spec: LaunchSpec) -> Result<(), S
                     }
                 }
             }
-            Err(e) => emit_line(&app, &id, &format!("[Mineger] UPnP non disponibile: {}", e)),
+            Err(e) => emit_line(&app, &id, &tr!("console.upnp.unavailable", "error" => e)),
         });
     }
 
@@ -256,14 +257,14 @@ fn monitor_loop(app: AppHandle, id: String) {
             map.remove(&id);
             drop(map);
 
-            emit_line(&app, &id, &format!("[Mineger] Processo terminato (exit code: {})",
-                code.map(|c| c.to_string()).unwrap_or_else(|| "n/d".into())));
+            emit_line(&app, &id, &tr!("console.process_exited",
+                "code" => code.map(|c| c.to_string()).unwrap_or_else(|| tr!("console.exit_code_unknown"))));
             emit_status(&app, &id, ServerStatus::Offline, code, None);
 
             if upnp_mapped {
                 match upnp::unmap_port(port) {
-                    Ok(msg) => emit_line(&app, &id, &format!("[Mineger] UPnP: {}", msg)),
-                    Err(e) => emit_line(&app, &id, &format!("[Mineger] UPnP cleanup fallito: {}", e)),
+                    Ok(msg) => emit_line(&app, &id, &tr!("console.upnp.result", "message" => msg)),
+                    Err(e) => emit_line(&app, &id, &tr!("console.upnp.cleanup_failed", "error" => e)),
                 }
             }
             return;
@@ -275,13 +276,13 @@ fn monitor_loop(app: AppHandle, id: String) {
 /// avviene solo quando il processo esce davvero (monitor).
 pub fn send_stop(app: &AppHandle, id: &str) -> Result<String, String> {
     let mut map = lock();
-    let rs = map.get_mut(id).ok_or("Il server non è in esecuzione")?;
+    let rs = map.get_mut(id).ok_or_else(|| tr!("errors.server.not_running"))?;
 
     if rs.status == ServerStatus::Stopping {
         return Ok("Arresto già in corso".to_string());
     }
 
-    let stdin = rs.child.stdin.as_mut().ok_or("stdin del server non disponibile")?;
+    let stdin = rs.child.stdin.as_mut().ok_or_else(|| tr!("errors.server.stdin_unavailable"))?;
     stdin.write_all(b"stop\n").map_err(|e| e.to_string())?;
     stdin.flush().map_err(|e| e.to_string())?;
     rs.status = ServerStatus::Stopping;
@@ -289,25 +290,25 @@ pub fn send_stop(app: &AppHandle, id: &str) -> Result<String, String> {
     drop(map);
 
     emit_status(app, id, ServerStatus::Stopping, None, Some(started));
-    emit_line(app, id, "[Mineger] Comando stop inviato, in attesa del salvataggio...");
+    emit_line(app, id, &tr!("console.stop_sent"));
     Ok("Comando stop inviato".to_string())
 }
 
 /// Termina forzatamente il processo. Il monitor emetterà `offline` e farà il cleanup.
 pub fn kill(app: &AppHandle, id: &str) -> Result<String, String> {
     let mut map = lock();
-    let rs = map.get_mut(id).ok_or("Il server non è in esecuzione")?;
-    rs.child.kill().map_err(|e| format!("Kill fallito: {}", e))?;
+    let rs = map.get_mut(id).ok_or_else(|| tr!("errors.server.not_running"))?;
+    rs.child.kill().map_err(|e| tr!("errors.server.kill_failed", "error" => e))?;
     rs.status = ServerStatus::Stopping;
     drop(map);
-    emit_line(app, id, "[Mineger] Processo terminato forzatamente");
+    emit_line(app, id, &tr!("console.process_killed"));
     Ok("Processo terminato".to_string())
 }
 
 pub fn write_stdin(id: &str, command: &str) -> Result<(), String> {
     let mut map = lock();
-    let rs = map.get_mut(id).ok_or("Il server non è in esecuzione")?;
-    let stdin = rs.child.stdin.as_mut().ok_or("stdin del server non disponibile")?;
+    let rs = map.get_mut(id).ok_or_else(|| tr!("errors.server.not_running"))?;
+    let stdin = rs.child.stdin.as_mut().ok_or_else(|| tr!("errors.server.stdin_unavailable"))?;
 
     let cmd = if command.ends_with('\n') { command.to_string() } else { format!("{}\n", command) };
     stdin.write_all(cmd.as_bytes()).map_err(|e| e.to_string())?;

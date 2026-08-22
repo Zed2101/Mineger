@@ -171,6 +171,26 @@
   .perm-pill.on { @apply bg-accent/12 text-accent; }
   .perm-pill.off { @apply bg-white/5 text-text-faint line-through; }
 
+  /* Impostazioni: riquadri per sezione */
+  .settings-card { @apply rounded-xl border border-line bg-bg-card/60 p-4; }
+  .settings-head { @apply mb-3 flex items-center justify-between gap-3; }
+  .settings-row { @apply flex items-center gap-3; }
+  .settings-label { @apply w-[92px] shrink-0 text-[12px] leading-snug text-text-muted; }
+  .settings-value { @apply min-w-0 flex-1 truncate rounded-[7px] border border-line-strong bg-bg-inset px-3 py-2 font-mono text-[11px] text-text-soft; }
+  .settings-empty { @apply rounded-lg border border-dashed border-line-strong px-4 py-5 text-center; }
+
+  /* Java rilevate */
+  .java-row { @apply flex items-center gap-3 rounded-lg border border-line bg-bg-inset px-3 py-2; }
+  .java-badge { @apply shrink-0 rounded bg-accent/12 px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[1px] text-accent; }
+
+  /* Completezza delle traduzioni nel selettore lingua */
+  .lang-progress { @apply ml-auto flex shrink-0 items-center gap-2; }
+  .lang-progress-track { @apply h-1 w-16 overflow-hidden rounded-full bg-line-strong; }
+  .lang-progress-fill { @apply block h-full rounded-full bg-accent transition-[width]; }
+  .lang-progress-fill.partial { @apply bg-warning; }
+  .lang-percent { @apply w-9 text-right font-mono text-[10px] text-accent; }
+  .lang-percent.partial { @apply text-warning; }
+
   /* Avviso "serve la chiave API" */
   .key-notice { @apply rounded-lg border border-warning/30 bg-warning/5 px-4 py-3.5 text-[12px] leading-relaxed text-text-soft; }
 

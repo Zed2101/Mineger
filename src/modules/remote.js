@@ -4,6 +4,8 @@
 // WebSocket per gli eventi (server-output, server-status, backup-progress) con
 // riconnessione automatica.
 
+import { t } from './i18n.js';
+
 const RECONNECT_MIN_MS = 2000;
 const RECONNECT_MAX_MS = 30000;
 const FETCH_TIMEOUT_MS = 20000;
@@ -53,7 +55,7 @@ export class RemoteHost {
     try {
       res = await fetch(`${this.url}${path}`, { method, headers, body, signal: controller.signal });
     } catch (err) {
-      throw `Host "${this.meta.name}" non raggiungibile (${err?.message || err})`;
+      throw t('msg2.remote.host_unreachable', { name: this.meta.name, error: err?.message || err });
     } finally {
       clearTimeout(timer);
     }
@@ -68,7 +70,7 @@ export class RemoteHost {
 
     if (!res.ok) {
       if (data && typeof data === 'object' && data.error) throw String(data.error);
-      if (res.status === 401) throw 'Token rifiutato dall\'host';
+      if (res.status === 401) throw t('msg2.remote.token_rejected');
       throw `HTTP ${res.status}`;
     }
     return data;
@@ -153,9 +155,9 @@ export class RemoteHost {
       case 'open_server_folder':
       case 'set_server_icon_from_path':
       case 'pick_server_icon_file':
-        throw 'Non disponibile per i server remoti';
+        throw t('msg2.remote.not_available_remote');
       default:
-        throw `Comando non supportato da remoto: ${cmd}`;
+        throw t('msg2.remote.command_unsupported', { cmd });
     }
   }
 
@@ -200,7 +202,7 @@ export class RemoteHost {
       const wasConnected = this.connected;
       this.connected = false;
       this.ws = null;
-      if (wasConnected || !this.closed) this.handlers.onConnection?.(false, 'connessione persa');
+      if (wasConnected || !this.closed) this.handlers.onConnection?.(false, t('msg2.remote.connection_lost'));
       this.scheduleReconnect();
     };
   }

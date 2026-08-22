@@ -16,6 +16,7 @@ use crate::service;
 use crate::servericon;
 use base64::Engine;
 use crate::settings::{self, RemoteHost, Settings, Webhook, WebhookPerms};
+use crate::tr;
 use std::collections::HashMap;
 use std::path::Path;
 use std::time::Duration;
@@ -159,7 +160,7 @@ pub async fn create_vanilla_server(app: AppHandle, name: String, version: String
 
 #[tauri::command]
 pub async fn get_mc_versions(kind: String) -> Result<Vec<String>, String> {
-    let k = crate::loaders::ServerKind::from_str(&kind).ok_or("Tipo di server sconosciuto")?;
+    let k = crate::loaders::ServerKind::from_str(&kind).ok_or_else(|| tr!("errors.server.unknown_kind"))?;
     tauri::async_runtime::spawn_blocking(move || crate::loaders::mc_versions(k))
         .await
         .map_err(|e| e.to_string())?
@@ -167,7 +168,7 @@ pub async fn get_mc_versions(kind: String) -> Result<Vec<String>, String> {
 
 #[tauri::command]
 pub async fn get_loader_versions(kind: String, mc_version: String) -> Result<Vec<crate::loaders::LoaderVersion>, String> {
-    let k = crate::loaders::ServerKind::from_str(&kind).ok_or("Tipo di server sconosciuto")?;
+    let k = crate::loaders::ServerKind::from_str(&kind).ok_or_else(|| tr!("errors.server.unknown_kind"))?;
     tauri::async_runtime::spawn_blocking(move || crate::loaders::loader_versions(k, &mc_version))
         .await
         .map_err(|e| e.to_string())?
@@ -181,7 +182,7 @@ pub async fn create_server(
     mc_version: String,
     loader_version: Option<String>,
 ) -> Result<String, String> {
-    let k = crate::loaders::ServerKind::from_str(&kind).ok_or("Tipo di server sconosciuto")?;
+    let k = crate::loaders::ServerKind::from_str(&kind).ok_or_else(|| tr!("errors.server.unknown_kind"))?;
     let lv = loader_version.unwrap_or_default();
     tauri::async_runtime::spawn_blocking(move || {
         let mut progress = crate::packs::progress_emitter(&app, "create-progress", "name", name.clone());
@@ -208,7 +209,7 @@ pub async fn search_mods(
     query: String,
     limit: Option<u32>,
 ) -> Result<crate::providers::mods::ModSearchResult, String> {
-    let p = crate::providers::Provider::from_str(&provider).ok_or("Fonte sconosciuta")?;
+    let p = crate::providers::Provider::from_str(&provider).ok_or_else(|| tr!("errors.provider.unknown_source"))?;
     tauri::async_runtime::spawn_blocking(move || crate::modsvc::search(&app, &id, p, &query, limit.unwrap_or(20)))
         .await
         .map_err(|e| e.to_string())?
@@ -221,7 +222,7 @@ pub async fn get_mod_versions(
     provider: String,
     project_id: String,
 ) -> Result<crate::providers::mods::ModVersionList, String> {
-    let p = crate::providers::Provider::from_str(&provider).ok_or("Fonte sconosciuta")?;
+    let p = crate::providers::Provider::from_str(&provider).ok_or_else(|| tr!("errors.provider.unknown_source"))?;
     tauri::async_runtime::spawn_blocking(move || crate::modsvc::versions(&app, &id, p, &project_id))
         .await
         .map_err(|e| e.to_string())?
@@ -235,7 +236,7 @@ pub async fn install_mod(
     project_id: String,
     file_id: String,
 ) -> Result<Vec<crate::models::ModEntry>, String> {
-    let p = crate::providers::Provider::from_str(&provider).ok_or("Fonte sconosciuta")?;
+    let p = crate::providers::Provider::from_str(&provider).ok_or_else(|| tr!("errors.provider.unknown_source"))?;
     tauri::async_runtime::spawn_blocking(move || {
         let mut progress = crate::packs::progress_emitter(&app, "mod-progress", "id", id.clone());
         crate::modsvc::install(&app, &id, p, &project_id, &file_id, &mut progress)
@@ -288,7 +289,7 @@ pub async fn open_server_folder(app: AppHandle, id: String, sub: Option<String>)
     let mut dir = service::server_dir(&app, &id)?;
     if let Some(sub) = sub.filter(|s| !s.is_empty()) {
         if sub.contains(['/', '\\']) || sub == ".." {
-            return Err("Sottocartella non valida".to_string());
+            return Err(tr!("errors.server.invalid_subfolder"));
         }
         dir = dir.join(sub);
         std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
@@ -307,7 +308,7 @@ pub async fn open_app_folder(app: AppHandle, kind: String) -> Result<(), String>
             let p = paths::config_path(&app)?;
             p.parent().map(Path::to_path_buf).unwrap_or(p)
         }
-        _ => return Err("Cartella sconosciuta".to_string()),
+        _ => return Err(tr!("errors.app.unknown_folder")),
     };
     app.opener()
         .open_path(path.to_string_lossy().to_string(), None::<String>)
@@ -317,7 +318,7 @@ pub async fn open_app_folder(app: AppHandle, kind: String) -> Result<(), String>
 #[tauri::command]
 pub async fn open_url(app: AppHandle, url: String) -> Result<(), String> {
     if !(url.starts_with("https://") || url.starts_with("http://")) {
-        return Err("URL non consentito".to_string());
+        return Err(tr!("errors.app.url_not_allowed"));
     }
     app.opener().open_url(url, None::<String>).map_err(|e| e.to_string())
 }
@@ -351,11 +352,11 @@ pub async fn get_host_status(app: AppHandle) -> Result<HostStatus, String> {
 #[tauri::command]
 pub async fn set_host_config(app: AppHandle, enabled: bool, port: u16, name: String) -> Result<HostStatus, String> {
     if port < 1024 {
-        return Err("Usa una porta ≥ 1024".to_string());
+        return Err(tr!("errors.host.port_too_low"));
     }
     let name = name.trim().to_string();
     if name.is_empty() {
-        return Err("Il nome dell'host non può essere vuoto".to_string());
+        return Err(tr!("errors.host.empty_name"));
     }
 
     let mut s = settings::load(&app);
@@ -390,20 +391,20 @@ pub async fn add_remote_host(app: AppHandle, input: String, token: Option<String
         .get(format!("{}/api/info", url))
         .bearer_auth(&token)
         .send()
-        .map_err(|e| format!("Host non raggiungibile ({}): {}", url, e))?
+        .map_err(|e| tr!("errors.host.unreachable", "url" => url, "error" => e))?
         .error_for_status()
         .map_err(|e| {
             if e.status() == Some(reqwest::StatusCode::UNAUTHORIZED) {
-                "Token rifiutato dall'host".to_string()
+                tr!("errors.host.token_rejected")
             } else {
-                format!("Risposta non valida dall'host: {}", e)
+                tr!("errors.host.invalid_response", "error" => e)
             }
         })?
         .json()
-        .map_err(|e| format!("Risposta non valida dall'host: {}", e))?;
+        .map_err(|e| tr!("errors.host.invalid_response", "error" => e))?;
 
     if info.get("app").and_then(|v| v.as_str()) != Some("mineger") {
-        return Err("All'indirizzo indicato non risponde un Mineger".to_string());
+        return Err(tr!("errors.host.not_mineger"));
     }
     let name = info.get("name").and_then(|v| v.as_str()).unwrap_or("Host remoto").to_string();
 
@@ -487,10 +488,10 @@ pub async fn create_webhook(
 ) -> Result<Webhook, String> {
     let name = name.trim().to_string();
     if name.is_empty() {
-        return Err("Dai un nome al webhook".to_string());
+        return Err(tr!("errors.webhook.empty_name"));
     }
     if !(perms.say || perms.command || perms.power || perms.status) {
-        return Err("Scegli almeno un permesso".to_string());
+        return Err(tr!("errors.webhook.no_permission_selected"));
     }
     let server_id = server_id.map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
     if let Some(id) = &server_id {
@@ -518,7 +519,7 @@ pub async fn create_webhook(
 #[tauri::command]
 pub async fn set_webhook_enabled(app: AppHandle, id: String, enabled: bool) -> Result<Vec<Webhook>, String> {
     let mut s = settings::load(&app);
-    let hook = s.webhooks.iter_mut().find(|w| w.id == id).ok_or("Webhook non trovato")?;
+    let hook = s.webhooks.iter_mut().find(|w| w.id == id).ok_or_else(|| tr!("errors.webhook.not_found"))?;
     hook.enabled = enabled;
     settings::save(&app, &s)?;
     host::apply(&app, &s)?;
@@ -553,12 +554,12 @@ pub struct WebhookTestResult {
 #[tauri::command]
 pub async fn test_webhook(app: AppHandle, id: String) -> Result<WebhookTestResult, String> {
     let s = settings::load(&app);
-    let hook = s.webhooks.iter().find(|w| w.id == id).ok_or("Webhook non trovato")?;
+    let hook = s.webhooks.iter().find(|w| w.id == id).ok_or_else(|| tr!("errors.webhook.not_found"))?;
     if !hook.enabled {
-        return Err("Il webhook è disabilitato".to_string());
+        return Err(tr!("errors.webhook.disabled"));
     }
     if !host::is_running() {
-        return Err("Il listener HTTP non è attivo".to_string());
+        return Err(tr!("errors.webhook.listener_not_running"));
     }
 
     let mut params: Vec<(&str, String)> = vec![("token", hook.token.clone())];
@@ -572,10 +573,10 @@ pub async fn test_webhook(app: AppHandle, id: String) -> Result<WebhookTestResul
         params.push(("action", "command".into()));
         params.push(("command", "list".into()));
     } else {
-        return Err("Il webhook ha solo il permesso power: nessuna azione di test sicura".to_string());
+        return Err(tr!("errors.webhook.only_power_permission"));
     }
     if hook.server_id.is_none() {
-        return Err("Webhook generico: indica un server nella chiamata (test non disponibile)".to_string());
+        return Err(tr!("errors.webhook.generic_needs_server"));
     }
 
     let url = format!("http://127.0.0.1:{}/hook/{}", s.host.port, hook.id);
@@ -583,7 +584,7 @@ pub async fn test_webhook(app: AppHandle, id: String) -> Result<WebhookTestResul
         .timeout(Duration::from_secs(8))
         .build()
         .map_err(|e| e.to_string())?;
-    let resp = client.get(&url).query(&params).send().map_err(|e| format!("Chiamata fallita: {}", e))?;
+    let resp = client.get(&url).query(&params).send().map_err(|e| tr!("errors.webhook.call_failed", "error" => e))?;
     let status = resp.status().as_u16();
     let text = resp.text().unwrap_or_default();
     let body = serde_json::from_str(&text).unwrap_or(serde_json::Value::String(text));
@@ -605,7 +606,7 @@ pub async fn set_server_icon_from_bytes(app: AppHandle, id: String, data_base64:
     let raw = data_base64.split(',').next_back().unwrap_or("").trim();
     let bytes = base64::engine::general_purpose::STANDARD
         .decode(raw)
-        .map_err(|e| format!("Dati immagine non validi: {}", e))?;
+        .map_err(|e| tr!("errors.server_icon.invalid_data", "error" => e))?;
     service::set_server_icon_bytes(&app, &id, &bytes)
 }
 
@@ -648,7 +649,7 @@ pub async fn resolve_pack_link(app: AppHandle, url: String) -> Result<providers:
 /// Installa un pack come nuovo server. Progress via `create-progress` (campo `name`).
 #[tauri::command]
 pub async fn install_pack(app: AppHandle, name: String, provider: String, project_id: String, file_id: String) -> Result<String, String> {
-    let prov = providers::Provider::from_str(&provider).ok_or("Provider sconosciuto")?;
+    let prov = providers::Provider::from_str(&provider).ok_or_else(|| tr!("errors.provider.unknown"))?;
     tauri::async_runtime::spawn_blocking(move || {
         let mut progress = packs::progress_emitter(&app, "create-progress", "name", name.clone());
         packs::install(&app, &name, prov, &project_id, &file_id, &mut progress)
@@ -685,6 +686,44 @@ pub async fn update_pack_server(app: AppHandle, id: String) -> Result<packs::Upd
     })
     .await
     .map_err(|e| e.to_string())?
+}
+
+// ---------------------------------------------------------------------------
+// Lingua dell'interfaccia
+// ---------------------------------------------------------------------------
+
+/// Lingue disponibili: [{ code, name }]
+#[tauri::command]
+pub async fn list_languages() -> Result<Vec<serde_json::Value>, String> {
+    Ok(crate::i18n::available()
+        .into_iter()
+        .map(|(code, name)| serde_json::json!({ "code": code, "name": name }))
+        .collect())
+}
+
+/// Lingua effettiva: preferenza salvata oppure quella rilevata dal sistema.
+#[tauri::command]
+pub async fn get_language(app: AppHandle) -> Result<String, String> {
+    Ok(crate::i18n::resolve(&settings::load(&app).language))
+}
+
+/// Lingua del sistema operativo ricondotta a una di quelle disponibili.
+#[tauri::command]
+pub async fn get_system_language() -> Result<String, String> {
+    Ok(crate::i18n::detect_system_language())
+}
+
+/// Salva la lingua e la applica subito ai messaggi del backend.
+#[tauri::command]
+pub async fn set_language(app: AppHandle, code: String) -> Result<String, String> {
+    if !crate::i18n::is_supported(&code) {
+        return Err(tr!("errors.app.unsupported_language", "code" => code));
+    }
+    let mut s = settings::load(&app);
+    s.language = code.clone();
+    settings::save(&app, &s)?;
+    crate::i18n::set_language(&code);
+    Ok(code)
 }
 
 /// true se l'utente ha configurato la chiave API CurseForge.

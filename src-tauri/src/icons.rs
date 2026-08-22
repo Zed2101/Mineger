@@ -5,6 +5,7 @@
 // dall'utente in `paths::icons_dir` e vengono passate al frontend come data URL.
 
 use crate::paths;
+use crate::tr;
 use base64::Engine;
 use serde::Serialize;
 use std::fs;
@@ -127,20 +128,20 @@ pub fn list(app: &AppHandle) -> Result<Vec<IconInfo>, String> {
 /// Copia un'immagine nella cartella icone e la ritorna (con data URL).
 pub fn import_from_path(app: &AppHandle, src: &Path) -> Result<IconInfo, String> {
     if !src.is_file() {
-        return Err("File non trovato".to_string());
+        return Err(tr!("errors.file.not_found"));
     }
     if !is_image(src) {
-        return Err("Formato non supportato: usa PNG, JPG, WEBP o GIF".to_string());
+        return Err(tr!("errors.icons.unsupported_format"));
     }
     let size = fs::metadata(src).map(|m| m.len()).map_err(|e| e.to_string())?;
     if size > MAX_ICON_BYTES {
-        return Err(format!("Immagine troppo grande ({} MB, max 5 MB)", size / 1_048_576));
+        return Err(tr!("errors.icons.image_too_large", "size" => size / 1_048_576));
     }
 
     let dir = paths::icons_dir(app)?;
     let name = unique_name(&dir, &sanitize_name(&src.file_name().unwrap_or_default().to_string_lossy()));
     let dest = dir.join(&name);
-    fs::copy(src, &dest).map_err(|e| format!("Copia fallita: {}", e))?;
+    fs::copy(src, &dest).map_err(|e| tr!("errors.icons.copy_failed", "error" => e))?;
 
     Ok(IconInfo { data_url: data_url(&dest), name, builtin: false, size })
 }
@@ -148,11 +149,11 @@ pub fn import_from_path(app: &AppHandle, src: &Path) -> Result<IconInfo, String>
 pub fn delete(app: &AppHandle, name: &str) -> Result<(), String> {
     let safe = sanitize_name(name);
     if safe != name {
-        return Err("Nome icona non valido".to_string());
+        return Err(tr!("errors.icons.invalid_name"));
     }
     let path = paths::icons_dir(app)?.join(&safe);
     if !path.is_file() {
-        return Err("Icona non trovata (le icone predefinite non si possono eliminare)".to_string());
+        return Err(tr!("errors.icons.not_found"));
     }
     fs::remove_file(&path).map_err(|e| e.to_string())
 }

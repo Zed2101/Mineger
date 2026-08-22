@@ -6,6 +6,7 @@
 import { call, isRemoteId } from './api.js';
 import { iconUrl } from './icons.js';
 import { formatBytes } from './utils.js';
+import { t } from './i18n.js';
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -40,7 +41,7 @@ export function populatePropertiesPanel(server) {
   java.className = 'mt-1 font-mono text-[12px] ' +
     (server?.java_state === 'err' ? 'text-danger' : server?.java_state === 'warn' ? 'text-warning' : 'text-text-soft');
 
-  setPropsNote('Le modifiche avranno effetto al riavvio del server');
+  setPropsNote(t('msg2.properties.restart_note'));
   if (server) renderServerIcon(server);
 }
 
@@ -98,7 +99,7 @@ function applyServerIcon(info) {
     img.classList.add('hidden');
     empty.classList.remove('hidden');
     remove.disabled = true;
-    setIconStatus('Nessuna icona: nella lista server comparirà quella predefinita di Minecraft');
+    setIconStatus(t('msg2.properties.icon_none'));
   }
 }
 
@@ -131,10 +132,10 @@ export function setupServerIcon(state) {
   const propertiesVisible = () => !el('view-properties').classList.contains('hidden') && !el('server-details').classList.contains('hidden');
 
   async function setFromDataUrl(server, dataUrl) {
-    setIconStatus('Ridimensionamento a 64×64…');
+    setIconStatus(t('msg2.properties.icon_resizing'));
     try {
       applyServerIcon(await call('set_server_icon_from_bytes', { id: server.id, dataBase64: dataUrl }));
-      setIconStatus(`${el('server-icon-status').textContent} · aggiornata`, 'ok');
+      setIconStatus(t('msg2.properties.icon_updated', { status: el('server-icon-status').textContent }), 'ok');
     } catch (err) {
       setIconStatus(String(err), 'err');
     }
@@ -148,12 +149,12 @@ export function setupServerIcon(state) {
       fileInput.click();
       return;
     }
-    setIconStatus('Scegli un\'immagine…');
+    setIconStatus(t('msg2.properties.icon_pick'));
     try {
       const info = await invoke('pick_server_icon_file', { id: server.id });
       if (info) {
         applyServerIcon(info);
-        setIconStatus(`${el('server-icon-status').textContent} · aggiornata`, 'ok');
+        setIconStatus(t('msg2.properties.icon_updated', { status: el('server-icon-status').textContent }), 'ok');
       } else {
         renderServerIcon(server);
       }
@@ -178,7 +179,7 @@ export function setupServerIcon(state) {
     if (!server) return;
     try {
       const res = await fetch(iconUrl(server.icon));
-      if (!res.ok) throw `Immagine non trovata (${res.status})`;
+      if (!res.ok) throw t('msg2.properties.icon_not_found', { status: res.status });
       await setFromDataUrl(server, await blobToDataUrl(await res.blob()));
     } catch (err) {
       setIconStatus(String(err), 'err');
@@ -191,7 +192,7 @@ export function setupServerIcon(state) {
     try {
       await call('remove_server_icon', { id: server.id });
       applyServerIcon(null);
-      setIconStatus('Icona rimossa', 'ok');
+      setIconStatus(t('msg2.properties.icon_removed'), 'ok');
     } catch (err) {
       setIconStatus(String(err), 'err');
     }
@@ -204,10 +205,10 @@ export function setupServerIcon(state) {
     if (!el('modal-edit').classList.contains('hidden')) return;
     const path = event.payload?.paths?.[0];
     if (!path) return;
-    setIconStatus('Ridimensionamento a 64×64…');
+    setIconStatus(t('msg2.properties.icon_resizing'));
     try {
       applyServerIcon(await invoke('set_server_icon_from_path', { id: server.id, path }));
-      setIconStatus(`${el('server-icon-status').textContent} · aggiornata`, 'ok');
+      setIconStatus(t('msg2.properties.icon_updated', { status: el('server-icon-status').textContent }), 'ok');
     } catch (err) {
       setIconStatus(String(err), 'err');
     }

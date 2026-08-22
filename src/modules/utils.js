@@ -1,5 +1,7 @@
 // src/modules/utils.js
 
+import { t, currentLanguage } from './i18n.js';
+
 export function formatBytes(bytes, decimals = 1) {
   if (!+bytes) return '0 B';
   const k = 1024;
@@ -30,10 +32,10 @@ export function formatUptime(ms) {
   const d = Math.floor(s / 86400);
   const h = Math.floor((s % 86400) / 3600);
   const m = Math.floor((s % 3600) / 60);
-  if (d > 0) return `${d}d ${h}h`;
-  if (h > 0) return `${h}h ${m}m`;
-  if (m > 0) return `${m}m`;
-  return `${s}s`;
+  if (d > 0) return t('msg2.time.uptime_dh', { d, h });
+  if (h > 0) return t('msg2.time.uptime_hm', { h, m });
+  if (m > 0) return t('msg2.time.uptime_m', { m });
+  return t('msg2.time.uptime_s', { s });
 }
 
 /** epoch ms → "08:38" */
@@ -50,9 +52,13 @@ export function formatRelativeDay(ms) {
   const yesterday = new Date(now);
   yesterday.setDate(now.getDate() - 1);
   const clock = formatClock(ms);
-  if (sameDay(d, now)) return `oggi ${clock}`;
-  if (sameDay(d, yesterday)) return `ieri ${clock}`;
-  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')} ${clock}`;
+  if (sameDay(d, now)) return t('msg2.time.today', { clock });
+  if (sameDay(d, yesterday)) return t('msg2.time.yesterday', { clock });
+  return t('msg2.time.date_short', {
+    day: String(d.getDate()).padStart(2, '0'),
+    month: String(d.getMonth() + 1).padStart(2, '0'),
+    clock,
+  });
 }
 
 /** "xLuca_ITA" → "XL" */
@@ -77,7 +83,7 @@ export function avatarClass(name) {
   return AVATAR_CLASSES[h % AVATAR_CLASSES.length];
 }
 
-/** 2418 → "2.418" */
+/** 2418 → "2.418" (it) / "2,418" (en) */
 export function formatInt(n) {
-  return Number(n || 0).toLocaleString('it-IT');
+  return Number(n || 0).toLocaleString(currentLanguage());
 }

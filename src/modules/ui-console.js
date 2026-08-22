@@ -9,6 +9,7 @@ import { getRuntime } from './ui-status.js';
 import { onConsoleLine } from './ui-details.js';
 import { escapeHtml, formatInt } from './utils.js';
 import { call } from './api.js';
+import { t } from './i18n.js';
 
 const { listen } = window.__TAURI__.event;
 
@@ -101,7 +102,7 @@ function appendLine(entry) {
 function updateCount(state, id) {
   if (state.activeServerId !== id) return;
   const rt = getRuntime(state, id);
-  document.getElementById('console-count').textContent = `${formatInt(rt.lineCount)} righe`;
+  document.getElementById('console-count').textContent = t('msg2.console.lines', { count: formatInt(rt.lineCount) });
 }
 
 /** Aggiunge una riga al buffer del server e, se è quello attivo, al DOM. */
@@ -138,7 +139,7 @@ async function sendCommand(state, cmd) {
 
   const clean = cmd.replace(/^\//, '').trim();
   if (clean.toLowerCase() === 'stop') {
-    pushLog(state, id, '[Mineger] Usa il bottone "Arresta Server" per fermare il server', 'mineger');
+    pushLog(state, id, `[Mineger] ${t('msg2.console.stop_hint')}`, 'mineger');
     return;
   }
 
@@ -146,7 +147,7 @@ async function sendCommand(state, cmd) {
   try {
     await call('send_command', { id, command: clean });
   } catch (err) {
-    pushLog(state, id, `[Mineger] Errore invio comando: ${err}`, 'error');
+    pushLog(state, id, `[Mineger] ${t('msg2.console.send_error', { error: err })}`, 'error');
   }
 }
 
