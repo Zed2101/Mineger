@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/).
 
-## [1.0.1] — unreleased
+## [1.0.1] — 2026-08-22
 
 ### Added
 - English interface, in **American** and **British** spelling. All user-facing strings are localized, including backend error messages, progress text and console notices emitted by the app itself.
