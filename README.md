@@ -4,7 +4,7 @@ A Minecraft server manager for Windows: create, run and administer your servers 
 
 Mineger is a desktop application built with [Tauri](https://tauri.app): a Rust backend and an HTML/JS interface styled with Tailwind CSS. No account, no mandatory external service — your servers stay as folders on your own disk.
 
-*[Leggi questo file in italiano](README.it.md)*
+*[Leggi questo file in italiano](README.it.md)* · **Website:** [zed2101.github.io/Mineger](https://zed2101.github.io/Mineger/)
 
 ---
 

@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Download Mineger for Windows</title>
+  <meta name="description" content="Download Mineger, the free and open-source Minecraft server manager for Windows 10 and 11.">
+  <meta name="theme-color" content="#0b0e12">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Download Mineger for Windows">
+  <meta property="og:description" content="Free, open-source Minecraft server manager for Windows. One installer, no account.">
+  <meta property="og:image" content="https://zed2101.github.io/Mineger/assets/screens/overview.webp">
+  <meta property="og:url" content="https://zed2101.github.io/Mineger/download.html">
+  <link rel="icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="assets/icon-512.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="tailwind.css">
+</head>
+<body class="bg-ink text-fg" data-title-key="meta.title_download">
+
+<header class="sticky top-0 z-40 border-b border-line/60 bg-ink/80 backdrop-blur-md">
+  <nav class="relative mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3">
+    <a href="./" class="flex items-center gap-3">
+      <img src="assets/logo.png" alt="" width="36" height="36" class="size-9 rounded-lg">
+      <span class="text-lg font-extrabold tracking-tight">Mineger</span>
+    </a>
+    <div id="nav-menu" class="hidden items-center gap-1 text-sm font-semibold text-fg-muted md:flex max-md:absolute max-md:inset-x-0 max-md:top-full max-md:flex-col max-md:items-stretch max-md:border-b max-md:border-line max-md:bg-ink max-md:p-4">
+      <a href="./#features" class="rounded-lg px-3 py-2 transition hover:bg-panel-2 hover:text-fg" data-i18n="nav.features">Features</a>
+      <a href="./#screens" class="rounded-lg px-3 py-2 transition hover:bg-panel-2 hover:text-fg" data-i18n="nav.screens">Screenshots</a>
+      <a href="https://github.com/Zed2101/Mineger/blob/main/docs/API-HOST.md" class="rounded-lg px-3 py-2 transition hover:bg-panel-2 hover:text-fg" data-i18n="nav.docs">Docs</a>
+      <a href="https://github.com/Zed2101/Mineger" class="rounded-lg px-3 py-2 transition hover:bg-panel-2 hover:text-fg" data-i18n="nav.github">GitHub</a>
+      <a href="download.html" class="btn-primary ml-2 px-4! py-2! max-md:mt-2 max-md:ml-0" data-i18n="nav.download">Download</a>
+      <button id="lang-toggle" type="button" class="btn-ghost ml-1 px-3! py-2! font-mono text-xs max-md:mt-2 max-md:ml-0" data-i18n="nav.lang" data-i18n-title="nav.lang_title">IT</button>
+    </div>
+    <button id="nav-toggle" type="button" class="rounded-lg border border-line p-2 text-fg-muted md:hidden" aria-label="Menu" aria-expanded="false" aria-controls="nav-menu">
+      <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </nav>
+</header>
+
+<main>
+<section class="relative overflow-hidden">
+  <div class="hero-grid absolute inset-0 [mask-image:radial-gradient(ellipse_at_top,black_10%,transparent_70%)]"></div>
+  <div class="absolute -top-56 left-1/2 h-[520px] w-[820px] -translate-x-1/2 rounded-full bg-accent/10 blur-3xl motion-safe:animate-glow"></div>
+
+  <div class="relative mx-auto max-w-3xl px-5 pb-16 pt-16 text-center md:pt-24">
+    <div class="reveal mx-auto flex size-24 items-center justify-center">
+      <svg viewBox="0 0 120 120" class="size-24" aria-hidden="true">
+        <circle cx="60" cy="60" r="40" fill="none" stroke-width="1.5" class="fill-box stroke-accent motion-safe:animate-pulse-ring"/>
+        <circle cx="60" cy="60" r="40" fill="none" stroke-width="1.5" class="fill-box stroke-accent motion-safe:animate-pulse-ring [animation-delay:-1.3s]"/>
+        <circle cx="60" cy="60" r="40" class="fill-panel stroke-line"/>
+        <svg x="38" y="38" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="text-accent motion-safe:animate-bounce-soft"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+      </svg>
+    </div>
+    <p class="micro reveal mt-6 [transition-delay:80ms]" data-i18n="dl.kicker">Download</p>
+    <h1 class="reveal mt-3 text-4xl font-black tracking-tight [transition-delay:160ms] md:text-5xl" data-i18n="dl.title">Get Mineger for Windows</h1>
+    <p class="reveal mt-4 text-lg text-fg-muted [transition-delay:240ms]" data-i18n="dl.sub">Free, open source, no account. Windows 10 and 11, 64-bit.</p>
+
+    <div class="reveal mt-10 flex flex-col items-center gap-3 [transition-delay:320ms]">
+      <a data-release="setup" href="https://github.com/Zed2101/Mineger/releases/latest" class="btn-primary text-lg">
+        <svg class="size-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.5 10.5 4.4v7.3H3zm8.5-1.3L21 3v8.7h-9.5zM3 12.3h7.5v7.3L3 18.5zm8.5 0H21V21l-9.5-1.4z"/></svg>
+        <span data-release="button" data-i18n="dl.button_generic">Download for Windows</span>
+      </a>
+      <p class="font-mono text-xs text-fg-faint">
+        <span data-i18n="dl.setup">Installer (recommended)</span> <span data-release="setup-size"></span>
+        <span class="mx-1">·</span> <span data-release="date"></span>
+      </p>
+      <p class="mt-2 font-mono text-xs text-fg-muted">
+        <a data-release="msi" href="https://github.com/Zed2101/Mineger/releases/latest" class="text-accent underline-offset-4 hover:underline"><span data-i18n="dl.msi">MSI installer</span></a> <span data-release="msi-size"></span>
+      </p>
+      <p data-release="status" class="mt-2 font-mono text-xs text-fg-faint motion-safe:animate-glow" data-i18n="dl.loading">Fetching the latest release…</p>
+      <p data-release="fallback" class="mt-2 hidden font-mono text-xs"><a href="https://github.com/Zed2101/Mineger/releases" class="text-accent underline-offset-4 hover:underline" data-i18n="dl.fallback">See all releases on GitHub</a></p>
+    </div>
+  </div>
+</section>
+
+<section class="mx-auto max-w-6xl px-5 pb-20">
+  <p class="micro reveal" data-i18n="dl.req_title">Before you start</p>
+  <div class="mt-6 grid gap-5 md:grid-cols-2">
+    <article class="glow-card reveal p-6">
+      <div class="flex items-center gap-3">
+        <svg class="size-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3c2 2 2 4 0 6s-2 4 0 6M12 3c2 2 2 4 0 6s-2 4 0 6"/><path d="M4 17c0 2 4 4 8 4s8-2 8-4"/></svg>
+        <h2 class="text-lg font-bold" data-i18n="dl.req_java_title">Java</h2>
+      </div>
+      <p class="mt-2 text-sm text-fg-muted" data-i18n="dl.req_java">Java 8, 17 or 21 depending on the Minecraft version. Mineger finds the installed runtimes and picks the right one.</p>
+    </article>
+    <article class="glow-card reveal p-6 [transition-delay:80ms]">
+      <div class="flex items-center gap-3">
+        <svg class="size-6 text-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 3 7v5c0 5 4 8 9 9 5-1 9-4 9-9V7z"/><path d="M12 9v4M12 16h.01"/></svg>
+        <h2 class="text-lg font-bold" data-i18n="dl.req_smart_title">SmartScreen</h2>
+      </div>
+      <p class="mt-2 text-sm text-fg-muted" data-i18n="dl.req_smart">The installer isn't signed yet, so Windows may warn you on first run. Choose More info → Run anyway.</p>
+    </article>
+    <article class="glow-card reveal p-6 [transition-delay:160ms]">
+      <div class="flex items-center gap-3">
+        <svg class="size-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 9-9M15 6l3 3M18 3l3 3"/></svg>
+        <h2 class="text-lg font-bold" data-i18n="dl.req_cf_title">CurseForge key</h2>
+      </div>
+      <p class="mt-2 text-sm text-fg-muted" data-i18n="dl.req_cf">Modrinth and FTB work out of the box. CurseForge needs your own free API key, pasted under Settings → CurseForge key.</p>
+    </article>
+    <article class="glow-card reveal p-6 [transition-delay:240ms]">
+      <div class="flex items-center gap-3">
+        <svg class="size-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+        <h2 class="text-lg font-bold" data-i18n="dl.upgrade_title">Upgrading</h2>
+      </div>
+      <p class="mt-2 text-sm text-fg-muted" data-i18n="dl.upgrade">Install over the previous version: servers and settings are kept.</p>
+    </article>
+  </div>
+</section>
+
+<section class="border-t border-line/60 bg-ink-2/50">
+  <div class="mx-auto max-w-3xl px-5 py-16">
+    <h2 class="reveal text-2xl font-extrabold tracking-tight" data-release="notes-title">What's new</h2>
+    <div data-release="notes" class="reveal mt-2 text-sm leading-6 text-fg-muted [transition-delay:80ms]"></div>
+    <div class="reveal mt-8 flex flex-wrap gap-3 [transition-delay:160ms]">
+      <a href="https://github.com/Zed2101/Mineger/blob/main/CHANGELOG.md" class="btn-ghost" data-i18n="dl.changelog">Full changelog</a>
+      <a href="https://github.com/Zed2101/Mineger/releases" class="btn-ghost" data-i18n="dl.all">All releases</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="border-t border-line/60 bg-ink-2/60">
+  <div class="mx-auto grid max-w-6xl gap-10 px-5 py-14 md:grid-cols-[1.4fr_1fr_1fr]">
+    <div>
+      <div class="flex items-center gap-3">
+        <img src="assets/logo.png" alt="" width="32" height="32" class="size-8 rounded-lg">
+        <span class="text-lg font-extrabold tracking-tight">Mineger</span>
+      </div>
+      <p class="mt-3 max-w-sm text-sm text-fg-muted" data-i18n="footer.tagline">Minecraft server manager for Windows.</p>
+      <p class="mt-6 font-mono text-[11px] text-fg-faint" data-i18n="footer.made">Made by Daniel Crantoc. Not affiliated with Mojang or Microsoft.</p>
+    </div>
+    <div>
+      <p class="micro" data-i18n="footer.product">Product</p>
+      <ul class="mt-4 space-y-2 text-sm text-fg-muted">
+        <li><a href="./" class="transition hover:text-fg" data-i18n="nav.features">Features</a></li>
+        <li><a href="https://github.com/Zed2101/Mineger/releases" class="transition hover:text-fg" data-i18n="footer.releases">All releases</a></li>
+        <li><a href="https://github.com/Zed2101/Mineger/blob/main/CHANGELOG.md" class="transition hover:text-fg" data-i18n="footer.changelog">Changelog</a></li>
+        <li><a href="https://github.com/Zed2101/Mineger/issues" class="transition hover:text-fg" data-i18n="footer.issues">Report a bug</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="micro" data-i18n="footer.docs">Documentation</p>
+      <ul class="mt-4 space-y-2 text-sm text-fg-muted">
+        <li><a href="https://github.com/Zed2101/Mineger#readme" class="transition hover:text-fg">README</a></li>
+        <li><a href="https://github.com/Zed2101/Mineger/blob/main/docs/ARCHITECTURE.md" class="transition hover:text-fg" data-i18n="footer.arch">Architecture</a></li>
+        <li><a href="https://github.com/Zed2101/Mineger/blob/main/docs/API-HOST.md" class="transition hover:text-fg" data-i18n="footer.api">Host API &amp; webhooks</a></li>
+        <li><a href="https://github.com/Zed2101/Mineger" class="transition hover:text-fg" data-i18n="footer.source">Source code</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+</body>
+</html>

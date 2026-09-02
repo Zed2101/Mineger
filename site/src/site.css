@@ -1,0 +1,168 @@
+/* Mineger website — Tailwind v4 source. Compiled to site/tailwind.css by `npm run site:build`. */
+@import "tailwindcss";
+@source "../";
+@source not "../tailwind.css";
+
+/* ---------------------------------------------------------------------------
+   Theme — same palette as the app ("Pannello Pro")
+   --------------------------------------------------------------------------- */
+@theme {
+  --color-ink: #0b0e12;
+  --color-ink-2: #11151a;
+  --color-panel: #161b21;
+  --color-panel-2: #1b2128;
+  --color-line: #262c34;
+  --color-line-strong: #2f3741;
+
+  --color-fg: #e7eaee;
+  --color-fg-soft: #c9cfd6;
+  --color-fg-muted: #98a2ae;
+  --color-fg-faint: #6b7684;
+
+  --color-accent: #2dd4bf;
+  --color-accent-ink: #06231f;
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
+
+  --color-grass: #6fca4f;
+  --color-grass-dark: #4f9d38;
+  --color-dirt: #8b5a3c;
+  --color-dirt-dark: #6b4229;
+  --color-stone: #7f8794;
+  --color-stone-dark: #5c6470;
+
+  --font-sans: "Archivo", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-mono: "Martian Mono", ui-monospace, Consolas, "Cascadia Mono", monospace;
+
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-float-slow: float 11s ease-in-out infinite;
+  --animate-float-fast: float 5s ease-in-out infinite;
+  --animate-dash: dash 1.6s linear infinite;
+  --animate-dash-slow: dash 3.2s linear infinite;
+  --animate-pulse-ring: pulse-ring 2.6s ease-out infinite;
+  --animate-orbit: orbit 28s linear infinite;
+  --animate-orbit-reverse: orbit-reverse 40s linear infinite;
+  --animate-blink: blink 1s steps(2) infinite;
+  --animate-glow: glow 4s ease-in-out infinite;
+  --animate-grid: grid-move 14s linear infinite;
+  --animate-rise: rise 0.8s ease-out both;
+  --animate-shimmer: shimmer 2.8s linear infinite;
+  --animate-bounce-soft: bounce-soft 1.8s ease-in-out infinite;
+  --animate-fill: fill 3.6s ease-in-out infinite;
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-14px); }
+  }
+  @keyframes dash {
+    to { stroke-dashoffset: -32; }
+  }
+  @keyframes pulse-ring {
+    0% { transform: scale(0.55); opacity: 0.9; }
+    100% { transform: scale(1.9); opacity: 0; }
+  }
+  @keyframes orbit {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes orbit-reverse {
+    to { transform: rotate(-360deg); }
+  }
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+  @keyframes glow {
+    0%, 100% { opacity: 0.45; }
+    50% { opacity: 1; }
+  }
+  @keyframes grid-move {
+    to { background-position: 0 56px, 56px 0; }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes shimmer {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(250%); }
+  }
+  @keyframes bounce-soft {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(5px); }
+  }
+  @keyframes fill {
+    0% { stroke-dashoffset: 260; }
+    70%, 100% { stroke-dashoffset: 0; }
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Base
+   --------------------------------------------------------------------------- */
+@layer base {
+  html { scroll-behavior: smooth; }
+  body {
+    @apply bg-ink font-sans text-fg antialiased;
+  }
+  ::selection { @apply bg-accent text-accent-ink; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-md bg-line-strong;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Reusable utilities (composed with @apply, usable with variants)
+   --------------------------------------------------------------------------- */
+@utility micro {
+  @apply font-mono text-[11px] font-semibold uppercase tracking-[2px] text-accent;
+}
+
+@utility panel {
+  @apply rounded-2xl border border-line bg-panel/80 backdrop-blur-sm;
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-5 py-3 text-sm font-bold transition-all duration-200 select-none;
+}
+
+@utility btn-primary {
+  @apply btn bg-accent text-accent-ink shadow-[0_0_0_1px_rgba(45,212,191,.35),0_12px_40px_-12px_rgba(45,212,191,.7)] hover:-translate-y-0.5 hover:bg-[#5fe3d2] hover:shadow-[0_0_0_1px_rgba(45,212,191,.5),0_18px_50px_-12px_rgba(45,212,191,.85)] active:translate-y-0;
+}
+
+@utility btn-ghost {
+  @apply btn border border-line bg-panel/60 text-fg-soft hover:border-line-strong hover:bg-panel-2 hover:text-fg;
+}
+
+/* Cards with a gradient border that lights up on hover */
+@utility glow-card {
+  @apply relative rounded-2xl border border-line bg-panel/70 transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 hover:shadow-[0_24px_60px_-24px_rgba(45,212,191,.35)];
+}
+
+/* Scroll reveal: elements start hidden, site.js swaps in `reveal-in` */
+@utility reveal {
+  @apply translate-y-6 opacity-0 transition-all duration-700 ease-out motion-reduce:translate-y-0 motion-reduce:opacity-100;
+}
+@utility reveal-in {
+  @apply translate-y-0 opacity-100;
+}
+
+/* Animated grid backdrop for the hero */
+@utility hero-grid {
+  @apply bg-[linear-gradient(to_right,rgba(45,212,191,.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(45,212,191,.06)_1px,transparent_1px)] bg-[size:56px_56px] motion-safe:animate-grid;
+}
+
+/* Text with the accent gradient */
+@utility text-glow {
+  @apply bg-[linear-gradient(120deg,#2dd4bf,#8ef0e3_45%,#2dd4bf)] bg-clip-text text-transparent;
+}
+
+/* SVG helpers */
+@utility dashed-flow {
+  @apply [stroke-dasharray:6_10] motion-safe:animate-dash;
+}
+@utility fill-box {
+  @apply [transform-box:fill-box] origin-center;
+}

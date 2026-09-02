@@ -34,3 +34,7 @@ src-tauri/src/data/settings.json
 
 # Piano di lavoro interno
 PIANO.md
+
+# Sito (GitHub Pages): CSS compilato e release.json generati in CI
+site/tailwind.css
+site/release.json

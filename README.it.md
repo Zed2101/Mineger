@@ -2,7 +2,7 @@
 
 Gestore di server Minecraft per Windows: crea, avvia e amministra i tuoi server da un'unica app, senza righe di comando.
 
-*[Read this file in English](README.md)*
+*[Read this file in English](README.md)* · **Sito:** [zed2101.github.io/Mineger](https://zed2101.github.io/Mineger/)
 
 Mineger è un'applicazione desktop costruita con [Tauri](https://tauri.app) — backend in Rust, interfaccia in HTML/JS con Tailwind CSS. Nessun account, nessun servizio esterno obbligatorio: i server restano cartelle sul tuo disco.
 
