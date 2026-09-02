@@ -350,7 +350,13 @@ pub async fn get_host_status(app: AppHandle) -> Result<HostStatus, String> {
 
 /// Abilita/disabilita l'host e ne aggiorna porta e nome. Ritorna lo stato.
 #[tauri::command]
-pub async fn set_host_config(app: AppHandle, enabled: bool, port: u16, name: String) -> Result<HostStatus, String> {
+pub async fn set_host_config(
+    app: AppHandle,
+    enabled: bool,
+    port: u16,
+    name: String,
+    bind: Option<String>,
+) -> Result<HostStatus, String> {
     if port < 1024 {
         return Err(tr!("errors.host.port_too_low"));
     }
@@ -363,6 +369,8 @@ pub async fn set_host_config(app: AppHandle, enabled: bool, port: u16, name: Str
     s.host.enabled = enabled;
     s.host.port = port;
     s.host.name = name;
+    s.host.bind = bind.unwrap_or_default().trim().to_string();
+    s.host.bind_addr()?; // valida prima di salvare
     settings::save(&app, &s)?;
     host::apply(&app, &s)?;
     Ok(host::status(&s))

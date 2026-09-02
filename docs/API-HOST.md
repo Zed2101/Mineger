@@ -23,6 +23,19 @@ Il link d'invito che l'app genera (`mineger://…`) contiene indirizzo, porta e 
 
 > Il token dà **controllo completo** sui server dell'host: condividilo solo con chi vuoi che li amministri.
 
+Il token è accettato **solo nell'header**. L'unica eccezione è `/api/ws?token=…`, perché un browser non può impostare header su un WebSocket: lì il token viaggia nella query string.
+
+### Limiti e protezioni
+
+| Cosa | Valore |
+|---|---|
+| Body massimo `/api/...` | 1 MB (16 MB per l'icona del server, 1 GB solo per l'upload delle mod) |
+| Body massimo `/hook/{id}` | 64 KB |
+| Tentativi di autenticazione falliti | 20 al minuto per indirizzo, poi `429 Too Many Requests` |
+| Confronto del token | a tempo costante |
+| CORS | solo le origini del webview Mineger (i client non-browser non ne sono toccati) |
+| Indirizzo di ascolto | **Impostazioni → Controllo remoto → In ascolto su**: tutta la rete (predefinito) o solo questo PC |
+
 ---
 
 ## Endpoint
@@ -143,6 +156,6 @@ curl "http://127.0.0.1:25580/hook/ID?token=TOKEN&action=status"
 
 ## Note di rete
 
-- L'host ascolta su tutte le interfacce: perché sia raggiungibile da fuori casa serve un port forward o l'UPnP del router.
+- Per impostazione predefinita l'host ascolta su tutte le interfacce: perché sia raggiungibile da fuori casa serve un port forward o l'UPnP del router. Se l'accesso passa da un tunnel o una VPN sulla stessa macchina, scegli **Solo questo PC** nelle impostazioni.
 - Il traffico è **HTTP in chiaro**: adatto alla rete locale o a una VPN fra amici. Non esporre l'host su Internet senza un reverse proxy con TLS.
 - Chi si collega vede e comanda solo i server dell'host, non il resto del computer.

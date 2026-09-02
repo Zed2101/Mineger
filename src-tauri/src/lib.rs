@@ -128,9 +128,11 @@ pub fn run() {
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|_app, event| {
+        .run(|app, event| {
             if let RunEvent::Exit = event {
-                // Host remoto (chiude anche la porta UPnP), poi i server Java.
+                // Contatori webhook non ancora scritti, host remoto (chiude anche la
+                // porta UPnP), poi i server Java.
+                host::flush_stats(app);
                 host::shutdown_blocking();
                 process::shutdown_all(SHUTDOWN_TIMEOUT);
             }

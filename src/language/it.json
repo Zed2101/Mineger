@@ -117,6 +117,7 @@
     },
     "host": {
       "empty_name": "Il nome dell'host non può essere vuoto",
+      "invalid_bind": "Indirizzo di ascolto non valido: {address}",
       "invalid_form_body": "Form non valido: {error}",
       "invalid_json_body": "JSON non valido: {error}",
       "invalid_port": "Porta non valida: {port}",
@@ -132,6 +133,7 @@
       "task_failed": "task fallito: {error}",
       "token_rejected": "Token rifiutato dall'host",
       "token_too_short": "Token troppo corto",
+      "too_many_attempts": "Troppi tentativi falliti da questo indirizzo: riprova tra un minuto",
       "unreachable": "Host non raggiungibile ({url}): {error}",
       "upload_failed": "upload: {error}",
       "upload_file_failed": "upload {name}: {error}"
@@ -879,6 +881,10 @@
     },
     "settings": {
       "apply": "Applica",
+      "bind_all": "Tutta la rete",
+      "bind_hint": "\"Solo questo PC\" serve quando l'accesso passa da un tunnel o una VPN su questa macchina.",
+      "bind_label": "In ascolto su",
+      "bind_local": "Solo questo PC",
       "cf_key_label": "Chiave CurseForge",
       "cf_key_placeholder": "incolla qui la tua chiave CurseForge",
       "cf_note": "CurseForge richiede una chiave API <span class=\"text-text-soft\">personale</span>: senza, mod e modpack di CurseForge non sono disponibili.",

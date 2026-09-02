@@ -329,6 +329,20 @@ function renderHostStatus(status) {
   document.getElementById('host-invite-public-row').classList.toggle('hidden', !status.invite_public);
 }
 
+/** Pillole "In ascolto su": tutta la rete (valore vuoto = 0.0.0.0) oppure solo questo PC. */
+function renderBindPills(value) {
+  const wanted = value === '0.0.0.0' ? '' : value;
+  document.querySelectorAll('#host-bind [data-bind]').forEach((pill) => {
+    const on = (pill.dataset.bind || '') === wanted;
+    pill.classList.toggle('selected', on);
+    pill.setAttribute('aria-checked', String(on));
+  });
+}
+
+function selectedBind() {
+  return document.querySelector('#host-bind .selected')?.dataset.bind || '';
+}
+
 /** Aggiorna la pill accanto al titolo "Controllo remoto". */
 function renderHostPill(active) {
   const pill = document.getElementById('host-state-pill');
@@ -389,6 +403,7 @@ async function renderSettings(state, refreshJava = false) {
     document.getElementById('host-enabled').checked = settings.host.enabled;
     document.getElementById('host-name').value = settings.host.name;
     document.getElementById('host-port').value = settings.host.port;
+    renderBindPills(settings.host.bind || '');
     document.getElementById('cf-api-key').value = settings.curseforge_api_key || '';
   } catch (err) {
     document.getElementById('host-status').textContent = t('msg.settings.error', { error: err });
@@ -455,6 +470,7 @@ function setupSettings(state, hooks) {
         enabled: document.getElementById('host-enabled').checked,
         port: Number(document.getElementById('host-port').value) || 25580,
         name: document.getElementById('host-name').value.trim(),
+        bind: selectedBind(),
       });
       renderHostStatus(status);
       if (status.listener_running) setTimeout(refreshHostStatus, 7000); // esito UPnP
@@ -466,6 +482,10 @@ function setupSettings(state, hooks) {
       btn.disabled = false;
     }
   };
+  document.getElementById('host-bind')?.addEventListener('click', (e) => {
+    const pill = e.target.closest('[data-bind]');
+    if (pill) renderBindPills(pill.dataset.bind || '');
+  });
   document.getElementById('btn-host-apply').addEventListener('click', applyHost);
   document.getElementById('host-enabled').addEventListener('change', applyHost);
 

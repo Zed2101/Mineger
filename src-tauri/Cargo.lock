@@ -2200,7 +2200,7 @@ checksum = "6877bb514081ee2a7ff5ef9de3281f14a4dd4bceac4c09388074a6b5df8a139a"
 
 [[package]]
 name = "mineger"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "axum",
  "base64 0.22.1",
@@ -2214,6 +2214,7 @@ dependencies = [
  "serde_urlencoded",
  "sha1",
  "sha2",
+ "subtle",
  "sys-locale",
  "sysinfo",
  "tauri",

@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/).
 
+## [1.0.2] — 2026-09-02
+
+Security hardening of the host listener (remote control and webhooks). Updating is recommended for anyone who has enabled the host or a webhook.
+
+### Security
+- Per-route request body limits. `/hook/{id}` now accepts at most 64 KB — it has to read the body to find the token, so an unauthenticated caller could previously make the host buffer up to 1 GB per request. API routes are capped at 1 MB and the server icon at 16 MB; the 1 GB limit remains only on mod uploads.
+- Token comparison is constant-time (`subtle`), for the API token and for per-webhook tokens.
+- Failed authentication is rate-limited per client address: after 20 failures within a minute the host answers `429` without evaluating the token.
+- The API token is accepted only in the `Authorization: Bearer` header. The `?token=` query parameter is honoured solely on `/api/ws`, where browsers cannot set headers. Webhook tokens may still travel in query or body: they are per-hook, carry their own permissions, and GET-only integrations depend on it.
+- CORS is restricted to the Tauri webview origins instead of `permissive()`. Non-browser clients (bots, the remote app) are unaffected.
+- The listen address is configurable in **Settings → Remote control → Listen on**: whole network (default, `0.0.0.0`) or this PC only (`127.0.0.1`), for setups that go through a tunnel or a VPN on the same machine.
+- Webhook call statistics no longer rewrite `settings.json` on every request. Unauthenticated calls are kept in memory only; authenticated ones are coalesced and flushed at most every 2 s and on exit. Every write to the settings file now goes through a single lock, so concurrent writers cannot clobber each other.
+- A Content Security Policy is set for the webview (it was `null`): scripts and styles from the app only, fonts from Google Fonts, images from HTTPS CDNs, connections to local IPC and to remote hosts.
+
 ## [1.0.1] — 2026-08-22
 
 ### Added

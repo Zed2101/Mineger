@@ -35,7 +35,7 @@ use crate::upnp;
 use axum::body::Bytes;
 use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
 use axum::extract::{ConnectInfo, DefaultBodyLimit, Multipart, Path, Query, Request, State};
-use axum::http::{header, HeaderMap, StatusCode};
+use axum::http::{header, HeaderMap, HeaderValue, Method, StatusCode};
 use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post, put};
@@ -43,16 +43,34 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::{HashMap, VecDeque};
-use std::net::SocketAddr;
-use std::sync::{Arc, Mutex};
+use std::net::{IpAddr, SocketAddr};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, LazyLock, Mutex};
 use std::thread;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use subtle::ConstantTimeEq;
 use tauri::{AppHandle, Emitter};
 use tokio::sync::{broadcast, oneshot};
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{AllowOrigin, CorsLayer};
 
-const MAX_UPLOAD_BYTES: usize = 1024 * 1024 * 1024; // 1 GB (modpack pesanti)
+/// Limiti del body per gruppo di rotte. Il limite grande vale solo per l'upload delle
+/// mod; il resto dell'API è piccolo, e i webhook — che devono leggere il body per
+/// trovarci il token, quindi prima di poter rifiutare — restano sotto i 64 KB.
+const MAX_UPLOAD_BYTES: usize = 1024 * 1024 * 1024; // 1 GB (mod e modpack pesanti)
+const MAX_ICON_BYTES: usize = 16 * 1024 * 1024; // immagine in base64 (max 5 MB decodificati)
+const MAX_API_BYTES: usize = 1024 * 1024; // JSON dei comandi
+const MAX_HOOK_BYTES: usize = 64 * 1024;
 const MAX_CALL_RECORDS: usize = 200;
+
+/// Tentativi di autenticazione falliti tollerati per IP nella finestra, poi 429.
+const AUTH_FAILURE_LIMIT: u32 = 20;
+const AUTH_FAILURE_WINDOW: Duration = Duration::from_secs(60);
+/// Le statistiche dei webhook si scrivono su disco al più ogni tanto, non a ogni chiamata.
+const STATS_FLUSH_INTERVAL: Duration = Duration::from_secs(2);
+
+/// Origini del webview Tauri: le uniche che un browser può usare verso questa API.
+/// I client non-browser (curl, bot, l'app remota via reqwest) non passano dal CORS.
+const ALLOWED_ORIGINS: [&str; 3] = ["http://tauri.localhost", "https://tauri.localhost", "tauri://localhost"];
 
 /// Una chiamata ricevuta da un webhook (anche fallita): mostrata nel tab Webhook del server.
 #[derive(Serialize, Clone, Debug)]
@@ -69,6 +87,8 @@ pub struct CallRecord {
     pub message: String,
     /// IP del chiamante
     pub from: String,
+    /// Il token era valido: solo queste chiamate aggiornano i contatori su disco
+    pub authenticated: bool,
 }
 
 static RECENT_CALLS: Mutex<VecDeque<CallRecord>> = Mutex::new(VecDeque::new());
@@ -77,7 +97,20 @@ fn now_ms() -> u64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis() as u64).unwrap_or(0)
 }
 
-/// Memorizza la chiamata, aggiorna i contatori persistiti del webhook e avvisa la UI.
+/// Contatori in attesa di essere scritti in `settings.json`, per webhook.
+#[derive(Default, Clone)]
+struct PendingStats {
+    calls: u64,
+    last: Option<CallRecord>,
+}
+
+static PENDING_STATS: LazyLock<Mutex<HashMap<String, PendingStats>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
+static LAST_FLUSH: Mutex<Option<Instant>> = Mutex::new(None);
+static FLUSH_SCHEDULED: AtomicBool = AtomicBool::new(false);
+
+/// Memorizza la chiamata e avvisa la UI. I contatori su disco si aggiornano solo per le
+/// chiamate autenticate e non più di una volta ogni `STATS_FLUSH_INTERVAL`: prima ogni
+/// richiesta, anche con token sbagliato, riscriveva tutto `settings.json`.
 fn record_call(app: &AppHandle, record: CallRecord) {
     {
         let mut calls = RECENT_CALLS.lock().unwrap_or_else(|e| e.into_inner());
@@ -87,21 +120,61 @@ fn record_call(app: &AppHandle, record: CallRecord) {
         }
     }
 
-    let mut s = settings::load(app);
-    if let Some(w) = s.webhooks.iter_mut().find(|w| w.id == record.hook_id) {
-        w.stats.calls += 1;
-        w.stats.last_call_at = Some(record.at);
-        w.stats.last_action = Some(record.action.clone());
-        w.stats.last_ok = Some(record.ok);
-        w.stats.last_from = Some(record.from.clone());
-        if let Err(e) = settings::save(app, &s) {
-            println!("[Mineger] statistiche webhook non salvate: {}", e);
-        }
-    }
-
     let payload = serde_json::to_value(&record).unwrap_or(Value::Null);
     let _ = app.emit("webhook-call", payload.clone());
     events::publish("webhook-call", payload);
+
+    if !record.authenticated {
+        return;
+    }
+    {
+        let mut pending = PENDING_STATS.lock().unwrap_or_else(|e| e.into_inner());
+        let entry = pending.entry(record.hook_id.clone()).or_default();
+        entry.calls += 1;
+        entry.last = Some(record);
+    }
+    let due = LAST_FLUSH
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .map(|t| t.elapsed() >= STATS_FLUSH_INTERVAL)
+        .unwrap_or(true);
+    if due {
+        flush_stats(app);
+    } else if !FLUSH_SCHEDULED.swap(true, Ordering::SeqCst) {
+        // Una sola scrittura differita, che raccoglie le chiamate arrivate nel frattempo.
+        let app = app.clone();
+        thread::spawn(move || {
+            thread::sleep(STATS_FLUSH_INTERVAL);
+            FLUSH_SCHEDULED.store(false, Ordering::SeqCst);
+            flush_stats(&app);
+        });
+    }
+}
+
+/// Scrive i contatori in attesa nelle impostazioni. Chiamata anche alla chiusura dell'app.
+pub fn flush_stats(app: &AppHandle) {
+    let pending = std::mem::take(&mut *PENDING_STATS.lock().unwrap_or_else(|e| e.into_inner()));
+    if pending.is_empty() {
+        return;
+    }
+    *LAST_FLUSH.lock().unwrap_or_else(|e| e.into_inner()) = Some(Instant::now());
+    if let Err(e) = settings::update(app, |s| merge_pending_stats(s, &pending)) {
+        println!("[Mineger] statistiche webhook non salvate: {}", e);
+    }
+}
+
+fn merge_pending_stats(s: &mut Settings, pending: &HashMap<String, PendingStats>) {
+    for (hook_id, p) in pending {
+        if let Some(w) = s.webhooks.iter_mut().find(|w| &w.id == hook_id) {
+            w.stats.calls += p.calls;
+            if let Some(last) = &p.last {
+                w.stats.last_call_at = Some(last.at);
+                w.stats.last_action = Some(last.action.clone());
+                w.stats.last_ok = Some(last.ok);
+                w.stats.last_from = Some(last.from.clone());
+            }
+        }
+    }
 }
 
 /// Ultime chiamate, opzionalmente filtrate per server.
@@ -142,6 +215,8 @@ pub struct HostStatus {
     pub webhooks_active: usize,
     pub port: u16,
     pub name: String,
+    /// Indirizzo di ascolto configurato (vuoto = tutta la rete)
+    pub bind: String,
     pub local_ip: Option<String>,
     pub public_ip: Option<String>,
     /// Esito UPnP sulla porta di gestione (None = non ancora noto)
@@ -179,7 +254,9 @@ pub fn start(app: &AppHandle, settings: &Settings) -> Result<(), String> {
         return Err(tr!("errors.host.token_too_short"));
     }
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], cfg.port));
+    // Tutta la rete per impostazione predefinita (è lo scopo dell'host); "127.0.0.1"
+    // per chi lo espone attraverso un tunnel o una VPN sulla stessa macchina.
+    let addr = SocketAddr::new(cfg.bind_addr()?, cfg.port);
     let std_listener = std::net::TcpListener::bind(addr)
         .map_err(|e| tr!("errors.host.port_unavailable", "port" => cfg.port, "error" => e))?;
     std_listener.set_nonblocking(true).map_err(|e| e.to_string())?;
@@ -299,6 +376,7 @@ pub fn status(settings: &Settings) -> HostStatus {
         public_ip,
         upnp: upnp_msg,
         upnp_ok,
+        bind: settings.host.bind.clone(),
     }
 }
 
@@ -321,6 +399,19 @@ fn extract_public_ip(msg: &str) -> Option<String> {
 // ---------------------------------------------------------------------------
 
 fn build_router(state: HostState) -> Router {
+    let auth_layer = || middleware::from_fn_with_state(state.clone(), auth);
+
+    // L'upload delle mod è l'unico gruppo che ha bisogno di un body grande.
+    let api_upload = Router::new()
+        .route("/api/servers/{id}/mods", post(upload_mods))
+        .route_layer(auth_layer())
+        .layer(DefaultBodyLimit::max(MAX_UPLOAD_BYTES));
+
+    let api_icon = Router::new()
+        .route("/api/servers/{id}/server-icon", get(get_server_icon).put(put_server_icon).delete(delete_server_icon))
+        .route_layer(auth_layer())
+        .layer(DefaultBodyLimit::max(MAX_ICON_BYTES));
+
     let api = Router::new()
         .route("/api/info", get(info))
         .route("/api/servers", get(list_servers))
@@ -340,10 +431,8 @@ fn build_router(state: HostState) -> Router {
         .route("/api/servers/{id}/info", put(update_info))
         .route("/api/servers/{id}/launch", put(update_launch))
         .route("/api/servers/{id}/properties", put(save_properties))
-        .route("/api/servers/{id}/mods", post(upload_mods))
         .route("/api/servers/{id}/mods/toggle", post(toggle_mod))
         .route("/api/servers/{id}/mods/{name}", axum::routing::delete(delete_mod))
-        .route("/api/servers/{id}/server-icon", get(get_server_icon).put(put_server_icon).delete(delete_server_icon))
         .route("/api/servers/{id}/content", get(mod_context))
         .route("/api/servers/{id}/content/search", post(mods_search))
         .route("/api/servers/{id}/content/versions", post(mods_versions))
@@ -355,14 +444,19 @@ fn build_router(state: HostState) -> Router {
         .route("/api/packs/resolve", post(packs_resolve))
         .route("/api/packs/install", post(packs_install))
         .route("/api/ws", get(ws_upgrade))
-        .route_layer(middleware::from_fn_with_state(state.clone(), auth));
+        .route_layer(auth_layer())
+        .layer(DefaultBodyLimit::max(MAX_API_BYTES));
 
-    Router::new()
-        .merge(api)
+    let hooks = Router::new()
         .route("/hook/{id}", get(hook).post(hook))
-        .layer(DefaultBodyLimit::max(MAX_UPLOAD_BYTES))
-        .layer(CorsLayer::permissive())
-        .with_state(state)
+        .layer(DefaultBodyLimit::max(MAX_HOOK_BYTES));
+
+    let cors = CorsLayer::new()
+        .allow_origin(AllowOrigin::list(ALLOWED_ORIGINS.into_iter().map(HeaderValue::from_static)))
+        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
+        .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE]);
+
+    Router::new().merge(api).merge(api_upload).merge(api_icon).merge(hooks).layer(cors).with_state(state)
 }
 
 // ---------------------------------------------------------------------------
@@ -382,12 +476,53 @@ fn bearer(headers: &HeaderMap) -> Option<&str> {
         .map(str::trim)
 }
 
+/// Confronto a tempo costante: un `==` si ferma al primo byte diverso e lascerebbe
+/// indovinare il token misurando i tempi di risposta.
+fn token_matches(provided: Option<&str>, expected: &str) -> bool {
+    match provided {
+        Some(p) => p.as_bytes().ct_eq(expected.as_bytes()).into(),
+        None => false,
+    }
+}
+
+/// Tentativi falliti per IP nella finestra corrente.
+static AUTH_FAILURES: LazyLock<Mutex<HashMap<IpAddr, (u32, Instant)>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
+
+/// true se l'IP ha esaurito i tentativi: la risposta è 429 senza nemmeno guardare il token.
+fn auth_blocked(ip: IpAddr) -> bool {
+    let mut map = AUTH_FAILURES.lock().unwrap_or_else(|e| e.into_inner());
+    match map.get(&ip) {
+        Some((count, since)) if since.elapsed() < AUTH_FAILURE_WINDOW => *count >= AUTH_FAILURE_LIMIT,
+        Some(_) => {
+            map.remove(&ip);
+            false
+        }
+        None => false,
+    }
+}
+
+fn note_auth_failure(ip: IpAddr) {
+    let mut map = AUTH_FAILURES.lock().unwrap_or_else(|e| e.into_inner());
+    map.retain(|_, (_, since)| since.elapsed() < AUTH_FAILURE_WINDOW);
+    map.entry(ip).or_insert((0, Instant::now())).0 += 1;
+}
+
 async fn auth(State(state): State<HostState>, Query(q): Query<TokenQuery>, req: Request, next: Next) -> Response {
     if !state.api_enabled {
         return (StatusCode::FORBIDDEN, Json(json!({ "error": tr!("errors.host.remote_control_disabled") }))).into_response();
     }
-    let provided = bearer(req.headers()).or(q.token.as_deref());
-    if provided != Some(state.token.as_str()) {
+    let ip = req.extensions().get::<ConnectInfo<SocketAddr>>().map(|c| c.0.ip());
+    if ip.is_some_and(auth_blocked) {
+        return (StatusCode::TOO_MANY_REQUESTS, Json(json!({ "error": tr!("errors.host.too_many_attempts") }))).into_response();
+    }
+    // Un token nella query string finisce in log, proxy e cronologie: è accettato solo
+    // per il WebSocket, dove il browser non può impostare l'header Authorization.
+    let from_query = if req.uri().path() == "/api/ws" { q.token.as_deref() } else { None };
+    let provided = bearer(req.headers()).or(from_query);
+    if !token_matches(provided, state.token.as_str()) {
+        if let Some(ip) = ip {
+            note_auth_failure(ip);
+        }
         return (StatusCode::UNAUTHORIZED, Json(json!({ "error": tr!("errors.host.invalid_token") }))).into_response();
     }
     next.run(req).await
@@ -714,15 +849,24 @@ async fn hook(
         ok: false,
         message: String::new(),
         from,
+        authenticated: false,
     };
 
+    if auth_blocked(addr.ip()) {
+        return hook_error(StatusCode::TOO_MANY_REQUESTS, &tr!("errors.host.too_many_attempts"));
+    }
+    // Per i webhook il token può stare anche in query o body (integrazioni che sanno
+    // fare solo una GET): è un token per-hook con permessi propri, e il body è
+    // limitato a MAX_HOOK_BYTES, quindi leggerlo prima di rifiutare costa poco.
     let provided = bearer(&headers).or(req.token.as_deref());
-    if provided != Some(hook.token.as_str()) {
+    if !token_matches(provided, hook.token.as_str()) {
+        note_auth_failure(addr.ip());
         let app = state.app.clone();
         let rec = CallRecord { action: "auth".into(), message: tr!("errors.host.invalid_token"), ..base_record };
         tokio::task::spawn_blocking(move || record_call(&app, rec));
         return hook_error(StatusCode::UNAUTHORIZED, &tr!("errors.host.invalid_token"));
     }
+    let base_record = CallRecord { authenticated: true, ..base_record };
 
     let Some(action) = action else {
         return hook_error(StatusCode::BAD_REQUEST, &tr!("errors.webhook.missing_action"));
@@ -852,6 +996,71 @@ mod tests {
         let missing = open(&tr!("console.upnp.public_ip_unavailable"));
         assert_eq!(extract_public_ip(&missing), None, "{}", missing);
         assert_eq!(extract_public_ip("niente"), None);
+    }
+
+    #[test]
+    fn token_comparison_is_exact() {
+        assert!(token_matches(Some("abcdef0123456789"), "abcdef0123456789"));
+        assert!(!token_matches(Some("abcdef0123456788"), "abcdef0123456789"), "ultimo byte diverso");
+        assert!(!token_matches(Some("abcdef012345678"), "abcdef0123456789"), "lunghezza diversa");
+        assert!(!token_matches(Some(""), "abcdef0123456789"));
+        assert!(!token_matches(None, "abcdef0123456789"));
+    }
+
+    #[test]
+    fn auth_failures_block_after_limit_and_expire() {
+        let ip: IpAddr = "203.0.113.7".parse().unwrap();
+        AUTH_FAILURES.lock().unwrap().remove(&ip);
+        assert!(!auth_blocked(ip));
+        for _ in 0..AUTH_FAILURE_LIMIT - 1 {
+            note_auth_failure(ip);
+        }
+        assert!(!auth_blocked(ip), "sotto il limite si passa ancora");
+        note_auth_failure(ip);
+        assert!(auth_blocked(ip), "al limite scatta il 429");
+
+        // Finestra scaduta: il conteggio riparte
+        AUTH_FAILURES.lock().unwrap().insert(ip, (AUTH_FAILURE_LIMIT, Instant::now() - AUTH_FAILURE_WINDOW - Duration::from_secs(1)));
+        assert!(!auth_blocked(ip));
+        assert!(!AUTH_FAILURES.lock().unwrap().contains_key(&ip), "la voce scaduta viene tolta");
+    }
+
+    #[test]
+    fn pending_stats_merge_into_settings() {
+        let mut s = Settings::default();
+        s.webhooks.push(Webhook {
+            id: "h1".into(),
+            name: "H".into(),
+            token: "t".repeat(32),
+            server_id: None,
+            perms: Default::default(),
+            allowed_commands: vec![],
+            enabled: true,
+            stats: Default::default(),
+        });
+        s.webhooks[0].stats.calls = 5;
+        let last = CallRecord {
+            at: 1234,
+            hook_id: "h1".into(),
+            hook_name: "H".into(),
+            server_id: None,
+            action: "say".into(),
+            detail: String::new(),
+            ok: true,
+            message: "ok".into(),
+            from: "10.0.0.2".into(),
+            authenticated: true,
+        };
+        let mut pending = HashMap::new();
+        pending.insert("h1".to_string(), PendingStats { calls: 3, last: Some(last) });
+        pending.insert("sconosciuto".to_string(), PendingStats { calls: 9, last: None });
+        merge_pending_stats(&mut s, &pending);
+        let w = &s.webhooks[0];
+        assert_eq!(w.stats.calls, 8, "i contatori si sommano, non si sovrascrivono");
+        assert_eq!(w.stats.last_call_at, Some(1234));
+        assert_eq!(w.stats.last_action.as_deref(), Some("say"));
+        assert_eq!(w.stats.last_from.as_deref(), Some("10.0.0.2"));
+        assert_eq!(s.webhooks.len(), 1, "un hook sconosciuto non viene creato");
     }
 
     #[test]

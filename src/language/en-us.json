@@ -117,6 +117,7 @@
     },
     "host": {
       "empty_name": "The host name cannot be empty",
+      "invalid_bind": "Invalid listen address: {address}",
       "invalid_form_body": "Invalid form: {error}",
       "invalid_json_body": "Invalid JSON: {error}",
       "invalid_port": "Invalid port: {port}",
@@ -132,6 +133,7 @@
       "task_failed": "task failed: {error}",
       "token_rejected": "Token rejected by the host",
       "token_too_short": "Token too short",
+      "too_many_attempts": "Too many failed attempts from this address: try again in a minute",
       "unreachable": "Host unreachable ({url}): {error}",
       "upload_failed": "upload: {error}",
       "upload_file_failed": "upload {name}: {error}"
@@ -879,6 +881,10 @@
     },
     "settings": {
       "apply": "Apply",
+      "bind_all": "Whole network",
+      "bind_hint": "\"This PC only\" is for access through a tunnel or VPN running on this machine.",
+      "bind_label": "Listen on",
+      "bind_local": "This PC only",
       "cf_key_label": "CurseForge key",
       "cf_key_placeholder": "paste your CurseForge key here",
       "cf_note": "CurseForge requires your <span class=\"text-text-soft\">own</span> API key: without it, CurseForge mods and modpacks are unavailable.",

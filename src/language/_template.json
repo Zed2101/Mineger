@@ -117,6 +117,7 @@
     },
     "host": {
       "empty_name": "",
+      "invalid_bind": "",
       "invalid_form_body": "",
       "invalid_json_body": "",
       "invalid_port": "",
@@ -132,6 +133,7 @@
       "task_failed": "",
       "token_rejected": "",
       "token_too_short": "",
+      "too_many_attempts": "",
       "unreachable": "",
       "upload_failed": "",
       "upload_file_failed": ""
@@ -879,6 +881,10 @@
     },
     "settings": {
       "apply": "",
+      "bind_all": "",
+      "bind_hint": "",
+      "bind_label": "",
+      "bind_local": "",
       "cf_key_label": "",
       "cf_key_placeholder": "",
       "cf_note": "",

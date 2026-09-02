@@ -1,6 +1,6 @@
 [package]
 name = "mineger"
-version = "1.0.1"
+version = "1.0.2"
 description = "A Tauri app to manage minecraft servers easily!"
 authors = ["Zed"]
 edition = "2024"
@@ -40,3 +40,4 @@ base64 = "0.22"
 serde_urlencoded = "0.7"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "bmp"] }
 sys-locale = "0.3.2"
+subtle = "2"

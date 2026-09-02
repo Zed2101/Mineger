@@ -658,6 +658,14 @@
                 <input type="number" id="host-port" class="input w-[84px] text-center" min="1024" max="65535" />
                 <button id="btn-host-apply" class="btn-outline-accent shrink-0" data-i18n="ui.settings.apply">Applica</button>
               </div>
+              <div class="flex items-center gap-2">
+                <span class="settings-label" data-i18n="ui.settings.bind_label">In ascolto su</span>
+                <div id="host-bind" class="flex shrink-0 gap-2" role="radiogroup" data-i18n-aria="ui.settings.bind_label">
+                  <button type="button" class="loader-pill selected" data-bind="" role="radio" aria-checked="true" data-i18n="ui.settings.bind_all">Tutta la rete</button>
+                  <button type="button" class="loader-pill" data-bind="127.0.0.1" role="radio" aria-checked="false" data-i18n="ui.settings.bind_local">Solo questo PC</button>
+                </div>
+                <span class="note min-w-0 flex-1" data-i18n="ui.settings.bind_hint">"Solo questo PC" serve quando l'accesso passa da un tunnel o una VPN su questa macchina.</span>
+              </div>
               <p id="host-status" class="note">—</p>
               <div id="host-invites" class="hidden space-y-1.5">
                 <div class="flex items-center gap-2">

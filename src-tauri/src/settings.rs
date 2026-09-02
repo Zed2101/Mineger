@@ -34,11 +34,26 @@ pub struct HostConfig {
     pub name: String,
     #[serde(default)]
     pub token: String,
+    /// Indirizzo su cui ascolta il listener: vuoto o "0.0.0.0" = tutta la rete,
+    /// "127.0.0.1" = solo questo PC (dietro un tunnel o una VPN sulla stessa macchina).
+    #[serde(default)]
+    pub bind: String,
 }
 
 impl Default for HostConfig {
     fn default() -> Self {
-        HostConfig { enabled: false, port: DEFAULT_PORT, name: String::new(), token: String::new() }
+        HostConfig { enabled: false, port: DEFAULT_PORT, name: String::new(), token: String::new(), bind: String::new() }
+    }
+}
+
+impl HostConfig {
+    /// Indirizzo di ascolto validato; vuoto = tutte le interfacce.
+    pub fn bind_addr(&self) -> Result<std::net::IpAddr, String> {
+        let raw = self.bind.trim();
+        if raw.is_empty() {
+            return Ok(std::net::IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED));
+        }
+        raw.parse().map_err(|_| crate::tr!("errors.host.invalid_bind", "address" => raw))
     }
 }
 
@@ -170,7 +185,25 @@ pub fn load(app: &AppHandle) -> Settings {
     settings
 }
 
+/// Tutte le scritture di `settings.json` passano da qui: due chiamate concorrenti
+/// (un webhook e la UI, due webhook) non devono sovrascriversi a vicenda.
+static SETTINGS_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 pub fn save(app: &AppHandle, settings: &Settings) -> Result<(), String> {
+    let _guard = SETTINGS_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    write(app, settings)
+}
+
+/// Legge, modifica e riscrive le impostazioni in un'unica sezione critica, così
+/// la modifica parte sempre dallo stato più recente su disco.
+pub fn update(app: &AppHandle, change: impl FnOnce(&mut Settings)) -> Result<(), String> {
+    let _guard = SETTINGS_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let mut settings = load(app);
+    change(&mut settings);
+    write(app, &settings)
+}
+
+fn write(app: &AppHandle, settings: &Settings) -> Result<(), String> {
     let path = paths::settings_path(app)?;
     let json = serde_json::to_string_pretty(settings).map_err(|e| e.to_string())?;
     fs::write(&path, json).map_err(|e| tr!("errors.file.write_failed", "path" => path.display(), "error" => e))
