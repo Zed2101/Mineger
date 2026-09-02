@@ -1,5 +1,7 @@
 # Architettura
 
+*[Read this file in English](ARCHITECTURE.md)*
+
 Mineger è un'app [Tauri v2](https://tauri.app): backend Rust, frontend HTML/CSS/JS senza framework né bundler (moduli ES nativi), Tailwind CSS v4 per lo stile.
 
 ```
@@ -64,7 +66,8 @@ servers/<nome>/
   server.properties     configurazione del gioco
   mods/ | plugins/      contenuti caricabili (secondo il tipo di server)
   backups/              zip dei mondi
-src-tauri/src/data/settings.json   impostazioni dell'app (non versionato)
+settings.json           impostazioni dell'app, nella cartella config
+                        (src-tauri/src/data/ nelle build di sviluppo, non versionato)
 ```
 
 `server-data.json` è la fonte di verità dell'app; lo stato di esecuzione vive solo in memoria (`process.rs`) e viene ricalcolato a ogni avvio.

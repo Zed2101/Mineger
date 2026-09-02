@@ -1,152 +1,154 @@
-# API host e webhook
+# Host API and webhooks
 
-Un'installazione di Mineger può fare da **host**: espone i suoi server in rete, così altre copie dell'app (o qualsiasi client HTTP) li gestiscono a distanza. Si attiva in **Impostazioni → Host**.
+*[Leggi questo file in italiano](API-HOST.it.md)*
 
-L'host serve due cose diverse:
+A Mineger installation can act as a **host**: it exposes its servers on the network, so other copies of the app (or any HTTP client) can manage them remotely. Enable it under **Settings → Remote control**.
 
-- **API di controllo** sotto `/api/...`, protetta da token — è quella che usa l'app remota.
-- **Webhook** sotto `/hook/<id>`, pubblici ma con token e permessi propri — pensati per bot Discord, estensioni Twitch, script.
+The host serves two different things:
 
-Porta predefinita: **25580**.
+- **Control API** under `/api/...`, protected by a token — the one the remote app uses.
+- **Webhooks** under `/hook/<id>`, public but with their own token and permissions — meant for Discord bots, Twitch extensions, scripts.
+
+Default port: **25580**.
 
 ---
 
-## Autenticazione
+## Authentication
 
-Ogni richiesta a `/api/...` richiede il token dell'host:
+Every request to `/api/...` requires the host token:
 
 ```
 Authorization: Bearer <token>
 ```
 
-Il link d'invito che l'app genera (`mineger://…`) contiene indirizzo, porta e token: incollandolo in *Connetti remoto* il client si configura da solo.
+The invite link the app generates (`mineger://…`) contains address, port and token: paste it into *Connect remote* and the client configures itself.
 
-> Il token dà **controllo completo** sui server dell'host: condividilo solo con chi vuoi che li amministri.
+> The token grants **full control** over the host's servers: share it only with people you want administering them.
 
-Il token è accettato **solo nell'header**. L'unica eccezione è `/api/ws?token=…`, perché un browser non può impostare header su un WebSocket: lì il token viaggia nella query string.
+The token is accepted **only in the header**. The single exception is `/api/ws?token=…`, because a browser cannot set headers on a WebSocket: there the token travels in the query string.
 
-### Limiti e protezioni
+### Limits and protections
 
-| Cosa | Valore |
+| What | Value |
 |---|---|
-| Body massimo `/api/...` | 1 MB (16 MB per l'icona del server, 1 GB solo per l'upload delle mod) |
-| Body massimo `/hook/{id}` | 64 KB |
-| Tentativi di autenticazione falliti | 20 al minuto per indirizzo, poi `429 Too Many Requests` |
-| Confronto del token | a tempo costante |
-| CORS | solo le origini del webview Mineger (i client non-browser non ne sono toccati) |
-| Indirizzo di ascolto | **Impostazioni → Controllo remoto → In ascolto su**: tutta la rete (predefinito) o solo questo PC |
+| Maximum body on `/api/...` | 1 MB (16 MB for the server icon, 1 GB only for mod uploads) |
+| Maximum body on `/hook/{id}` | 64 KB |
+| Failed authentication attempts | 20 per minute per address, then `429 Too Many Requests` |
+| Token comparison | constant-time |
+| CORS | only the Mineger webview origins (non-browser clients are unaffected) |
+| Listen address | **Settings → Remote control → Listen on**: whole network (default) or this PC only |
 
 ---
 
-## Endpoint
+## Endpoints
 
-### Generali
+### General
 
-| Metodo | Percorso | Descrizione |
+| Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/info` | Nome dell'host, versione, spazio su disco |
-| `GET` | `/api/servers` | Elenco completo dei server con stato, mod, proprietà |
-| `POST` | `/api/servers/create` | Crea un server: `{name, kind, mc_version, loader_version}` |
-| `DELETE` | `/api/servers/{id}` | Elimina definitivamente un server (rifiutato se è in esecuzione) |
-| `POST` | `/api/loaders/mc-versions` | Versioni di Minecraft per un tipo: `{kind}` |
-| `POST` | `/api/loaders/versions` | Build del loader: `{kind, mc_version}` |
+| `GET` | `/api/info` | Host name, version, disk space |
+| `GET` | `/api/servers` | Full server list with state, mods, properties |
+| `POST` | `/api/servers/create` | Create a server: `{name, kind, mc_version, loader_version}` |
+| `DELETE` | `/api/servers/{id}` | Permanently delete a server (refused while it is running) |
+| `POST` | `/api/loaders/mc-versions` | Minecraft versions for a kind: `{kind}` |
+| `POST` | `/api/loaders/versions` | Loader builds: `{kind, mc_version}` |
 
 `kind`: `vanilla` · `paper` · `forge` · `neoforge` · `fabric`.
 
-### Ciclo di vita di un server
+### Server lifecycle
 
-| Metodo | Percorso | Descrizione |
+| Method | Path | Description |
 |---|---|---|
-| `POST` | `/api/servers/{id}/start` · `/stop` · `/kill` | Avvia, ferma con `stop`, termina il processo |
-| `POST` | `/api/servers/{id}/command` | Invia un comando alla console: `{command}` |
-| `POST` | `/api/servers/{id}/eula` | Accetta la EULA di Minecraft |
-| `GET` | `/api/servers/{id}/logs` | Ultime righe di console |
-| `GET` | `/api/servers/{id}/metrics` | CPU e RAM del processo Java |
-| `GET` | `/api/servers/{id}/disk-usage` | Byte e numero di file della cartella |
+| `POST` | `/api/servers/{id}/start` · `/stop` · `/kill` | Start, stop with `stop`, kill the process |
+| `POST` | `/api/servers/{id}/command` | Send a command to the console: `{command}` |
+| `POST` | `/api/servers/{id}/eula` | Accept the Minecraft EULA |
+| `GET` | `/api/servers/{id}/logs` | Latest console lines |
+| `GET` | `/api/servers/{id}/metrics` | CPU and RAM of the Java process |
+| `GET` | `/api/servers/{id}/disk-usage` | Bytes and file count of the folder |
 
-### Configurazione
+### Configuration
 
-| Metodo | Percorso | Descrizione |
+| Method | Path | Description |
 |---|---|---|
-| `PUT` | `/api/servers/{id}/info` | Nome e icona: `{name, icon}` |
-| `PUT` | `/api/servers/{id}/launch` | RAM e UPnP: `{max_ram_mb, upnp}` |
+| `PUT` | `/api/servers/{id}/info` | Name and icon: `{name, icon}` |
+| `PUT` | `/api/servers/{id}/launch` | RAM and UPnP: `{max_ram_mb, upnp}` |
 | `PUT` | `/api/servers/{id}/properties` | `server.properties`: `{properties: {...}}` |
-| `GET`/`PUT`/`DELETE` | `/api/servers/{id}/server-icon` | Icona del server (PNG 64×64, ridimensionata dall'app) |
-| `GET`/`POST` | `/api/servers/{id}/backups` | Elenca o crea un backup del mondo |
+| `GET`/`PUT`/`DELETE` | `/api/servers/{id}/server-icon` | Server icon (64×64 PNG, resized by the app) |
+| `GET`/`POST` | `/api/servers/{id}/backups` | List or create a world backup |
 
-### Mod e plugin
+### Mods and plugins
 
-| Metodo | Percorso | Descrizione |
+| Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/servers/{id}/content` | Contesto: tipo di server, cartella, versione, loader, se CurseForge è configurato |
-| `POST` | `/api/servers/{id}/content/search` | Ricerca: `{provider, query, limit}` |
-| `POST` | `/api/servers/{id}/content/versions` | Versioni di un progetto: `{provider, project_id}` |
-| `POST` | `/api/servers/{id}/content/install` | Installa: `{provider, project_id, file_id}` |
-| `GET` | `/api/servers/{id}/content/updates` | Aggiornamenti disponibili per le mod installate |
-| `POST` | `/api/servers/{id}/content/update` | Aggiorna una mod: `{name}` |
-| `POST` | `/api/servers/{id}/mods` | Carica file `.jar` (multipart) |
-| `POST` | `/api/servers/{id}/mods/toggle` | Attiva/disattiva: `{name, enabled}` |
-| `DELETE` | `/api/servers/{id}/mods/{name}` | Elimina un file |
+| `GET` | `/api/servers/{id}/content` | Context: server kind, folder, version, loader, whether CurseForge is configured |
+| `POST` | `/api/servers/{id}/content/search` | Search: `{provider, query, limit}` |
+| `POST` | `/api/servers/{id}/content/versions` | Versions of a project: `{provider, project_id}` |
+| `POST` | `/api/servers/{id}/content/install` | Install: `{provider, project_id, file_id}` |
+| `GET` | `/api/servers/{id}/content/updates` | Updates available for the installed mods |
+| `POST` | `/api/servers/{id}/content/update` | Update one mod: `{name}` |
+| `POST` | `/api/servers/{id}/mods` | Upload `.jar` files (multipart) |
+| `POST` | `/api/servers/{id}/mods/toggle` | Enable/disable: `{name, enabled}` |
+| `DELETE` | `/api/servers/{id}/mods/{name}` | Delete a file |
 
-`provider`: `modrinth` · `curseforge`. Le ricerche filtrano sempre per il **loader del server**; se per la versione di Minecraft non esiste nulla, la risposta contiene `relaxed_mc: true` e le build sono marcate `compatible: false`.
+`provider`: `modrinth` · `curseforge`. Searches always filter by the **server's loader**; when nothing exists for the Minecraft version, the response carries `relaxed_mc: true` and the builds are marked `compatible: false`.
 
-### Modpack
+### Modpacks
 
-| Metodo | Percorso | Descrizione |
+| Method | Path | Description |
 |---|---|---|
-| `POST` | `/api/packs/resolve` | Legge un link modpack: `{url}` |
-| `POST` | `/api/packs/install` | Installa: `{name, provider, project_id, file_id}` |
-| `GET` | `/api/servers/{id}/updates` | Controlla aggiornamenti del modpack |
-| `POST` | `/api/servers/{id}/update` | Aggiorna il modpack (backup + migrazione dati) |
+| `POST` | `/api/packs/resolve` | Read a modpack link: `{url}` |
+| `POST` | `/api/packs/install` | Install: `{name, provider, project_id, file_id}` |
+| `GET` | `/api/servers/{id}/updates` | Check for modpack updates |
+| `POST` | `/api/servers/{id}/update` | Update the modpack (backup + data migration) |
 
-### Eventi in tempo reale
+### Real-time events
 
 ```
 GET /api/ws?token=<token>
 ```
 
-WebSocket che inoltra gli eventi dell'app: `server-status`, `server-output`, `create-progress`, `update-progress`, `mod-progress`, `backup-progress`, `pack-updates`, `webhook-call`.
+WebSocket that forwards the app's events: `server-status`, `server-output`, `create-progress`, `update-progress`, `mod-progress`, `backup-progress`, `pack-updates`, `webhook-call`.
 
 ---
 
-## Webhook
+## Webhooks
 
-Ogni server ha un tab **Webhook** dove crearne quanti ne servono. Ogni webhook ha un id, un token e permessi indipendenti.
+Every server has a **Webhook** tab where you can create as many as you need. Each webhook has its own id, token and permissions.
 
 ```
-GET  /hook/<id>?token=<token>&action=say&message=Ciao
+GET  /hook/<id>?token=<token>&action=say&message=Hello
 POST /hook/<id>          { "token": "...", "action": "command", "command": "time set day" }
 ```
 
-I parametri si possono passare in query string, JSON o form: comodo per servizi che sanno mandare solo una GET.
+Parameters can be passed as query string, JSON or form: handy for services that can only send a GET.
 
-### Azioni e permessi
+### Actions and permissions
 
-| Azione | Parametri | Permesso |
+| Action | Parameters | Permission |
 |---|---|---|
-| `say` | `message` | Messaggi |
-| `command` | `command` | Comandi |
-| `start` / `stop` | — | Accensione |
-| `status` | — | Stato |
+| `say` | `message` | Messages |
+| `command` | `command` | Commands |
+| `start` / `stop` | — | Power |
+| `status` | — | Status |
 
-Regole applicate dall'host:
+Rules enforced by the host:
 
-- Ogni azione richiede il **permesso corrispondente**, attivabile singolarmente.
-- I comandi si limitano a una **lista consentita** che decidi tu (vuota = tutti i comandi permessi dal permesso "Comandi").
-- Il comando `stop` è **sempre rifiutato** dall'azione `command`: fermare il server richiede il permesso di accensione, esplicito.
-- Ogni chiamata viene registrata (orario, esito, IP) ed è visibile nel tab Webhook.
+- Every action requires the **matching permission**, each one enabled individually.
+- Commands are restricted to an **allow list** you define (empty = every command allowed by the "Commands" permission).
+- The `stop` command is **always refused** by the `command` action: stopping the server requires the explicit power permission.
+- Every call is recorded (time, outcome, IP) and shown in the Webhook tab.
 
-### Esempio: bot Discord
+### Example: Discord bot
 
 ```js
-await fetch(`http://casa-di-luca:25580/hook/${id}`, {
+await fetch(`http://lukes-pc:25580/hook/${id}`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ token, action: 'say', message: `<${user}> ${text}` }),
 });
 ```
 
-### Esempio: comando da terminale
+### Example: from the terminal
 
 ```bash
 curl "http://127.0.0.1:25580/hook/ID?token=TOKEN&action=status"
@@ -154,8 +156,8 @@ curl "http://127.0.0.1:25580/hook/ID?token=TOKEN&action=status"
 
 ---
 
-## Note di rete
+## Network notes
 
-- Per impostazione predefinita l'host ascolta su tutte le interfacce: perché sia raggiungibile da fuori casa serve un port forward o l'UPnP del router. Se l'accesso passa da un tunnel o una VPN sulla stessa macchina, scegli **Solo questo PC** nelle impostazioni.
-- Il traffico è **HTTP in chiaro**: adatto alla rete locale o a una VPN fra amici. Non esporre l'host su Internet senza un reverse proxy con TLS.
-- Chi si collega vede e comanda solo i server dell'host, non il resto del computer.
+- By default the host listens on every interface: to be reachable from outside your home it needs a port forward or the router's UPnP. If access goes through a tunnel or a VPN on the same machine, choose **This PC only** in the settings.
+- Traffic is **plain HTTP**: fine for a local network or a VPN among friends. Don't expose the host on the Internet without a TLS reverse proxy.
+- Whoever connects sees and controls only the host's servers, not the rest of the computer.

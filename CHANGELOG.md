@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- Technical documentation in `docs/` is now in English; the Italian versions stay as `*.it.md`.
+
 ## [1.0.2] — 2026-09-02
 
 Security hardening of the host listener (remote control and webhooks). Updating is recommended for anyone who has enabled the host or a webhook.

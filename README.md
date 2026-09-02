@@ -111,7 +111,7 @@ npm run tauri dev
 
 You'll need [Rust](https://rustup.rs) and Node.js 18+.
 
-Technical documentation: [architecture](docs/ARCHITETTURA.md) · [host API and webhooks](docs/API-HOST.md) (in Italian).
+Technical documentation: [architecture](docs/ARCHITECTURE.md) · [host API and webhooks](docs/API-HOST.md).
 
 ---
 
