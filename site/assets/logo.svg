@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Mineger logo: an isometric teal ore block on a dark rounded tile. Source of truth for every icon size. -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1f262e"/>
+      <stop offset="1" stop-color="#0d1014"/>
+    </linearGradient>
+    <linearGradient id="top" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4de6d2"/>
+      <stop offset="1" stop-color="#22c4b0"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#2dd4bf" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#2dd4bf" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="54"/>
+    </filter>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="28" stdDeviation="30" flood-color="#000" flood-opacity=".55"/>
+    </filter>
+  </defs>
+
+  <!-- tile -->
+  <rect x="0" y="0" width="1024" height="1024" rx="224" fill="url(#tile)"/>
+  <rect x="6" y="6" width="1012" height="1012" rx="220" fill="none" stroke="#ffffff" stroke-opacity=".07" stroke-width="12"/>
+  <ellipse cx="512" cy="560" rx="330" ry="250" fill="url(#glow)" filter="url(#blur)"/>
+
+  <!-- cube: side 312, centre (512, 400) -->
+  <g filter="url(#shadow)">
+    <!-- left face -->
+    <polygon points="242,400 512,556 512,868 242,712" fill="#137466"/>
+    <!-- right face -->
+    <polygon points="782,400 512,556 512,868 782,712" fill="#1a9c8c"/>
+    <!-- top face -->
+    <polygon points="512,244 782,400 512,556 242,400" fill="url(#top)"/>
+  </g>
+
+  <!-- pixels on the top face (iso grid of 60px cells) -->
+  <polygon points="616,334 668,364 616,394 564,364" fill="#9df3e7" opacity=".85"/>
+  <polygon points="460,364 512,394 460,424 408,394" fill="#9df3e7" opacity=".7"/>
+  <polygon points="616,394 668,424 616,454 564,424" fill="#1bb3a0" opacity=".8"/>
+  <polygon points="408,334 460,364 408,394 356,364" fill="#1bb3a0" opacity=".55"/>
+
+  <!-- ore glints on the side faces -->
+  <polygon points="300,520 352,550 352,610 300,580" fill="#a7f3e6" opacity=".9"/>
+  <polygon points="404,640 456,670 456,730 404,700" fill="#a7f3e6" opacity=".75"/>
+  <polygon points="568,600 620,570 620,630 568,660" fill="#c9fbf3" opacity=".95"/>
+  <polygon points="672,700 724,670 724,730 672,760" fill="#c9fbf3" opacity=".8"/>
+  <polygon points="700,500 752,470 752,530 700,560" fill="#c9fbf3" opacity=".6"/>
+
+  <!-- crisp edges -->
+  <polyline points="242,400 512,244 782,400" fill="none" stroke="#c9fbf3" stroke-opacity=".5" stroke-width="6" stroke-linejoin="round"/>
+  <polyline points="242,400 512,556 782,400" fill="none" stroke="#0b3f38" stroke-opacity=".45" stroke-width="6" stroke-linejoin="round"/>
+  <line x1="512" y1="556" x2="512" y2="868" stroke="#0b3f38" stroke-opacity=".5" stroke-width="6"/>
+</svg>

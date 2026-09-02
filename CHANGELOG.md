@@ -21,6 +21,9 @@ Security hardening of the host listener (remote control and webhooks). Updating 
 - Webhook call statistics no longer rewrite `settings.json` on every request. Unauthenticated calls are kept in memory only; authenticated ones are coalesced and flushed at most every 2 s and on exit. Every write to the settings file now goes through a single lock, so concurrent writers cannot clobber each other.
 - A Content Security Policy is set for the webview (it was `null`): scripts and styles from the app only, fonts from Google Fonts, images from HTTPS CDNs, connections to local IPC and to remote hosts.
 
+### Changed
+- New application icon and logo, replacing the default Tauri artwork. The source is `site/assets/logo.svg`; every size under `src-tauri/icons/` is generated from it with `npm run tauri icon`.
+
 ## [1.0.1] — 2026-08-22
 
 ### Added
