@@ -9,7 +9,7 @@ on:
       - "package-lock.json"
       - ".github/workflows/pages.yml"
   release:
-    types: [published, edited]
+    types: [published]
   workflow_dispatch:
 
 permissions:
