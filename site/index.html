@@ -51,7 +51,7 @@
   <div class="relative mx-auto grid max-w-6xl items-center gap-12 px-5 pb-20 pt-14 md:grid-cols-[1.05fr_.95fr] md:pb-28 md:pt-24">
     <div>
       <p class="micro reveal" data-i18n="hero.kicker">Free &amp; open source · Windows</p>
-      <h1 class="reveal mt-4 text-4xl font-black leading-[1.05] tracking-tight [transition-delay:80ms] md:text-6xl" data-i18n="hero.title" data-i18n-html>Your Minecraft servers, <span class="text-glow">without the command line</span>.</h1>
+      <h1 class="reveal mt-4 text-4xl font-black leading-[1.05] tracking-tight [transition-delay:80ms] md:text-5xl lg:text-6xl" data-i18n="hero.title" data-i18n-html>Your Minecraft servers, <span class="text-glow">without the command line</span>.</h1>
       <p class="reveal mt-6 max-w-xl text-lg text-fg-muted [transition-delay:160ms]" data-i18n="hero.sub">Create vanilla, Paper or modded servers in a couple of clicks. Install modpacks from a link, mods from Modrinth and CurseForge, and let friends or bots manage the server with you.</p>
       <div class="reveal mt-8 flex flex-wrap items-center gap-3 [transition-delay:240ms]">
         <a href="download.html" class="btn-primary text-base">
@@ -126,23 +126,21 @@
         <use href="#cube-grass" x="200" y="178" width="160" height="185" class="fill-box motion-safe:animate-float"/>
         <use href="#cube-ore" x="384" y="306" width="88" height="102" class="fill-box motion-safe:animate-float-fast [animation-delay:-1.5s]"/>
 
-        <g class="fill-box motion-safe:animate-float-slow [animation-delay:-6s]">
-          <rect x="356" y="96" width="162" height="44" rx="11" class="fill-panel stroke-line"/>
-          <circle cx="380" cy="118" r="5" class="fill-accent"/>
-          <circle cx="380" cy="118" r="5" fill="none" class="fill-box stroke-accent motion-safe:animate-pulse-ring"/>
-          <text x="394" y="123" class="fill-fg font-mono" font-size="12">online · 3 players</text>
-        </g>
-        <g class="fill-box motion-safe:animate-float [animation-delay:-2.2s]">
-          <rect x="36" y="332" width="170" height="44" rx="11" class="fill-panel stroke-line"/>
-          <text x="52" y="359" class="fill-fg-muted font-mono" font-size="12">RAM <tspan class="fill-fg">2.1 / 6 GB</tspan></text>
-          <rect x="52" y="365" width="138" height="3" rx="1.5" class="fill-line-strong"/>
-          <rect x="52" y="365" width="48" height="3" rx="1.5" class="fill-accent"/>
-        </g>
-        <g class="fill-box motion-safe:animate-float-fast [animation-delay:-4s]">
-          <rect x="326" y="416" width="196" height="44" rx="11" class="fill-panel stroke-line"/>
-          <text x="342" y="443" class="fill-fg-muted font-mono" font-size="12">NeoForge <tspan class="fill-accent">1.21.1</tspan> · ready</text>
-        </g>
       </svg>
+      <!-- Floating chips: HTML so they size to their text, positioned over the SVG scene -->
+      <div class="pointer-events-none absolute inset-0 mx-auto max-w-[560px] font-mono text-[11px] sm:text-xs" aria-hidden="true">
+        <div class="absolute right-[4%] top-[19%] flex items-center gap-2 rounded-xl border border-line bg-panel px-3.5 py-2.5 text-fg shadow-lg motion-safe:animate-float-slow [animation-delay:-6s]">
+          <span class="relative flex size-2.5"><span class="absolute inline-flex size-full rounded-full bg-accent opacity-70 motion-safe:animate-ping"></span><span class="relative inline-flex size-2.5 rounded-full bg-accent"></span></span>
+          <span>online · 3 players</span>
+        </div>
+        <div class="absolute left-[4%] top-[66%] rounded-xl border border-line bg-panel px-3.5 py-2.5 text-fg-muted shadow-lg motion-safe:animate-float [animation-delay:-2.2s]">
+          RAM <span class="text-fg">2.1 / 6 GB</span>
+          <div class="mt-1.5 h-[3px] w-full rounded-full bg-line-strong"><div class="h-full w-1/3 rounded-full bg-accent"></div></div>
+        </div>
+        <div class="absolute right-[6%] top-[83%] rounded-xl border border-line bg-panel px-3.5 py-2.5 text-fg-muted shadow-lg motion-safe:animate-float-fast [animation-delay:-4s]">
+          NeoForge <span class="text-accent">1.21.1</span> · ready
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -211,7 +209,7 @@
     </div>
 
     <div class="reveal [transition-delay:200ms]">
-      <svg viewBox="0 0 520 240" class="w-full" aria-hidden="true">
+      <svg viewBox="0 0 520 240" class="w-full overflow-visible" aria-hidden="true">
         <line x1="112" y1="80" x2="208" y2="80" class="stroke-accent dashed-flow" stroke-width="2"/>
         <line x1="312" y1="80" x2="408" y2="80" class="stroke-accent dashed-flow [animation-delay:-.8s]" stroke-width="2"/>
 
@@ -230,12 +228,12 @@
           <circle cx="500" cy="52" r="5" fill="none" class="fill-box stroke-accent motion-safe:animate-pulse-ring"/>
         </g>
 
-        <text x="62" y="140" text-anchor="middle" class="fill-fg-muted font-mono" font-size="11" data-i18n="packs.step1">Link</text>
-        <text x="260" y="140" text-anchor="middle" class="fill-fg-muted font-mono" font-size="11" data-i18n="packs.step2">Download &amp; unpack</text>
-        <text x="458" y="140" text-anchor="middle" class="fill-fg-muted font-mono" font-size="11" data-i18n="packs.step3">Server ready</text>
+        <text x="62" y="140" text-anchor="middle" class="fill-fg-muted font-mono text-[13px] md:text-[11px]" data-i18n="packs.step1">Link</text>
+        <text x="260" y="140" text-anchor="middle" class="fill-fg-muted font-mono text-[13px] md:text-[11px]" data-i18n="packs.step2">Download &amp; unpack</text>
+        <text x="458" y="140" text-anchor="middle" class="fill-fg-muted font-mono text-[13px] md:text-[11px]" data-i18n="packs.step3">Server ready</text>
 
         <rect x="60" y="176" width="400" height="48" rx="12" class="fill-panel stroke-line"/>
-        <text x="80" y="196" class="fill-fg-soft font-mono" font-size="11">Installing 214 mods · Cave Horror 1.20.1</text>
+        <text x="80" y="196" class="fill-fg-soft font-mono text-[14px] md:text-[11px]">Installing 214 mods · Cave Horror 1.20.1</text>
         <line x1="80" y1="212" x2="440" y2="212" class="stroke-line-strong" stroke-width="4" stroke-linecap="round"/>
         <line x1="130" y1="212" x2="390" y2="212" class="stroke-accent motion-safe:animate-fill" stroke-width="4" stroke-linecap="round" stroke-dasharray="260" pathLength="260"/>
       </svg>
@@ -251,7 +249,7 @@
     </div>
     <img src="assets/screens/modbrowser.webp" alt="Mineger mod catalog" width="1440" height="900" loading="lazy" class="rounded-lg border border-line">
   </figure>
-  <div class="order-1 md:order-2">
+  <div class="order-1 min-w-0 md:order-2">
     <p class="micro reveal" data-i18n="mods.kicker">Mods and plugins</p>
     <h2 class="reveal mt-3 text-3xl font-extrabold tracking-tight [transition-delay:80ms] md:text-4xl" data-i18n="mods.title">Search, install, update. From inside the app.</h2>
     <p class="reveal mt-4 text-fg-muted [transition-delay:160ms]" data-i18n="mods.text">Browse Modrinth and CurseForge filtered by your server's Minecraft version and loader. Every file shows where it came from, and updates with a button.</p>
@@ -353,7 +351,7 @@
 
 <!-- ============================================================ friends -->
 <section class="mx-auto grid max-w-6xl items-center gap-12 px-5 py-20 md:grid-cols-2 md:py-28">
-  <div>
+  <div class="min-w-0">
     <p class="micro reveal" data-i18n="friends.kicker">Play with friends</p>
     <h2 class="reveal mt-3 text-3xl font-extrabold tracking-tight [transition-delay:80ms] md:text-4xl" data-i18n="friends.title">One PC hosts. Everyone manages.</h2>
     <p class="reveal mt-4 text-fg-muted [transition-delay:160ms]" data-i18n="friends.text">Turn on host mode and share an invite link: other copies of Mineger control your servers remotely, over LAN or VPN. Per-server webhooks let Discord bots, Twitch extensions or plain scripts start, stop and talk to the server, each with its own token and permissions.</p>
@@ -362,7 +360,7 @@
       <li class="reveal flex items-start gap-3 [transition-delay:320ms]"><svg class="mt-0.5 size-5 shrink-0 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span data-i18n="friends.li2">Webhooks with per-action permissions and a command allow-list</span></li>
       <li class="reveal flex items-start gap-3 [transition-delay:400ms]"><svg class="mt-0.5 size-5 shrink-0 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span data-i18n="friends.li3">Rate limiting, body limits and constant-time token checks built in</span></li>
     </ul>
-    <pre class="reveal mt-6 overflow-x-auto rounded-xl border border-line bg-[#0d1013] p-4 font-mono text-[11px] leading-5 text-fg-soft [transition-delay:480ms]"><span class="text-fg-faint">$</span> curl "http://host:25580/hook/ID?token=…&amp;action=say&amp;message=hi"
+    <pre class="reveal mt-6 rounded-xl border border-line bg-[#0d1013] p-4 font-mono text-[11px] leading-5 whitespace-pre-wrap break-all text-fg-soft [transition-delay:480ms]"><span class="text-fg-faint">$</span> curl "http://host:25580/hook/ID?token=…&amp;action=say&amp;message=hi"
 <span class="text-accent">{ "ok": true, "action": "say" }</span></pre>
   </div>
 
@@ -377,27 +375,27 @@
       <circle cx="260" cy="190" r="54" fill="none" stroke-width="1.5" class="fill-box stroke-accent motion-safe:animate-pulse-ring [animation-delay:-1.3s]"/>
       <circle cx="260" cy="190" r="54" class="fill-panel stroke-accent" stroke-width="2"/>
       <svg x="236" y="166" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="text-accent"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
-      <text x="260" y="270" text-anchor="middle" class="fill-fg font-mono" font-size="12" font-weight="600" data-i18n="net.host">Host PC</text>
+      <text x="260" y="270" text-anchor="middle" class="fill-fg font-mono text-[15px] md:text-[12px]" font-weight="600" data-i18n="net.host">Host PC</text>
 
       <g class="fill-box motion-safe:animate-float-slow">
         <circle cx="92" cy="84" r="36" class="fill-panel stroke-line"/>
         <svg x="74" y="66" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="text-fg-soft"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M11 18h2"/></svg>
-        <text x="92" y="140" text-anchor="middle" class="fill-fg-muted font-mono" font-size="11" data-i18n="net.remote">Remote app</text>
+        <text x="92" y="140" text-anchor="middle" class="fill-fg-muted font-mono text-[14px] md:text-[11px]" data-i18n="net.remote">Remote app</text>
       </g>
       <g class="fill-box motion-safe:animate-float [animation-delay:-2s]">
         <circle cx="430" cy="92" r="36" class="fill-panel stroke-line"/>
         <svg x="412" y="74" width="36" height="36" viewBox="0 0 24 24" fill="currentColor" class="text-fg-soft"><path d="M19.5 5.3A17 17 0 0 0 15.4 4l-.2.4a15 15 0 0 1 3.7 1.9 13 13 0 0 0-13.8 0A15 15 0 0 1 8.8 4.4L8.6 4a17 17 0 0 0-4.1 1.3C1.9 9.2 1.2 13 1.5 16.7a17 17 0 0 0 5.1 2.6l1.1-1.5a11 11 0 0 1-1.7-.8l.4-.3a12 12 0 0 0 11.2 0l.4.3-1.7.8 1.1 1.5a17 17 0 0 0 5.1-2.6c.4-4.3-.7-8-3-11.4zM8.7 14.4c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z"/></svg>
-        <text x="430" y="148" text-anchor="middle" class="fill-fg-muted font-mono" font-size="11" data-i18n="net.discord">Discord bot</text>
+        <text x="430" y="148" text-anchor="middle" class="fill-fg-muted font-mono text-[14px] md:text-[11px]" data-i18n="net.discord">Discord bot</text>
       </g>
       <g class="fill-box motion-safe:animate-float-fast [animation-delay:-3.5s]">
         <circle cx="104" cy="300" r="36" class="fill-panel stroke-line"/>
         <svg x="86" y="282" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="text-fg-soft"><path d="m8 9-4 3 4 3M16 9l4 3-4 3M14 5l-4 14"/></svg>
-        <text x="104" y="356" text-anchor="middle" class="fill-fg-muted font-mono" font-size="11" data-i18n="net.script">Script</text>
+        <text x="104" y="356" text-anchor="middle" class="fill-fg-muted font-mono text-[14px] md:text-[11px]" data-i18n="net.script">Script</text>
       </g>
       <g class="fill-box motion-safe:animate-float-slow [animation-delay:-5s]">
         <circle cx="428" cy="296" r="36" class="fill-panel stroke-line"/>
         <svg x="410" y="278" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="text-fg-soft"><path d="M4 4h16v11H9l-4 4v-4H4z"/><path d="M11 8v4M15 8v4"/></svg>
-        <text x="428" y="352" text-anchor="middle" class="fill-fg-muted font-mono" font-size="11">Twitch</text>
+        <text x="428" y="352" text-anchor="middle" class="fill-fg-muted font-mono text-[14px] md:text-[11px]">Twitch</text>
       </g>
     </svg>
   </div>

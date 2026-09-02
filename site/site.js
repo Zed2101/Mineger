@@ -99,8 +99,8 @@
         .replace(/`([^`]+)`/g, '<code class="rounded bg-ink-2 px-1.5 py-0.5 font-mono text-[0.85em] text-accent">$1</code>')
         .replace(/\*\*([^*]+)\*\*/g, '<strong class="text-fg">$1</strong>')
         .replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,:;!?]|$)/g, '$1<em>$2</em>')
-        .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a class="text-accent underline-offset-4 hover:underline" href="$2" target="_blank" rel="noopener">$1</a>')
-        .replace(/(^|\s)(https?:\/\/[^\s<]+)/g, '$1<a class="text-accent underline-offset-4 hover:underline" href="$2" target="_blank" rel="noopener">$2</a>');
+        .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a class="break-all text-accent underline-offset-4 hover:underline" href="$2" target="_blank" rel="noopener">$1</a>')
+        .replace(/(^|\s)(https?:\/\/[^\s<]+)/g, '$1<a class="break-all text-accent underline-offset-4 hover:underline" href="$2" target="_blank" rel="noopener">$2</a>');
     const out = [];
     let list = false;
     for (const raw of src.split(/\r?\n/)) {
