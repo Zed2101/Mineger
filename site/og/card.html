@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Mineger — social card</title>
+  <!-- Source of assets/og.png (1200×630). Rendered with `node scripts/render-og.mjs` after `npm run site:build`. -->
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../tailwind.css">
+</head>
+<body class="m-0 bg-ink text-fg">
+<div id="card" class="relative h-[630px] w-[1200px] overflow-hidden bg-ink">
+  <!-- backdrop -->
+  <div class="hero-grid absolute inset-0 [mask-image:radial-gradient(ellipse_at_70%_50%,black_25%,transparent_75%)] motion-safe:animate-none"></div>
+  <div class="absolute -right-40 -top-40 size-[720px] rounded-full bg-accent/15 blur-3xl"></div>
+  <div class="absolute -bottom-64 left-40 size-[560px] rounded-full bg-accent/10 blur-3xl"></div>
+
+  <!-- text -->
+  <div class="absolute left-16 top-14 w-[640px]">
+    <div class="flex items-center gap-4">
+      <img src="../assets/logo.svg" alt="" class="size-16 rounded-2xl shadow-2xl">
+      <span class="text-4xl font-black tracking-tight">Mineger</span>
+    </div>
+    <p class="micro mt-12">Free &amp; open source · Windows</p>
+    <h1 class="mt-4 text-[64px] font-black leading-[1.02] tracking-tight">Minecraft servers,<br><span class="text-glow">without the command line.</span></h1>
+    <p class="mt-7 max-w-[560px] text-[22px] leading-snug text-fg-muted">Vanilla, Paper or modded. Modpacks from a link, mods from Modrinth and CurseForge, remote control and webhooks.</p>
+    <div class="mt-9 flex items-center gap-3 font-mono text-[15px]">
+      <span class="whitespace-nowrap rounded-full border border-line bg-panel px-4 py-2 text-fg-soft">Vanilla</span>
+      <span class="whitespace-nowrap rounded-full border border-line bg-panel px-4 py-2 text-fg-soft">Paper</span>
+      <span class="whitespace-nowrap rounded-full border border-line bg-panel px-4 py-2 text-fg-soft">NeoForge · Forge · Fabric</span>
+    </div>
+  </div>
+
+  <!-- app window peeking from the bottom right -->
+  <div class="absolute -right-14 top-[300px] w-[600px] rotate-[-6deg] rounded-2xl border border-line bg-panel p-2 shadow-[0_40px_80px_-20px_rgba(0,0,0,.8)]">
+    <div class="flex items-center gap-1.5 px-2 pb-2 pt-1">
+      <span class="size-2.5 rounded-full bg-danger/70"></span><span class="size-2.5 rounded-full bg-warning/70"></span><span class="size-2.5 rounded-full bg-accent/70"></span>
+    </div>
+    <img src="../assets/screens/overview.webp" alt="" class="rounded-lg border border-line">
+  </div>
+
+  <!-- cube scene -->
+  <svg viewBox="0 0 560 500" class="absolute right-12 top-2 w-[470px] drop-shadow-[0_40px_60px_rgba(0,0,0,.6)]" aria-hidden="true">
+    <defs>
+      <radialGradient id="g-glow" cx="50%" cy="50%" r="50%">
+        <stop offset="0" stop-color="#2dd4bf" stop-opacity=".35"/>
+        <stop offset="1" stop-color="#2dd4bf" stop-opacity="0"/>
+      </radialGradient>
+      <symbol id="cube-grass" viewBox="-64 -40 128 148">
+        <polygon points="-60,0 0,34 0,102 -60,68" class="fill-dirt-dark"/>
+        <polygon points="60,0 0,34 0,102 60,68" class="fill-dirt"/>
+        <polygon points="-60,0 0,34 0,48 -60,14" class="fill-grass-dark"/>
+        <polygon points="60,0 0,34 0,48 60,14" class="fill-grass-dark" opacity=".8"/>
+        <polygon points="0,-34 60,0 0,34 -60,0" class="fill-grass"/>
+        <polygon points="-24,-10 -12,-3 -24,4 -36,-3" fill="#8fe06e" opacity=".75"/>
+        <polygon points="20,2 32,9 20,16 8,9" fill="#57b442" opacity=".9"/>
+        <polygon points="6,-22 18,-15 6,-8 -6,-15" fill="#8fe06e" opacity=".5"/>
+        <polygon points="-40,44 -28,51 -28,63 -40,56" fill="#5c3a22" opacity=".6"/>
+        <polygon points="34,58 46,51 46,63 34,70" fill="#a06a45" opacity=".6"/>
+      </symbol>
+      <symbol id="cube-ore" viewBox="-64 -40 128 148">
+        <polygon points="-60,0 0,34 0,102 -60,68" class="fill-stone-dark"/>
+        <polygon points="60,0 0,34 0,102 60,68" fill="#6c7481"/>
+        <polygon points="0,-34 60,0 0,34 -60,0" class="fill-stone"/>
+        <polygon points="-18,-8 -6,-1 -18,6 -30,-1" class="fill-accent"/>
+        <polygon points="18,4 30,11 18,18 6,11" class="fill-accent"/>
+        <polygon points="-40,28 -28,35 -28,47 -40,40" class="fill-accent"/>
+        <polygon points="26,50 38,43 38,55 26,62" class="fill-accent"/>
+      </symbol>
+      <symbol id="cube-stone" viewBox="-64 -40 128 148">
+        <polygon points="-60,0 0,34 0,102 -60,68" class="fill-stone-dark"/>
+        <polygon points="60,0 0,34 0,102 60,68" fill="#6c7481"/>
+        <polygon points="0,-34 60,0 0,34 -60,0" class="fill-stone"/>
+        <polygon points="-24,-10 -12,-3 -24,4 -36,-3" fill="#9aa2ae" opacity=".8"/>
+        <polygon points="14,6 26,13 14,20 2,13" fill="#69717d" opacity=".9"/>
+      </symbol>
+    </defs>
+    <ellipse cx="280" cy="280" rx="230" ry="150" fill="url(#g-glow)"/>
+    <circle cx="280" cy="250" r="200" fill="none" class="stroke-accent/35" stroke-dasharray="4 12"/>
+    <circle cx="480" cy="250" r="5" class="fill-accent"/>
+    <circle cx="150" cy="95" r="4" class="fill-warning"/>
+    <circle cx="280" cy="250" r="135" fill="none" class="stroke-fg-muted/25"/>
+    <circle cx="145" cy="250" r="4" class="fill-accent"/>
+    <use href="#cube-stone" x="92" y="52" width="92" height="106"/>
+    <use href="#cube-grass" x="200" y="150" width="160" height="185"/>
+    <use href="#cube-ore" x="380" y="290" width="86" height="99"/>
+  </svg>
+
+  <!-- floating chips -->
+  <div class="absolute right-[150px] top-[78px] flex items-center gap-2 rounded-xl border border-line bg-panel px-4 py-2.5 font-mono text-[14px] text-fg shadow-lg">
+    <span class="size-2.5 rounded-full bg-accent"></span> online · 3 players
+  </div>
+</div>
+</body>
+</html>

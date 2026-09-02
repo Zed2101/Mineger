@@ -12,7 +12,8 @@
     "lang:template": "node scripts/lang-template.mjs",
     "lang:new": "node scripts/lang-template.mjs",
     "site:build": "tailwindcss -i ./site/src/site.css -o ./site/tailwind.css --minify",
-    "site:watch": "tailwindcss -i ./site/src/site.css -o ./site/tailwind.css --watch"
+    "site:watch": "tailwindcss -i ./site/src/site.css -o ./site/tailwind.css --watch",
+    "site:og": "node scripts/render-og.mjs"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4",
