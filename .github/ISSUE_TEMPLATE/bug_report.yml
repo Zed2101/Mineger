@@ -1,0 +1,62 @@
+name: Bug report
+description: Something in Mineger does not work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Security problems go to [SECURITY.md](../blob/main/SECURITY.md) instead, not here.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What did you do, and what went wrong?
+      placeholder: I clicked "Install" on a Modrinth modpack and the progress stopped at 40%...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+  - type: input
+    id: version
+    attributes:
+      label: Mineger version
+      description: Shown next to "Settings" at the bottom of the sidebar.
+      placeholder: 1.0.2
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Server kind involved
+      options:
+        - Vanilla
+        - Paper
+        - Forge
+        - NeoForge
+        - Fabric
+        - Modpack (CurseForge / Modrinth / FTB)
+        - Remote host / webhooks
+        - Not server specific
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console output or error message
+      description: Paste the relevant lines from the Console tab or the error dialog. Remove tokens and personal paths.
+      render: text

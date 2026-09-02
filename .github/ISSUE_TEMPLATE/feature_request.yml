@@ -1,0 +1,34 @@
+name: Feature request
+description: Suggest something Mineger should do
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The situation or the pain point, not the solution yet.
+      placeholder: Every time a friend joins I have to open the console and type /op...
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How would you like it to work?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Anything you do today as a workaround?
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Server creation / modpacks
+        - Mods and plugins
+        - Console, backups, properties
+        - Remote control / webhooks
+        - Settings and languages
+        - Website / docs
+        - Other

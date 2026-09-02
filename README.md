@@ -196,6 +196,10 @@ Run `npm run lang:template` to refresh `src/language/_template.json`, then add t
 
 ---
 
+## Contributing
+
+Bug reports and feature requests go through the [issue templates](https://github.com/Zed2101/Mineger/issues/new/choose); code, docs and translations through pull requests, see [CONTRIBUTING.md](CONTRIBUTING.md). Security problems have a private channel, described in [SECURITY.md](SECURITY.md).
+
 ## Licence
 
 MIT — see [LICENSE](LICENSE).

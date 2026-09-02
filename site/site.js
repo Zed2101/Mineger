@@ -58,6 +58,8 @@
 
   function renderRelease() {
     const version = release ? release.tag_name.replace(/^v/, '') : null;
+    const ld = $('#ld-app');
+    if (ld && version) { try { const data = JSON.parse(ld.textContent); data.softwareVersion = version; ld.textContent = JSON.stringify(data); } catch {} }
     const setup = asset(/setup\.exe$/i);
     const msi = asset(/\.msi$/i);
     const releasesUrl = `https://github.com/${REPO}/releases`;

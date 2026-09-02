@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/Zed2101/Mineger/security/advisories/new
+    about: Report security problems privately, not as a public issue.
+  - name: Documentation
+    url: https://github.com/Zed2101/Mineger#readme
+    about: README, architecture and host API docs.

@@ -196,6 +196,10 @@ Esegui `npm run lang:template` per rigenerare `src/language/_template.json`, poi
 
 ---
 
+## Contribuire
+
+Segnalazioni e richieste passano dai [template delle issue](https://github.com/Zed2101/Mineger/issues/new/choose); codice, documentazione e traduzioni dalle pull request, vedi [CONTRIBUTING.md](CONTRIBUTING.md) (in inglese). I problemi di sicurezza hanno un canale privato, descritto in [SECURITY.md](SECURITY.md).
+
 ## Licenza
 
 MIT — vedi [LICENSE](LICENSE).

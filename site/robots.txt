@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /og/
+
+Sitemap: https://zed2101.github.io/Mineger/sitemap.xml
