@@ -925,7 +925,12 @@
       "save": "",
       "title": "",
       "tls_note": "",
-      "webhooks_note": ""
+      "webhooks_note": "",
+      "presence_title": "",
+      "presence_enable": "",
+      "presence_show_name": "",
+      "presence_show_players": "",
+      "presence_hint": ""
     },
     "sidebar": {
       "add_server": "",
@@ -1015,5 +1020,23 @@
       "search": "",
       "show_all_versions": ""
     }
+  },
+  "presence": {
+    "idle": "",
+    "no_servers": "",
+    "managing": "",
+    "hosting": "",
+    "hosting_generic": "",
+    "hosting_many": "",
+    "starting": "",
+    "online": "",
+    "no_players": "",
+    "players": "",
+    "players_total": "",
+    "small_online": "",
+    "small_idle": "",
+    "large_text": "",
+    "button_site": "",
+    "button_repo": ""
   }
 }

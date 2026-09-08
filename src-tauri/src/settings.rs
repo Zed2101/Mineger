@@ -117,10 +117,32 @@ pub struct Webhook {
     pub stats: WebhookStats,
 }
 
+/// Discord Rich Presence: cosa mostrare sul profilo Discord dell'utente.
+/// Spento di default: nessuna connessione al client Discord finché non viene attivato.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct PresenceConfig {
+    #[serde(default)]
+    pub enabled: bool,
+    /// "Hosting Cave Horror" invece di "Hosting a server"
+    #[serde(default = "default_true")]
+    pub show_server_name: bool,
+    /// "3/20 online" invece del solo stato
+    #[serde(default = "default_true")]
+    pub show_players: bool,
+}
+
+impl Default for PresenceConfig {
+    fn default() -> Self {
+        Self { enabled: false, show_server_name: true, show_players: true }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Settings {
     #[serde(default)]
     pub host: HostConfig,
+    #[serde(default)]
+    pub presence: PresenceConfig,
     #[serde(default)]
     pub remote_hosts: Vec<RemoteHost>,
     #[serde(default)]

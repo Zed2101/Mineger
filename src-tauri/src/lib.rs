@@ -15,6 +15,7 @@ pub mod metrics;
 pub mod models;
 pub mod packs;
 pub mod paths;
+pub mod presence;
 pub mod providers;
 pub mod process;
 pub mod service;
@@ -51,6 +52,9 @@ pub fn run() {
             if let Err(e) = host::apply(&handle, &s) {
                 println!("[Mineger] Listener HTTP non avviato: {}", e);
             }
+
+            // Discord Rich Presence (si collega solo se attivata nelle impostazioni)
+            presence::init(&handle, &s.presence);
 
             // Controllo aggiornamenti dei modpack installati da link (dopo 20 s, poi ogni 6 h)
             packs::start_periodic_checks(app.handle().clone());
@@ -95,6 +99,7 @@ pub fn run() {
             commands::get_settings,
             commands::get_host_status,
             commands::set_host_config,
+            commands::set_presence_config,
             commands::regenerate_host_token,
             commands::add_remote_host,
             commands::remove_remote_host,
@@ -130,8 +135,9 @@ pub fn run() {
         .expect("error while building tauri application")
         .run(|app, event| {
             if let RunEvent::Exit = event {
-                // Contatori webhook non ancora scritti, host remoto (chiude anche la
-                // porta UPnP), poi i server Java.
+                // Presenza Discord, contatori webhook non ancora scritti, host remoto
+                // (chiude anche la porta UPnP), poi i server Java.
+                presence::shutdown();
                 host::flush_stats(app);
                 host::shutdown_blocking();
                 process::shutdown_all(SHUTDOWN_TIMEOUT);

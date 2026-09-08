@@ -379,6 +379,17 @@ function renderRemoteHosts(state) {
     .join('');
 }
 
+/** Riflette la configurazione della presenza Discord nei tre interruttori. */
+function renderPresence(cfg) {
+  const enabled = !!cfg.enabled;
+  document.getElementById('presence-enabled').checked = enabled;
+  document.getElementById('presence-show-name').checked = cfg.show_server_name !== false;
+  document.getElementById('presence-show-players').checked = cfg.show_players !== false;
+  const options = document.getElementById('presence-options');
+  options.classList.toggle('opacity-50', !enabled);
+  options.querySelectorAll('input').forEach((i) => { i.disabled = !enabled; });
+}
+
 async function renderSettings(state, refreshJava = false) {
   const javaList = document.getElementById('settings-java-list');
   javaList.innerHTML = `<li class="note">${escapeHtml(t('msg.settings.scanning'))}</li>`;
@@ -404,6 +415,7 @@ async function renderSettings(state, refreshJava = false) {
     document.getElementById('host-name').value = settings.host.name;
     document.getElementById('host-port').value = settings.host.port;
     renderBindPills(settings.host.bind || '');
+    renderPresence(settings.presence || {});
     document.getElementById('cf-api-key').value = settings.curseforge_api_key || '';
   } catch (err) {
     document.getElementById('host-status').textContent = t('msg.settings.error', { error: err });
@@ -488,6 +500,26 @@ function setupSettings(state, hooks) {
   });
   document.getElementById('btn-host-apply').addEventListener('click', applyHost);
   document.getElementById('host-enabled').addEventListener('change', applyHost);
+
+  // --- Discord Rich Presence ---
+  const applyPresence = async () => {
+    const status = document.getElementById('presence-status');
+    status.classList.add('hidden');
+    try {
+      const cfg = await invoke('set_presence_config', {
+        enabled: document.getElementById('presence-enabled').checked,
+        showServerName: document.getElementById('presence-show-name').checked,
+        showPlayers: document.getElementById('presence-show-players').checked,
+      });
+      renderPresence(cfg);
+    } catch (err) {
+      status.textContent = t('msg.settings.error', { error: err });
+      status.classList.remove('hidden');
+    }
+  };
+  for (const id of ['presence-enabled', 'presence-show-name', 'presence-show-players']) {
+    document.getElementById(id).addEventListener('change', applyPresence);
+  }
 
   document.getElementById('btn-host-regenerate').addEventListener('click', async () => {
     if (!confirm(t('msg.settings.regenerate_token_confirm'))) return;

@@ -4,6 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- **Discord Rich Presence** (Settings → Discord, off by default): your Discord profile shows "Hosting <server> · 3/20 online" with the Mineger logo while a server runs, with a website button for others. Talks to the local Discord client only, no token or account; the server name and the player count can each be hidden.
+
 ### Changed
 - Technical documentation in `docs/` is now in English; the Italian versions stay as `*.it.md`.
 

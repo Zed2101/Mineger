@@ -925,7 +925,12 @@
       "save": "Save",
       "title": "Settings",
       "tls_note": "The connection has no TLS: use it on a LAN or over a VPN (Tailscale, ZeroTier) and only share the link with people you trust.",
-      "webhooks_note": "Incoming webhooks (Discord, Twitch, automations) are managed in each server's <span class=\"font-semibold text-text-soft\">Webhook</span> tab; they use the same port as remote control."
+      "webhooks_note": "Incoming webhooks (Discord, Twitch, automations) are managed in each server's <span class=\"font-semibold text-text-soft\">Webhook</span> tab; they use the same port as remote control.",
+      "presence_title": "Discord",
+      "presence_enable": "Show on Discord what I am doing",
+      "presence_show_name": "Show the server name",
+      "presence_show_players": "Show how many players are online",
+      "presence_hint": "Needs Discord open on this PC. Your profile shows \"Hosting Server name · 2/20 online\" with the Mineger logo. While off, no connection is made."
     },
     "sidebar": {
       "add_server": "+ Add server",
@@ -1015,5 +1020,23 @@
       "search": "Search",
       "show_all_versions": "Show all versions"
     }
+  },
+  "presence": {
+    "idle": "Idle",
+    "no_servers": "No servers yet",
+    "managing": "Managing {n} servers",
+    "hosting": "Hosting {name}",
+    "hosting_generic": "Hosting a server",
+    "hosting_many": "Hosting {n} servers",
+    "starting": "Starting up…",
+    "online": "Online",
+    "no_players": "Nobody online yet",
+    "players": "{online}/{max} online",
+    "players_total": "{online} online in total",
+    "small_online": "Server running",
+    "small_idle": "No server running",
+    "large_text": "Mineger — Minecraft servers without the command line",
+    "button_site": "Mineger website",
+    "button_repo": "Source on GitHub"
   }
 }

@@ -176,6 +176,12 @@ pub fn start_server(app: &AppHandle, id: &str) -> Result<String, String> {
     // 2. Spawn (UPnP parte in background dentro spawn_server)
     let spec = LaunchSpec { java: java.runtime.path, args: plan.args, cwd: dir.clone(), port, upnp: data.launch.upnp.unwrap_or(true) };
     process::spawn_server(app, id, spec)?;
+    crate::presence::server_started(
+        id,
+        &data.name,
+        crate::presence::max_players_from(&dir),
+        process::started_at_of(id).unwrap_or_default(),
+    );
 
     // 3. last_played (un errore qui non deve bloccare l'avvio)
     data.last_played = now_string();
@@ -226,7 +232,9 @@ pub fn update_server_info(app: &AppHandle, id: &str, name: &str, icon: Option<&s
         data.icon = icon.to_string();
     }
 
-    write_server_data(&dir, &data)
+    write_server_data(&dir, &data)?;
+    crate::presence::server_renamed(id, name);
+    Ok(())
 }
 
 /// Aggiorna la RAM massima. Ritorna la nuova descrizione di avvio per la UI.

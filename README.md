@@ -44,6 +44,7 @@ When a new version of the modpack is released the app tells you and installs it 
 ### Remote control and integrations
 - **Host mode**: one Mineger installation can expose its servers over the network, so friends start and manage them from their own copy of the app through an invite link.
 - **Webhooks** per server: let Discord bots, Twitch extensions or any HTTP service send chat messages, run commands from an allowlist, start/stop the server or read its status — each webhook with its own permissions.
+- **Discord Rich Presence** (optional, off by default): your Discord profile shows "Hosting *server* · 3/20 online" while a server runs. It only talks to the Discord client on the same PC; the server name and the player count can be hidden.
 
 ---
 

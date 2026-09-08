@@ -15,7 +15,8 @@ use crate::providers;
 use crate::service;
 use crate::servericon;
 use base64::Engine;
-use crate::settings::{self, RemoteHost, Settings, Webhook, WebhookPerms};
+use crate::presence;
+use crate::settings::{self, PresenceConfig, RemoteHost, Settings, Webhook, WebhookPerms};
 use crate::tr;
 use std::collections::HashMap;
 use std::path::Path;
@@ -374,6 +375,21 @@ pub async fn set_host_config(
     settings::save(&app, &s)?;
     host::apply(&app, &s)?;
     Ok(host::status(&s))
+}
+
+/// Discord Rich Presence: salva le preferenze e le applica subito.
+#[tauri::command]
+pub async fn set_presence_config(
+    app: AppHandle,
+    enabled: bool,
+    show_server_name: bool,
+    show_players: bool,
+) -> Result<PresenceConfig, String> {
+    let cfg = PresenceConfig { enabled, show_server_name, show_players };
+    let saved = cfg.clone();
+    settings::update(&app, move |s| s.presence = saved)?;
+    presence::configure(&cfg);
+    Ok(cfg)
 }
 
 /// Nuovo token: i client con il vecchio link non potranno più collegarsi.

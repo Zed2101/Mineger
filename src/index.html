@@ -686,6 +686,33 @@
             </div>
           </section>
 
+          <!-- Discord Rich Presence -->
+          <section class="settings-card">
+            <div class="settings-head">
+              <div class="flex items-center gap-2">
+                <div class="card-title" data-i18n="ui.settings.presence_title">Discord</div>
+              </div>
+              <label class="flex cursor-pointer items-center gap-2.5">
+                <span class="text-[12px] text-text-soft" data-i18n="ui.settings.presence_enable">Mostra su Discord cosa sto facendo</span>
+                <span class="toggle"><input type="checkbox" id="presence-enabled" /><span class="toggle-track"></span></span>
+              </label>
+            </div>
+            <div class="space-y-2.5">
+              <div id="presence-options" class="flex flex-wrap items-center gap-x-6 gap-y-2 transition-opacity">
+                <label class="flex cursor-pointer items-center gap-2.5">
+                  <span class="toggle"><input type="checkbox" id="presence-show-name" /><span class="toggle-track"></span></span>
+                  <span class="text-[12px] text-text-soft" data-i18n="ui.settings.presence_show_name">Mostra il nome del server</span>
+                </label>
+                <label class="flex cursor-pointer items-center gap-2.5">
+                  <span class="toggle"><input type="checkbox" id="presence-show-players" /><span class="toggle-track"></span></span>
+                  <span class="text-[12px] text-text-soft" data-i18n="ui.settings.presence_show_players">Mostra quanti giocatori sono online</span>
+                </label>
+              </div>
+              <p class="note" data-i18n="ui.settings.presence_hint">Serve Discord aperto su questo PC. Sul tuo profilo compare "Hosting Nome server · 2/20 online" con il logo di Mineger. Da spento non parte nessuna connessione.</p>
+              <p id="presence-status" class="note-err hidden"></p>
+            </div>
+          </section>
+
           <!-- Host collegati -->
           <section class="settings-card">
             <div class="settings-head">

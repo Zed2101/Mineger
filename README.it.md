@@ -44,6 +44,7 @@ Quando esce una nuova versione del modpack l'app te lo segnala e la installa con
 ### Controllo remoto e integrazioni
 - **Host**: un'installazione di Mineger può esporre i suoi server in rete; gli amici li avviano e gestiscono dalla loro copia dell'app tramite un link d'invito.
 - **Webhook** per server: consentono a bot Discord, estensioni Twitch o qualsiasi servizio HTTP di inviare messaggi in chat, eseguire comandi da una lista consentita, avviare/fermare il server o leggerne lo stato — con permessi separati per ogni webhook.
+- **Discord Rich Presence** (opzionale, spenta di default): sul tuo profilo Discord compare "Hosting *server* · 3/20 online" mentre un server è acceso. Parla solo con il client Discord sullo stesso PC; nome del server e numero di giocatori si possono nascondere.
 
 ---
 

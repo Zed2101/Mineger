@@ -96,6 +96,11 @@ pub fn pid_of(id: &str) -> Option<u32> {
 }
 
 pub fn emit_status(app: &AppHandle, id: &str, status: ServerStatus, code: Option<i32>, started_at: Option<u64>) {
+    match status {
+        ServerStatus::Online => crate::presence::server_online(id),
+        ServerStatus::Offline => crate::presence::server_stopped(id),
+        _ => {}
+    }
     let payload = serde_json::json!({ "id": id, "status": status.as_str(), "code": code, "started_at": started_at });
     let _ = app.emit("server-status", payload.clone());
     events::publish("server-status", payload);
@@ -184,6 +189,7 @@ pub fn spawn_server(app: &AppHandle, id: &str, spec: LaunchSpec) -> Result<(), S
                         }
                     }
                 }
+                crate::presence::observe_line(&id, &line);
                 emit_line(&app, &id, &line);
             });
         });
