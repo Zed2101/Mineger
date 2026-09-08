@@ -419,6 +419,13 @@ pub fn get_tunnel_status(app: AppHandle, id: String) -> crate::tunnel::TunnelSta
     service::tunnel_status(&app, &id)
 }
 
+/// Riprova il tunnel di un server acceso (dopo un errore), senza toccare il flag salvato.
+#[tauri::command]
+pub fn retry_tunnel(app: AppHandle, id: String) -> Result<(), String> {
+    crate::tunnel::set_enabled(&app, &id, true);
+    Ok(())
+}
+
 /// LAN, UPnP e tunnel di un server in una sola risposta (card "Come entrano gli amici").
 #[tauri::command]
 pub async fn get_network_status(app: AppHandle, id: String) -> Result<crate::models::NetworkStatus, String> {

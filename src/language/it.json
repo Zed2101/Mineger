@@ -1224,7 +1224,7 @@
       "retry": "Riprova",
       "hint_off": "Il tunnel parte con il server. L'indirizzo resta lo stesso a ogni avvio.",
       "hint_starting": "Collegamento a playit.gg in corso, l'indirizzo arriva tra qualche secondo…",
-      "hint_online": "Gli amici entrano con questo indirizzo, da qualsiasi rete. Copialo e mandalo in chat.",
+      "hint_online": "Gli amici entrano con questo indirizzo, incollato così com'è (senza porta), da qualsiasi rete.",
       "hint_error": "Tunnel non attivo: {error}",
       "account_guest": "account ospite",
       "account_email_not_verified": "email non verificata",

@@ -150,6 +150,8 @@ export class RemoteHost {
         return this.request('GET', s('/tunnel'));
       case 'get_network_status':
         return this.request('GET', s('/network'));
+      case 'retry_tunnel':
+        return this.request('POST', s('/tunnel/retry'));
       case 'save_server_properties':
         return this.request('PUT', s('/properties'), { json: { properties: args.properties } });
       case 'toggle_mod':

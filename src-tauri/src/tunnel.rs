@@ -41,6 +41,16 @@ const READY_POLL: Duration = Duration::from_secs(3);
 const READY_TIMEOUT: Duration = Duration::from_secs(120);
 const HTTP_TIMEOUT: Duration = Duration::from_secs(25);
 const LOCAL_IP: &str = "127.0.0.1";
+/// Versione dell'agent `playitd` distribuito con l'app: deve combaciare con il
+/// tag in `scripts/build-playit.mjs`. È ciò che l'API registra al claim: con
+/// un testo diverso da `playit <versione>` i tunnel vengono rifiutati come
+/// `AgentVersionTooOld`.
+const PLAYIT_AGENT_VERSION: &str = "1.0.10";
+/// Dopo l'avvio l'agent impiega qualche secondo a registrarsi: finché non lo
+/// ha fatto, l'API rifiuta la creazione del tunnel (`AgentVersionTooOld`,
+/// `AgentNotFound`). Si riprova per un po' prima di arrendersi.
+const AGENT_REGISTER_TIMEOUT: Duration = Duration::from_secs(60);
+const AGENT_REGISTER_POLL: Duration = Duration::from_secs(3);
 
 /// Account playit collegato: chiave dell'agent (segreta, come il token dell'host).
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, Eq)]
@@ -221,7 +231,7 @@ pub fn claim_start(app: &AppHandle) -> Result<String, String> {
 
 fn claim_worker(app: AppHandle, code: String) {
     let deadline = Instant::now() + CLAIM_TIMEOUT;
-    let version = format!("mineger {}", env!("CARGO_PKG_VERSION"));
+    let version = format!("playit {}", PLAYIT_AGENT_VERSION);
     let result = loop {
         if Instant::now() > deadline {
             break Err(tr!("errors.tunnel.claim_timeout"));
@@ -395,6 +405,20 @@ fn ensure_agent_id(app: &AppHandle, cfg: &PlayitConfig) -> Result<String, String
     Ok(data.agent_id)
 }
 
+/// Ripete una chiamata all'API finché l'agent non risulta registrato (subito
+/// dopo l'avvio l'API risponde `AgentVersionTooOld` / `AgentNotFound`).
+fn with_agent_registered<T>(mut call: impl FnMut() -> Result<T, String>) -> Result<T, String> {
+    let deadline = Instant::now() + AGENT_REGISTER_TIMEOUT;
+    loop {
+        match call() {
+            Err(e) if (e.contains("AgentVersionTooOld") || e.contains("AgentNotFound")) && Instant::now() < deadline && daemon_running() => {
+                thread::sleep(AGENT_REGISTER_POLL);
+            }
+            other => return other,
+        }
+    }
+}
+
 /// Crea il tunnel del server o riallinea quello esistente alla porta attuale. Ritorna l'id.
 fn ensure_tunnel(app: &AppHandle, id: &str, secret: &str, agent_id: &str, port: u16) -> Result<String, String> {
     let dir = service::server_dir(app, id)?;
@@ -408,11 +432,13 @@ fn ensure_tunnel(app: &AppHandle, id: &str, secret: &str, agent_id: &str, port: 
         if let Some(t) = listed {
             let needs_update = local_port_of(t) != Some(port) || t.disabled_reason.is_some();
             if needs_update {
-                let _: Value = api_post(
-                    Some(secret),
-                    "/tunnels/update",
-                    json!({ "tunnel_id": tid, "local_ip": LOCAL_IP, "local_port": port, "agent_id": agent_id, "enabled": true }),
-                )?;
+                let _: Value = with_agent_registered(|| {
+                    api_post(
+                        Some(secret),
+                        "/tunnels/update",
+                        json!({ "tunnel_id": tid, "local_ip": LOCAL_IP, "local_port": port, "agent_id": agent_id, "enabled": true }),
+                    )
+                })?;
             }
             return Ok(tid.clone());
         }
@@ -422,21 +448,23 @@ fn ensure_tunnel(app: &AppHandle, id: &str, secret: &str, agent_id: &str, port: 
         // Cancellato dal sito: se ne crea uno nuovo.
     }
 
-    let created: Value = api_post(
-        Some(secret),
-        "/tunnels/create",
-        json!({
-            "name": tunnel_name(id),
-            "tunnel_type": "minecraft-java",
-            "port_type": "tcp",
-            "port_count": 1,
-            "origin": { "type": "agent", "data": { "agent_id": agent_id, "local_ip": LOCAL_IP, "local_port": port } },
-            "enabled": true,
-            "alloc": null,
-            "firewall_id": null,
-            "proxy_protocol": null
-        }),
-    )?;
+    let created: Value = with_agent_registered(|| {
+        api_post(
+            Some(secret),
+            "/tunnels/create",
+            json!({
+                "name": tunnel_name(id),
+                "tunnel_type": "minecraft-java",
+                "port_type": "tcp",
+                "port_count": 1,
+                "origin": { "type": "agent", "data": { "agent_id": agent_id, "local_ip": LOCAL_IP, "local_port": port } },
+                "enabled": true,
+                "alloc": null,
+                "firewall_id": null,
+                "proxy_protocol": null
+            }),
+        )
+    })?;
     let tid = created
         .get("id")
         .and_then(Value::as_str)

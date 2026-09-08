@@ -1224,7 +1224,7 @@
       "retry": "Retry",
       "hint_off": "The tunnel starts with the server. The address stays the same at every start.",
       "hint_starting": "Connecting to playit.gg, the address arrives in a few seconds…",
-      "hint_online": "Friends join with this address, from any network. Copy it and paste it in the chat.",
+      "hint_online": "Friends join with this address, pasted as is (no port), from any network.",
       "hint_error": "Tunnel not active: {error}",
       "account_guest": "guest account",
       "account_email_not_verified": "email not verified",

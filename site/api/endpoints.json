@@ -456,6 +456,25 @@
           "response": "{ \"linked\": true, \"account\": \"verified\", \"enabled\": true, \"agent_running\": true, \"state\": \"online\", \"address\": \"quiet-forest.gl.joinmc.link:31245\" }"
         },
         {
+          "method": "POST",
+          "path": "/api/servers/{id}/tunnel/retry",
+          "auth": "token",
+          "title": {
+            "en": "Retry the tunnel",
+            "it": "Riprova il tunnel"
+          },
+          "desc": {
+            "en": "Brings the playit.gg tunnel of a running server up again after an error, without touching the saved flag. The outcome arrives as a <code>tunnel-status</code> event.",
+            "it": "Rimette in piedi il tunnel playit.gg di un server acceso dopo un errore, senza toccare il flag salvato. L'esito arriva come evento <code>tunnel-status</code>."
+          },
+          "use": {
+            "en": "A watchdog that retries the tunnel when <code>/tunnel</code> reports <code>error</code>.",
+            "it": "Un watchdog che riprova il tunnel quando <code>/tunnel</code> riporta <code>error</code>."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Vanilla%20coi%20bro/tunnel/retry\"",
+          "response": "{ \"ok\": true }"
+        },
+        {
           "method": "WS",
           "path": "/api/ws?token=…",
           "auth": "token",

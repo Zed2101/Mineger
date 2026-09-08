@@ -256,7 +256,14 @@ export function setupNetwork(state, { isRemote = () => false, onSettingsChanged 
     const link = e.target.closest('button[data-url]');
     if (link) return openExternal(link.dataset.url);
     if (e.target.closest('button[data-open-settings]')) return openPlayitSettings();
-    if (e.target.closest('button[data-retry]')) return setFlag('tunnel', true);
+    if (e.target.closest('button[data-retry]')) {
+      try {
+        await call('retry_tunnel', { id: current.id });
+      } catch (err) {
+        alert(String(err));
+      }
+      return load();
+    }
     const copy = e.target.closest('button[data-copy]');
     if (copy) {
       const text = card.querySelector(`[data-address="${copy.dataset.copy}"]`)?.textContent || '';
