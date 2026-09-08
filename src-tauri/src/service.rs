@@ -524,7 +524,72 @@ pub fn list_backups(app: &AppHandle, id: &str) -> Result<Vec<BackupInfo>, String
 
 pub fn create_backup(app: &AppHandle, id: &str) -> Result<BackupInfo, String> {
     let dir = server_dir(app, id)?;
-    backup::create_backup(app, id, &dir)
+    crate::automation::run_backup(app, id, &dir, "manual")
+}
+
+pub fn delete_backup(app: &AppHandle, id: &str, file: &str) -> Result<(), String> {
+    let dir = server_dir(app, id)?;
+    backup::delete_backup(&dir, file)
+}
+
+pub fn backup_contents(app: &AppHandle, id: &str, file: &str) -> Result<crate::models::BackupContents, String> {
+    let dir = server_dir(app, id)?;
+    backup::contents(&dir, file)
+}
+
+pub fn backup_stats(app: &AppHandle, id: &str) -> Result<crate::models::BackupStats, String> {
+    let dir = server_dir(app, id)?;
+    let mut s = backup::stats(&dir);
+    s.last_backup = read_server_data(&dir)?.automation.last_backup;
+    Ok(s)
+}
+
+pub fn restore_backup(app: &AppHandle, id: &str, file: &str, safety: bool) -> Result<crate::models::RestoreResult, String> {
+    let dir = server_dir(app, id)?;
+    backup::restore(app, id, &dir, file, safety)
+}
+
+pub fn automation_config(app: &AppHandle, id: &str) -> Result<crate::models::AutomationConfig, String> {
+    let dir = server_dir(app, id)?;
+    Ok(read_server_data(&dir)?.automation)
+}
+
+/// Salva riavvio/pianificazioni/backup/Discord. Gli esiti delle ultime esecuzioni
+/// (last_run, last_backup) restano quelli su disco: la UI non li possiede.
+pub fn save_automation(app: &AppHandle, id: &str, mut cfg: crate::models::AutomationConfig) -> Result<crate::models::AutomationConfig, String> {
+    let dir = server_dir(app, id)?;
+    crate::automation::validate(&mut cfg)?;
+    let mut out = cfg.clone();
+    crate::automation::update_data(&dir, |d| {
+        let old = std::mem::take(&mut d.automation);
+        for s in cfg.schedules.iter_mut() {
+            if let Some(prev) = old.schedules.iter().find(|p| p.id == s.id) {
+                s.last_run = prev.last_run;
+                s.last_ok = prev.last_ok;
+                s.last_result = prev.last_result.clone();
+            }
+        }
+        cfg.last_backup = old.last_backup;
+        out = cfg.clone();
+        d.automation = cfg;
+    })?;
+    Ok(out)
+}
+
+/// Esegue subito una pianificazione (pulsante "Esegui ora"), senza aspettare la scadenza.
+pub fn run_schedule_now(app: &AppHandle, id: &str, schedule_id: &str) -> Result<(), String> {
+    let dir = server_dir(app, id)?;
+    let data = read_server_data(&dir)?;
+    let s = data.automation.schedules.into_iter().find(|s| s.id == schedule_id).ok_or_else(|| tr!("errors.automation.schedule_not_found"))?;
+    let (app, id, dir) = (app.clone(), id.to_string(), dir);
+    std::thread::spawn(move || crate::automation::run_schedule(&app, &id, &dir, &s));
+    Ok(())
+}
+
+pub fn test_discord(app: &AppHandle, id: &str, url: &str) -> Result<(), String> {
+    let dir = server_dir(app, id)?;
+    let name = read_server_data(&dir)?.name;
+    crate::notify::send_test(url, &name)
 }
 
 pub fn app_info(app: &AppHandle) -> Result<AppInfo, String> {

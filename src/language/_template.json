@@ -29,7 +29,10 @@
   "console": {
     "backup": {
       "created": "",
-      "save_forced": ""
+      "save_forced": "",
+      "safety": "",
+      "restoring": "",
+      "restored": ""
     },
     "exit_code_unknown": "",
     "launch": "",
@@ -67,6 +70,17 @@
       "starting": "",
       "online": "",
       "error": ""
+    },
+    "automation": {
+      "running": "",
+      "done": "",
+      "failed": "",
+      "backup_pruned": "",
+      "backup_failed": "",
+      "backup_on_stop": "",
+      "restart_scheduled": "",
+      "restart_gave_up": "",
+      "restart_failed": ""
     }
   },
   "errors": {
@@ -76,7 +90,14 @@
       "url_not_allowed": ""
     },
     "backup": {
-      "no_world_dir": ""
+      "no_world_dir": "",
+      "bad_name": "",
+      "not_found": "",
+      "bad_zip": "",
+      "empty": "",
+      "bad_entry": "",
+      "safety_failed": "",
+      "clear_failed": ""
     },
     "create": {
       "choose_version": "",
@@ -353,6 +374,19 @@
       "agent_spawn": "",
       "agent_exited": "",
       "ready_timeout": ""
+    },
+    "automation": {
+      "bad_action": "",
+      "empty_command": "",
+      "bad_time": "",
+      "bad_days": "",
+      "interval_too_short": "",
+      "stop_timeout": "",
+      "schedule_not_found": ""
+    },
+    "discord": {
+      "bad_url": "",
+      "http": ""
     }
   },
   "msg": {
@@ -742,13 +776,102 @@
       "last_seen": "",
       "kick_confirm": "",
       "indexing": ""
+    },
+    "automation": {
+      "saved": "",
+      "save_error": "",
+      "run_started": "",
+      "actions": {
+        "start": "",
+        "stop": "",
+        "restart": "",
+        "backup": "",
+        "command": ""
+      },
+      "action_short": {
+        "start": "",
+        "stop": "",
+        "restart": "",
+        "backup": "",
+        "command": ""
+      },
+      "when": {
+        "daily": "",
+        "weekly": "",
+        "interval": ""
+      },
+      "when_daily": "",
+      "when_weekly": "",
+      "when_interval": "",
+      "day_short": {
+        "0": "",
+        "1": "",
+        "2": "",
+        "3": "",
+        "4": "",
+        "5": "",
+        "6": ""
+      },
+      "day_long": {
+        "0": "",
+        "1": "",
+        "2": "",
+        "3": "",
+        "4": "",
+        "5": "",
+        "6": ""
+      },
+      "warn_pill": "",
+      "next_run": "",
+      "never_run": "",
+      "last_ok": "",
+      "last_failed": "",
+      "disabled": "",
+      "run_now": "",
+      "edit": "",
+      "delete": "",
+      "confirm_delete": "",
+      "no_schedules": "",
+      "edit_title": "",
+      "form_error_command": "",
+      "form_error_time": "",
+      "form_error_days": "",
+      "form_error_interval": "",
+      "backup_stats": "",
+      "backup_stats_none": "",
+      "last_backup_none": "",
+      "last_backup_ok": "",
+      "last_backup_failed": "",
+      "source": {
+        "manual": "",
+        "schedule": "",
+        "on_stop": "",
+        "pre_restore": ""
+      },
+      "restore": "",
+      "restore_running": "",
+      "restore_preview": "",
+      "no_level_dat": "",
+      "restore_safety": "",
+      "restore_confirm": "",
+      "restore_progress": "",
+      "restore_done": "",
+      "restore_safety_done": "",
+      "restore_error": "",
+      "backup_pruned": "",
+      "discord_url_required": "",
+      "discord_test_ok": "",
+      "discord_test_error": ""
     }
   },
   "progress": {
     "backup": {
       "compressing": "",
       "compressing_files": "",
-      "done": ""
+      "done": "",
+      "restoring": "",
+      "restoring_files": "",
+      "restored": ""
     },
     "create": {
       "done": "",
@@ -861,7 +984,8 @@
       "stat_ram_sub": "",
       "stat_tick": "",
       "stat_uptime": "",
-      "stat_uptime_sub": ""
+      "stat_uptime_sub": "",
+      "backup_manage": ""
     },
     "edit": {
       "browse": "",
@@ -1034,7 +1158,8 @@
       "mods": "",
       "properties": "",
       "webhooks": "",
-      "map": ""
+      "map": "",
+      "automation": ""
     },
     "topbar": {
       "edit_title": "",
@@ -1264,6 +1389,53 @@
       "pill_off": "",
       "pill_wait": "",
       "pill_err": ""
+    },
+    "automation": {
+      "title": "",
+      "intro": "",
+      "restart_title": "",
+      "restart_note": "",
+      "restart_attempts": "",
+      "restart_attempts_unit": "",
+      "restart_window": "",
+      "restart_window_unit": "",
+      "discord_title": "",
+      "discord_note": "",
+      "discord_url": "",
+      "discord_events": "",
+      "ev_start": "",
+      "ev_stop": "",
+      "ev_crash": "",
+      "ev_backup_failed": "",
+      "ev_backup_done": "",
+      "ev_join": "",
+      "ev_leave": "",
+      "ev_schedule": "",
+      "discord_test": "",
+      "discord_save": "",
+      "schedules_title": "",
+      "schedules_note": "",
+      "new_schedule": "",
+      "form_title": "",
+      "action_label": "",
+      "command_label": "",
+      "command_placeholder": "",
+      "when_label": "",
+      "time_label": "",
+      "days_label": "",
+      "interval_label": "",
+      "warn_label": "",
+      "cancel": "",
+      "add": "",
+      "backup_title": "",
+      "backup_note": "",
+      "backup_now": "",
+      "keep_last": "",
+      "keep_last_unit": "",
+      "keep_days": "",
+      "keep_days_unit": "",
+      "on_stop": "",
+      "backups_list": ""
     }
   },
   "presence": {
@@ -1331,5 +1503,39 @@
       "toolsmith": "",
       "weaponsmith": ""
     }
+  },
+  "automation": {
+    "chat_warning": "",
+    "actions": {
+      "start": "",
+      "stop": "",
+      "restart": "",
+      "backup": "",
+      "command": ""
+    },
+    "already_running": "",
+    "already_stopped": "",
+    "backup_result": "",
+    "command_sent": ""
+  },
+  "discord": {
+    "test_title": "",
+    "test_body": "",
+    "start_title": "",
+    "start_body": "",
+    "stop_title": "",
+    "stop_body": "",
+    "crash_title": "",
+    "crash_body": "",
+    "crash_restarting": "",
+    "crash_gave_up": "",
+    "backup_done_title": "",
+    "backup_done_body": "",
+    "backup_failed_title": "",
+    "join_title": "",
+    "leave_title": "",
+    "players_body": "",
+    "schedule_title": "",
+    "schedule_failed": ""
   }
 }

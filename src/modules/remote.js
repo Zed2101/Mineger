@@ -118,6 +118,22 @@ export class RemoteHost {
         return this.request('GET', s('/backups'));
       case 'create_backup':
         return this.request('POST', s('/backups'));
+      case 'get_backup_stats':
+        return this.request('GET', s('/backups/stats'));
+      case 'get_backup_contents':
+        return this.request('GET', s(`/backups/${enc(args.file)}`));
+      case 'delete_backup':
+        return this.request('DELETE', s(`/backups/${enc(args.file)}`));
+      case 'restore_backup':
+        return this.request('POST', s('/backups/restore'), { json: { file: args.file, safety: args.safety ?? true } });
+      case 'get_automation':
+        return this.request('GET', s('/automation'));
+      case 'save_automation':
+        return this.request('PUT', s('/automation'), { json: args.config });
+      case 'run_schedule_now':
+        return this.request('POST', s('/automation/run'), { json: { schedule_id: args.scheduleId } });
+      case 'test_discord_webhook':
+        return this.request('POST', s('/automation/discord/test'), { json: { url: args.url } });
       case 'delete_server':
         return this.request('DELETE', s(''));
       case 'get_server_disk_usage':

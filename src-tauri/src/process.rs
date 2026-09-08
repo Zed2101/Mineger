@@ -340,17 +340,24 @@ pub fn spawn_server(app: &AppHandle, id: &str, spec: LaunchSpec) -> Result<(), S
                             emit_status(&app, &id, ServerStatus::Online, None, Some(started));
                             crate::cmdsnap::schedule(app.clone(), id.clone());
                             crate::tunnel::server_online(&app, &id, port);
+                            crate::notify::event(&app, &id, crate::notify::Kind::Start, tr!("discord.start_title"), tr!("discord.start_body", "port" => port));
                         }
                     }
                 }
                 if let Some((name, joined)) = parse_player_event(&line) {
                     let mut map = lock();
                     if let Some(rs) = map.get_mut(&id) {
-                        let changed = if joined { rs.players.insert(name) } else { rs.players.remove(&name) };
+                        let changed = if joined { rs.players.insert(name.clone()) } else { rs.players.remove(&name) };
                         if changed {
                             let players = rs.players.clone();
                             drop(map);
                             crate::presence::set_players(&id, &players);
+                            let (kind, title) = if joined {
+                                (crate::notify::Kind::Join, tr!("discord.join_title", "name" => name))
+                            } else {
+                                (crate::notify::Kind::Leave, tr!("discord.leave_title", "name" => name))
+                            };
+                            crate::notify::event(&app, &id, kind, title, tr!("discord.players_body", "count" => players.len()));
                         }
                     }
                 }
@@ -511,6 +518,8 @@ fn monitor_loop(app: AppHandle, id: String) {
         if let Some(code) = exited {
             let port = rs.port;
             let upnp_mapped = rs.upnp_mapped;
+            // Stop/kill chiesti dall'app (`Stopping`) o uscita pulita: non è un crash.
+            let intended = rs.status == ServerStatus::Stopping || code == Some(0);
             map.remove(&id);
             drop(map);
 
@@ -525,6 +534,7 @@ fn monitor_loop(app: AppHandle, id: String) {
                     Err(e) => emit_line(&app, &id, &tr!("console.upnp.cleanup_failed", "error" => e)),
                 }
             }
+            crate::automation::on_exit(&app, &id, code, intended);
             return;
         }
     }

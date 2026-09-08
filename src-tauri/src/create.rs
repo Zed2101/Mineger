@@ -214,6 +214,7 @@ pub fn write_new_server_data_with(dir: &Path, name: &str, version: &str, launch:
         source,
         kind: String::new(),
         mod_sources: Default::default(),
+        automation: Default::default(),
     };
     let json = serde_json::to_string_pretty(&data).map_err(|e| e.to_string())?;
     fs::write(dir.join("server-data.json"), json).map_err(|e| e.to_string())

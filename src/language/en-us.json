@@ -29,7 +29,10 @@
   "console": {
     "backup": {
       "created": "[Mineger] Backup created: {file} ({size} MB)",
-      "save_forced": "[Mineger] Backup: forcing a save, waiting 3 s..."
+      "save_forced": "[Mineger] Backup: forcing a save, waiting 3 s...",
+      "safety": "[Mineger] Restore: safety backup of the current world first…",
+      "restoring": "[Mineger] Restoring {file}…",
+      "restored": "[Mineger] Restore complete: {file} ({count} files)"
     },
     "exit_code_unknown": "n/a",
     "launch": "[Mineger] Starting: {java} {args}",
@@ -67,6 +70,17 @@
       "starting": "[Mineger] playit.gg: connecting the tunnel…",
       "online": "[Mineger] playit.gg: public address {address}",
       "error": "[Mineger] playit.gg: tunnel not active ({error})"
+    },
+    "automation": {
+      "running": "[Mineger] Schedule: {action}…",
+      "done": "[Mineger] Schedule done: {action} — {result}",
+      "failed": "[Mineger] Schedule failed: {action} — {error}",
+      "backup_pruned": "[Mineger] Retention: removed backup {file}",
+      "backup_failed": "[Mineger] BACKUP FAILED: {error}",
+      "backup_on_stop": "[Mineger] Server stopped: automatic backup on stop…",
+      "restart_scheduled": "[Mineger] Crash detected: restarting in {seconds} s (attempt {attempt} of {max})",
+      "restart_gave_up": "[Mineger] Crash detected: already {attempts} restarts in {minutes} minutes, giving up. Check the logs.",
+      "restart_failed": "[Mineger] Automatic restart failed: {error}"
     }
   },
   "errors": {
@@ -76,7 +90,14 @@
       "url_not_allowed": "URL not allowed"
     },
     "backup": {
-      "no_world_dir": "No world folder found (has the server ever been started?)"
+      "no_world_dir": "No world folder found (has the server ever been started?)",
+      "bad_name": "Invalid backup name: {file}",
+      "not_found": "Backup not found: {file}",
+      "bad_zip": "The file is not a readable zip: {error}",
+      "empty": "The backup contains no world",
+      "bad_entry": "The backup contains a path that is not allowed: {name}",
+      "safety_failed": "Safety backup failed, restore canceled: {error}",
+      "clear_failed": "Could not clear {path}: {error}"
     },
     "create": {
       "choose_version": "Choose a Minecraft version",
@@ -353,6 +374,19 @@
       "agent_spawn": "could not start the playit agent: {error}",
       "agent_exited": "the playit agent exited",
       "ready_timeout": "the tunnel did not come up in time ({detail})"
+    },
+    "automation": {
+      "bad_action": "Invalid action: {action}",
+      "empty_command": "Type the command to send",
+      "bad_time": "Invalid time: {time} (use HH:MM)",
+      "bad_days": "Pick at least one day of the week",
+      "interval_too_short": "The minimum interval is 5 minutes",
+      "stop_timeout": "The server did not stop within 90 seconds",
+      "schedule_not_found": "Schedule not found"
+    },
+    "discord": {
+      "bad_url": "Invalid Discord webhook URL (it must start with https://)",
+      "http": "Discord answered {status}: {body}"
     }
   },
   "msg": {
@@ -742,13 +776,102 @@
       "last_seen": "Last seen {when}",
       "kick_confirm": "Kick {name} from the server?",
       "indexing": "Indexing {done}/{total}…"
+    },
+    "automation": {
+      "saved": "Saved",
+      "save_error": "Error: {error}",
+      "run_started": "Running now…",
+      "actions": {
+        "start": "Start the server",
+        "stop": "Stop the server",
+        "restart": "Restart the server",
+        "backup": "World backup",
+        "command": "Command"
+      },
+      "action_short": {
+        "start": "Start",
+        "stop": "Stop",
+        "restart": "Restart",
+        "backup": "Backup",
+        "command": "Command"
+      },
+      "when": {
+        "daily": "Every day",
+        "weekly": "Chosen days",
+        "interval": "Every N minutes"
+      },
+      "when_daily": "every day at {time}",
+      "when_weekly": "{days} at {time}",
+      "when_interval": "every {minutes} min",
+      "day_short": {
+        "0": "M",
+        "1": "T",
+        "2": "W",
+        "3": "T",
+        "4": "F",
+        "5": "S",
+        "6": "S"
+      },
+      "day_long": {
+        "0": "Mon",
+        "1": "Tue",
+        "2": "Wed",
+        "3": "Thu",
+        "4": "Fri",
+        "5": "Sat",
+        "6": "Sun"
+      },
+      "warn_pill": "{minutes} min warning",
+      "next_run": "next: {when}",
+      "never_run": "never run",
+      "last_ok": "last: {when} ✓ {result}",
+      "last_failed": "last: {when} ✗ {error}",
+      "disabled": "paused",
+      "run_now": "Run now",
+      "edit": "Edit",
+      "delete": "Delete",
+      "confirm_delete": "Confirm",
+      "no_schedules": "No schedules yet. Examples: a backup every night at 04:00, a restart on Sundays, a chat message every hour.",
+      "edit_title": "Edit schedule",
+      "form_error_command": "Type the command to send",
+      "form_error_time": "Invalid time",
+      "form_error_days": "Pick at least one day",
+      "form_error_interval": "Minimum interval: 5 minutes",
+      "backup_stats": "{count} backups · {size} on disk",
+      "backup_stats_none": "no backups",
+      "last_backup_none": "No backup recorded yet.",
+      "last_backup_ok": "Last backup: {when} ({source}) ✓ {file}",
+      "last_backup_failed": "LAST BACKUP FAILED: {when} ({source}) — {error}",
+      "source": {
+        "manual": "manual",
+        "schedule": "scheduled",
+        "on_stop": "on stop",
+        "pre_restore": "before restore"
+      },
+      "restore": "Restore",
+      "restore_running": "Stop the server before restoring a backup",
+      "restore_preview": "Contains {worlds} · {entries} files · {size} uncompressed. The current world will be replaced by this one.",
+      "no_level_dat": "Warning: there is no level.dat in this backup, it may not be a complete world.",
+      "restore_safety": "Take a safety backup of the current world first (recommended)",
+      "restore_confirm": "Restore for real",
+      "restore_progress": "Restoring…",
+      "restore_done": "Restored: {count} files{safety}",
+      "restore_safety_done": " · previous world saved as {file}",
+      "restore_error": "Restore failed: {error}",
+      "backup_pruned": "Retention: removed {count} old backups",
+      "discord_url_required": "Enter the webhook URL",
+      "discord_test_ok": "Message sent: check the Discord channel",
+      "discord_test_error": "Send failed: {error}"
     }
   },
   "progress": {
     "backup": {
       "compressing": "Compressing...",
       "compressing_files": "Compressing {done}/{total} files",
-      "done": "Backup complete"
+      "done": "Backup complete",
+      "restoring": "Restoring...",
+      "restoring_files": "Restoring {done}/{total} files",
+      "restored": "Restore complete"
     },
     "create": {
       "done": "Server created",
@@ -861,7 +984,8 @@
       "stat_ram_sub": "of 2048 MB allocated",
       "stat_tick": "Tick",
       "stat_uptime": "Uptime",
-      "stat_uptime_sub": "not running"
+      "stat_uptime_sub": "not running",
+      "backup_manage": "Schedule, retention, restore →"
     },
     "edit": {
       "browse": "Browse…",
@@ -1034,7 +1158,8 @@
       "mods": "Mods",
       "properties": "Properties",
       "webhooks": "Webhook",
-      "map": "Map"
+      "map": "Map",
+      "automation": "Automation"
     },
     "topbar": {
       "edit_title": "Edit name and icon",
@@ -1264,6 +1389,53 @@
       "pill_off": "off",
       "pill_wait": "working",
       "pill_err": "error"
+    },
+    "automation": {
+      "title": "Automation",
+      "intro": "Restart after a crash, actions at fixed times, backups with retention and restore, Discord notifications: the server looks after itself.",
+      "restart_title": "Automatic restart",
+      "restart_note": "If the server exits without you stopping it, Mineger restarts it with growing waits (5 s, 15 s, 45 s, then 60 s). A stop from the app, a webhook or a schedule does not count as a crash.",
+      "restart_attempts": "At most",
+      "restart_attempts_unit": "attempts",
+      "restart_window": "within",
+      "restart_window_unit": "minutes, then give up",
+      "discord_title": "Discord notifications",
+      "discord_note": "A channel webhook, no bot and no token to keep: in Discord open Channel settings → Integrations → Webhooks, create one and copy its URL. If Discord does not answer, the server starts anyway.",
+      "discord_url": "Webhook URL",
+      "discord_events": "Events to notify",
+      "ev_start": "start",
+      "ev_stop": "stop",
+      "ev_crash": "crash",
+      "ev_backup_failed": "backup failed",
+      "ev_backup_done": "backup done",
+      "ev_join": "player joins",
+      "ev_leave": "player leaves",
+      "ev_schedule": "schedule run",
+      "discord_test": "Send a test message",
+      "discord_save": "Save",
+      "schedules_title": "Schedules",
+      "schedules_note": "Start, stop, restart, back up or send a command at fixed times. Times are those of the PC hosting the server; runs missed while the app was closed are not caught up.",
+      "new_schedule": "+ New",
+      "form_title": "New schedule",
+      "action_label": "Action",
+      "command_label": "Command to send (without /)",
+      "command_placeholder": "e.g. say The world is about to be saved",
+      "when_label": "When",
+      "time_label": "At",
+      "days_label": "Days",
+      "interval_label": "Every (minutes, min. 5)",
+      "warn_label": "Chat warning (minutes, 0 = none)",
+      "cancel": "Cancel",
+      "add": "Add",
+      "backup_title": "Backups",
+      "backup_note": "Every backup zips the world into backups/ inside the server folder. Retention and backup-on-stop apply to every backup, manual ones included.",
+      "backup_now": "Back up now",
+      "keep_last": "Keep only the last",
+      "keep_last_unit": "backups",
+      "keep_days": "Delete those older than",
+      "keep_days_unit": "days (never the last one left)",
+      "on_stop": "Automatic backup at every stop",
+      "backups_list": "Available backups"
     }
   },
   "presence": {
@@ -1331,5 +1503,39 @@
       "toolsmith": "Job site: toolsmith",
       "weaponsmith": "Job site: weaponsmith"
     }
+  },
+  "automation": {
+    "chat_warning": "[Mineger] The server will stop in {minutes} minutes: save what you are doing!",
+    "actions": {
+      "start": "server start",
+      "stop": "server stop",
+      "restart": "server restart",
+      "backup": "world backup",
+      "command": "command"
+    },
+    "already_running": "the server was already running",
+    "already_stopped": "the server was already stopped",
+    "backup_result": "{file} ({size} MB)",
+    "command_sent": "sent: {command}"
+  },
+  "discord": {
+    "test_title": "Test message",
+    "test_body": "The webhook works: this server's notifications will arrive here.",
+    "start_title": "Server online",
+    "start_body": "The server is ready on port {port}.",
+    "stop_title": "Server stopped",
+    "stop_body": "The server has been stopped.",
+    "crash_title": "The server crashed",
+    "crash_body": "Unexpected exit (code {code}). Automatic restart is off.",
+    "crash_restarting": "Unexpected exit (code {code}). Restarting in {seconds} s (attempt {attempt} of {max}).",
+    "crash_gave_up": "Unexpected exit (code {code}). Already {attempts} restarts in {minutes} minutes: Mineger gives up, a human is needed.",
+    "backup_done_title": "Backup complete",
+    "backup_done_body": "{file} ({size} MB)",
+    "backup_failed_title": "Backup FAILED",
+    "join_title": "{name} joined",
+    "leave_title": "{name} left",
+    "players_body": "Online now: {count}",
+    "schedule_title": "Schedule: {action}",
+    "schedule_failed": "Failed: {error}"
   }
 }

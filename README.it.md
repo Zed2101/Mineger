@@ -35,7 +35,8 @@ Quando esce una nuova versione del modpack l'app te lo segnala e la installa con
 - Avvio e arresto con stato in tempo reale, console con i log colorati e invio comandi.
 - Grafici CPU/RAM del processo Java, spazio su disco, uptime.
 - Editor di `server.properties` con descrizioni dei campi.
-- Backup del mondo in zip (con `save-off`/`save-all` per una copia consistente).
+- Backup del mondo in zip (con `save-off`/`save-all` per una copia consistente), con retention (tieni gli ultimi N e/o N giorni), backup a ogni arresto e ripristino dall'app (anteprima, conferma, prima un backup di sicurezza).
+- Il server si gestisce da solo: riavvio automatico dopo un crash (attese crescenti, tentativi in una finestra), pianificazioni (avvia, ferma, riavvia, backup, comando; giornaliere, settimanali o ogni N minuti, con preavviso in chat prima degli stop) e notifiche Discord in uscita tramite webhook del canale (avvio, arresto, crash, backup fallito, join/leave…).
 - Icona del server (`server-icon.png`) ridimensionata automaticamente a 64×64.
 - Riordino dei server con drag & drop, icone personalizzabili.
 - **Mappa del mondo** letta dai file di regione: funziona con ogni tipo di server e versione, anche a server spento. Dimensioni e colori dei blocchi delle mod compresi. I giocatori sono marker sulla mappa: clic su uno per teletrasportarlo, vedere l'inventario, mandargli un messaggio a schermo, un suono, un effetto e altro.

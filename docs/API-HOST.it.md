@@ -94,7 +94,14 @@ Le tile vengono rese dai file di regione: la mappa funziona anche a server spent
 | `PUT` | `/api/servers/{id}/launch` | RAM, UPnP e tunnel playit: `{max_ram_mb, upnp, tunnel}` |
 | `PUT` | `/api/servers/{id}/properties` | `server.properties`: `{properties: {...}}` |
 | `GET`/`PUT`/`DELETE` | `/api/servers/{id}/server-icon` | Icona del server (PNG 64×64, ridimensionata dall'app) |
-| `GET`/`POST` | `/api/servers/{id}/backups` | Elenca o crea un backup del mondo |
+| `GET`/`POST` | `/api/servers/{id}/backups` | Elenca o crea un backup del mondo (retention ed evento `backup-result` valgono per ogni backup) |
+| `GET` | `/api/servers/{id}/backups/stats` | `{count, bytes, last_backup?}`: quanti backup, lo spazio che occupano e l'esito dell'ultimo (`{at, ok, source, file?, error?}`; `source`: `manual`, `schedule`, `on_stop`, `pre_restore`) |
+| `GET` | `/api/servers/{id}/backups/{file}` | Anteprima di un backup: `{file, entries, bytes, worlds, has_level_dat}` |
+| `DELETE` | `/api/servers/{id}/backups/{file}` | Elimina un file di backup |
+| `POST` | `/api/servers/{id}/backups/restore` | `{file, safety?}`: ripristina il backup sulle cartelle del mondo. Server spento; con `safety` (default `true`) prima fa un backup del mondo attuale. Ritorna `{restored_files, safety_backup?}` |
+| `GET`/`PUT` | `/api/servers/{id}/automation` | L'automazione del server: `{restart: {enabled, max_attempts, window_minutes}, schedules: [{id, action, command, when, enabled, warn_minutes, last_run?, last_ok?, last_result?}], backup: {keep_last?, keep_days?, on_stop}, discord: {enabled, url, on_start, on_stop, on_crash, on_backup_failed, on_backup_done, on_join, on_leave, on_schedule}, last_backup?}`. `action`: `start`, `stop`, `restart`, `backup`, `command`; `when`: `{kind: "daily", time: "04:00"}`, `{kind: "weekly", days: [0..6], time}` (0 = lunedì) o `{kind: "interval", minutes}` (minimo 5). `PUT` manda l'oggetto intero (un `id` vuoto ne riceve uno); gli esiti delle esecuzioni restano quelli dell'host |
+| `POST` | `/api/servers/{id}/automation/run` | `{schedule_id}`: esegue subito una pianificazione. Esito come evento `schedule-run` |
+| `POST` | `/api/servers/{id}/automation/discord/test` | `{url}`: manda un messaggio di prova a un webhook Discord |
 
 ### Mod e plugin
 
@@ -127,7 +134,7 @@ Le tile vengono rese dai file di regione: la mappa funziona anche a server spent
 GET /api/ws?token=<token>
 ```
 
-WebSocket che inoltra gli eventi dell'app: `server-status`, `server-output`, `create-progress`, `update-progress`, `mod-progress`, `backup-progress`, `pack-updates`, `webhook-call`, `map-progress`, `commands-ready`, `tunnel-status`, `network-status`.
+WebSocket che inoltra gli eventi dell'app: `server-status`, `server-output`, `create-progress`, `update-progress`, `mod-progress`, `backup-progress`, `pack-updates`, `webhook-call`, `map-progress`, `commands-ready`, `tunnel-status`, `network-status`, `backup-result` (`{id, ok, source, file?, error?, at, pruned}` dopo ogni backup, da chiunque avviato), `schedule-run` (`{id, schedule_id, ok, message, at}`).
 
 ---
 

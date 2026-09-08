@@ -1,6 +1,7 @@
 // src-tauri/src/lib.rs
 
 pub mod appupdate;
+pub mod automation;
 pub mod backup;
 pub mod cmdsnap;
 pub mod commands;
@@ -15,6 +16,7 @@ pub mod loaders;
 pub mod modsvc;
 pub mod metrics;
 pub mod models;
+pub mod notify;
 pub mod packs;
 pub mod paths;
 pub mod presence;
@@ -68,6 +70,9 @@ pub fn run() {
 
             // Controllo aggiornamenti dei modpack installati da link (dopo 20 s, poi ogni 6 h)
             packs::start_periodic_checks(app.handle().clone());
+
+            // Pianificazioni per server (avvio, stop, riavvio, backup, comando)
+            automation::start(app.handle().clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -106,6 +111,14 @@ pub fn run() {
             commands::get_server_metrics,
             commands::list_backups,
             commands::create_backup,
+            commands::delete_backup,
+            commands::get_backup_contents,
+            commands::get_backup_stats,
+            commands::restore_backup,
+            commands::get_automation,
+            commands::save_automation,
+            commands::run_schedule_now,
+            commands::test_discord_webhook,
             commands::accept_eula_cmd,
             commands::get_vanilla_versions,
             commands::create_vanilla_server,

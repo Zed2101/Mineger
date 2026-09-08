@@ -29,7 +29,10 @@
   "console": {
     "backup": {
       "created": "[Mineger] Backup creato: {file} ({size} MB)",
-      "save_forced": "[Mineger] Backup: salvataggio forzato, attendo 3 s..."
+      "save_forced": "[Mineger] Backup: salvataggio forzato, attendo 3 s...",
+      "safety": "[Mineger] Ripristino: prima un backup di sicurezza del mondo attuale…",
+      "restoring": "[Mineger] Ripristino di {file} in corso…",
+      "restored": "[Mineger] Ripristino completato: {file} ({count} file)"
     },
     "exit_code_unknown": "n/d",
     "launch": "[Mineger] Avvio: {java} {args}",
@@ -67,6 +70,17 @@
       "starting": "[Mineger] playit.gg: collegamento del tunnel…",
       "online": "[Mineger] playit.gg: indirizzo pubblico {address}",
       "error": "[Mineger] playit.gg: tunnel non attivo ({error})"
+    },
+    "automation": {
+      "running": "[Mineger] Pianificazione: {action}…",
+      "done": "[Mineger] Pianificazione eseguita: {action} — {result}",
+      "failed": "[Mineger] Pianificazione fallita: {action} — {error}",
+      "backup_pruned": "[Mineger] Retention: eliminato il backup {file}",
+      "backup_failed": "[Mineger] BACKUP FALLITO: {error}",
+      "backup_on_stop": "[Mineger] Server fermo: backup automatico allo stop…",
+      "restart_scheduled": "[Mineger] Crash rilevato: riavvio fra {seconds} s (tentativo {attempt} di {max})",
+      "restart_gave_up": "[Mineger] Crash rilevato: già {attempts} riavvii in {minutes} minuti, rinuncio. Controlla i log.",
+      "restart_failed": "[Mineger] Riavvio automatico fallito: {error}"
     }
   },
   "errors": {
@@ -76,7 +90,14 @@
       "url_not_allowed": "URL non consentito"
     },
     "backup": {
-      "no_world_dir": "Nessuna cartella mondo trovata (il server non è mai stato avviato?)"
+      "no_world_dir": "Nessuna cartella mondo trovata (il server non è mai stato avviato?)",
+      "bad_name": "Nome di backup non valido: {file}",
+      "not_found": "Backup non trovato: {file}",
+      "bad_zip": "Il file non è uno zip leggibile: {error}",
+      "empty": "Il backup non contiene nessun mondo",
+      "bad_entry": "Il backup contiene un percorso non ammesso: {name}",
+      "safety_failed": "Backup di sicurezza fallito, ripristino annullato: {error}",
+      "clear_failed": "Impossibile svuotare {path}: {error}"
     },
     "create": {
       "choose_version": "Scegli una versione di Minecraft",
@@ -353,6 +374,19 @@
       "agent_spawn": "impossibile avviare l'agent playit: {error}",
       "agent_exited": "l'agent playit si è chiuso",
       "ready_timeout": "il tunnel non è diventato attivo in tempo ({detail})"
+    },
+    "automation": {
+      "bad_action": "Azione non valida: {action}",
+      "empty_command": "Scrivi il comando da inviare",
+      "bad_time": "Ora non valida: {time} (usa HH:MM)",
+      "bad_days": "Scegli almeno un giorno della settimana",
+      "interval_too_short": "L'intervallo minimo è di 5 minuti",
+      "stop_timeout": "Il server non si è fermato entro 90 secondi",
+      "schedule_not_found": "Pianificazione non trovata"
+    },
+    "discord": {
+      "bad_url": "URL del webhook Discord non valido (deve iniziare con https://)",
+      "http": "Discord ha risposto {status}: {body}"
     }
   },
   "msg": {
@@ -742,13 +776,102 @@
       "last_seen": "Visto il {when}",
       "kick_confirm": "Espellere {name} dal server?",
       "indexing": "Indicizzazione {done}/{total}…"
+    },
+    "automation": {
+      "saved": "Salvato",
+      "save_error": "Errore: {error}",
+      "run_started": "Eseguo adesso…",
+      "actions": {
+        "start": "Avvia il server",
+        "stop": "Ferma il server",
+        "restart": "Riavvia il server",
+        "backup": "Backup del mondo",
+        "command": "Comando"
+      },
+      "action_short": {
+        "start": "Avvia",
+        "stop": "Ferma",
+        "restart": "Riavvia",
+        "backup": "Backup",
+        "command": "Comando"
+      },
+      "when": {
+        "daily": "Ogni giorno",
+        "weekly": "Giorni scelti",
+        "interval": "A intervalli"
+      },
+      "when_daily": "ogni giorno alle {time}",
+      "when_weekly": "{days} alle {time}",
+      "when_interval": "ogni {minutes} min",
+      "day_short": {
+        "0": "L",
+        "1": "M",
+        "2": "M",
+        "3": "G",
+        "4": "V",
+        "5": "S",
+        "6": "D"
+      },
+      "day_long": {
+        "0": "lun",
+        "1": "mar",
+        "2": "mer",
+        "3": "gio",
+        "4": "ven",
+        "5": "sab",
+        "6": "dom"
+      },
+      "warn_pill": "preavviso {minutes} min",
+      "next_run": "prossima: {when}",
+      "never_run": "mai eseguita",
+      "last_ok": "ultima: {when} ✓ {result}",
+      "last_failed": "ultima: {when} ✗ {error}",
+      "disabled": "sospesa",
+      "run_now": "Esegui ora",
+      "edit": "Modifica",
+      "delete": "Elimina",
+      "confirm_delete": "Conferma",
+      "no_schedules": "Nessuna pianificazione. Esempi: backup ogni notte alle 04:00, riavvio la domenica, un messaggio in chat ogni ora.",
+      "edit_title": "Modifica pianificazione",
+      "form_error_command": "Scrivi il comando da inviare",
+      "form_error_time": "Ora non valida",
+      "form_error_days": "Scegli almeno un giorno",
+      "form_error_interval": "Intervallo minimo: 5 minuti",
+      "backup_stats": "{count} backup · {size} su disco",
+      "backup_stats_none": "nessun backup",
+      "last_backup_none": "Nessun backup registrato finora.",
+      "last_backup_ok": "Ultimo backup: {when} ({source}) ✓ {file}",
+      "last_backup_failed": "ULTIMO BACKUP FALLITO: {when} ({source}) — {error}",
+      "source": {
+        "manual": "manuale",
+        "schedule": "pianificato",
+        "on_stop": "allo stop",
+        "pre_restore": "prima del ripristino"
+      },
+      "restore": "Ripristina",
+      "restore_running": "Ferma il server prima di ripristinare un backup",
+      "restore_preview": "Contiene {worlds} · {entries} file · {size} non compressi. Il mondo attuale verrà sostituito da questo.",
+      "no_level_dat": "Attenzione: nel backup non c'è nessun level.dat, potrebbe non essere un mondo completo.",
+      "restore_safety": "Prima fai un backup di sicurezza del mondo attuale (consigliato)",
+      "restore_confirm": "Ripristina davvero",
+      "restore_progress": "Ripristino in corso…",
+      "restore_done": "Ripristinato: {count} file{safety}",
+      "restore_safety_done": " · mondo precedente salvato in {file}",
+      "restore_error": "Ripristino fallito: {error}",
+      "backup_pruned": "Retention: eliminati {count} backup vecchi",
+      "discord_url_required": "Inserisci l'URL del webhook",
+      "discord_test_ok": "Messaggio inviato: controlla il canale Discord",
+      "discord_test_error": "Invio fallito: {error}"
     }
   },
   "progress": {
     "backup": {
       "compressing": "Compressione in corso...",
       "compressing_files": "Compressione {done}/{total} file",
-      "done": "Backup completato"
+      "done": "Backup completato",
+      "restoring": "Ripristino in corso...",
+      "restoring_files": "Ripristino {done}/{total} file",
+      "restored": "Ripristino completato"
     },
     "create": {
       "done": "Server creato",
@@ -861,7 +984,8 @@
       "stat_ram_sub": "di 2048 MB assegnati",
       "stat_tick": "Tick",
       "stat_uptime": "Uptime",
-      "stat_uptime_sub": "non in esecuzione"
+      "stat_uptime_sub": "non in esecuzione",
+      "backup_manage": "Pianifica, retention, ripristino →"
     },
     "edit": {
       "browse": "Sfoglia…",
@@ -1034,7 +1158,8 @@
       "mods": "Mods",
       "properties": "Proprietà",
       "webhooks": "Webhook",
-      "map": "Mappa"
+      "map": "Mappa",
+      "automation": "Automazione"
     },
     "topbar": {
       "edit_title": "Modifica nome e icona",
@@ -1264,6 +1389,53 @@
       "pill_off": "spento",
       "pill_wait": "in corso",
       "pill_err": "errore"
+    },
+    "automation": {
+      "title": "Automazione",
+      "intro": "Riavvio dopo un crash, azioni a orari fissi, backup con retention e ripristino, notifiche Discord: il server si gestisce da solo.",
+      "restart_title": "Riavvio automatico",
+      "restart_note": "Se il server esce senza che tu l'abbia fermato, Mineger lo riavvia da solo con attese crescenti (5 s, 15 s, 45 s, poi 60 s). Uno stop dall'app, da un webhook o da una pianificazione non conta come crash.",
+      "restart_attempts": "Al massimo",
+      "restart_attempts_unit": "tentativi",
+      "restart_window": "in",
+      "restart_window_unit": "minuti, poi rinuncia",
+      "discord_title": "Notifiche Discord",
+      "discord_note": "Un webhook del canale, senza bot né token da custodire: in Discord apri Impostazioni canale → Integrazioni → Webhook, creane uno e copia l'URL. Se Discord non risponde il server parte lo stesso.",
+      "discord_url": "URL del webhook",
+      "discord_events": "Eventi da notificare",
+      "ev_start": "avvio",
+      "ev_stop": "arresto",
+      "ev_crash": "crash",
+      "ev_backup_failed": "backup fallito",
+      "ev_backup_done": "backup riuscito",
+      "ev_join": "giocatore entra",
+      "ev_leave": "giocatore esce",
+      "ev_schedule": "pianificazione eseguita",
+      "discord_test": "Invia messaggio di prova",
+      "discord_save": "Salva",
+      "schedules_title": "Pianificazioni",
+      "schedules_note": "Avvia, ferma, riavvia, fai un backup o manda un comando a orari fissi. Gli orari sono quelli del PC che ospita il server; le scadenze passate ad app chiusa non si recuperano.",
+      "new_schedule": "+ Nuova",
+      "form_title": "Nuova pianificazione",
+      "action_label": "Azione",
+      "command_label": "Comando da inviare (senza /)",
+      "command_placeholder": "es. say Fra poco si salva il mondo",
+      "when_label": "Quando",
+      "time_label": "Alle",
+      "days_label": "Giorni",
+      "interval_label": "Ogni (minuti, min. 5)",
+      "warn_label": "Preavviso in chat (minuti, 0 = nessuno)",
+      "cancel": "Annulla",
+      "add": "Aggiungi",
+      "backup_title": "Backup",
+      "backup_note": "Ogni backup zippa il mondo in backups/ nella cartella del server. Retention e backup allo stop valgono per tutti i backup, anche quelli fatti a mano.",
+      "backup_now": "Crea backup",
+      "keep_last": "Tieni solo gli ultimi",
+      "keep_last_unit": "backup",
+      "keep_days": "Elimina quelli più vecchi di",
+      "keep_days_unit": "giorni (mai l'ultimo rimasto)",
+      "on_stop": "Backup automatico a ogni arresto",
+      "backups_list": "Backup disponibili"
     }
   },
   "presence": {
@@ -1331,5 +1503,39 @@
       "toolsmith": "Postazione: fabbro di utensili",
       "weaponsmith": "Postazione: fabbro d'armi"
     }
+  },
+  "automation": {
+    "chat_warning": "[Mineger] Il server verrà fermato fra {minutes} minuti: salvate quello che state facendo!",
+    "actions": {
+      "start": "avvio del server",
+      "stop": "arresto del server",
+      "restart": "riavvio del server",
+      "backup": "backup del mondo",
+      "command": "comando"
+    },
+    "already_running": "il server era già acceso",
+    "already_stopped": "il server era già spento",
+    "backup_result": "{file} ({size} MB)",
+    "command_sent": "inviato: {command}"
+  },
+  "discord": {
+    "test_title": "Messaggio di prova",
+    "test_body": "Il webhook funziona: da qui arriveranno le notifiche di questo server.",
+    "start_title": "Server online",
+    "start_body": "Il server è pronto sulla porta {port}.",
+    "stop_title": "Server fermato",
+    "stop_body": "Il server è stato fermato.",
+    "crash_title": "Il server è crashato",
+    "crash_body": "Uscita inattesa (codice {code}). Riavvio automatico spento.",
+    "crash_restarting": "Uscita inattesa (codice {code}). Riavvio fra {seconds} s (tentativo {attempt} di {max}).",
+    "crash_gave_up": "Uscita inattesa (codice {code}). Già {attempts} riavvii in {minutes} minuti: Mineger rinuncia, serve un occhio umano.",
+    "backup_done_title": "Backup completato",
+    "backup_done_body": "{file} ({size} MB)",
+    "backup_failed_title": "Backup FALLITO",
+    "join_title": "{name} è entrato",
+    "leave_title": "{name} è uscito",
+    "players_body": "Online adesso: {count}",
+    "schedule_title": "Pianificazione: {action}",
+    "schedule_failed": "Fallita: {error}"
   }
 }

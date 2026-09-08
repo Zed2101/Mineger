@@ -820,6 +820,171 @@
       ]
     },
     {
+      "id": "automation",
+      "title": {
+        "en": "Automation and backup management",
+        "it": "Automazione e gestione dei backup"
+      },
+      "intro": {
+        "en": "<p>The same things the Automation tab does, per server: restart after a crash, schedules (start, stop, restart, backup, command), backup retention and backup-on-stop, restore, and outgoing Discord notifications. The configuration is one JSON object, read and written whole; run outcomes (<code>last_run</code>, <code>last_backup</code>) are kept by the host and never overwritten by a <code>PUT</code>. Times are local to the host PC; weekdays go from 0 (Monday) to 6 (Sunday).</p>",
+        "it": "<p>Le stesse cose del tab Automazione, per server: riavvio dopo un crash, pianificazioni (avvia, ferma, riavvia, backup, comando), retention e backup allo stop, ripristino, notifiche Discord in uscita. La configurazione è un unico oggetto JSON, letto e scritto intero; gli esiti (<code>last_run</code>, <code>last_backup</code>) li tiene l'host e un <code>PUT</code> non li sovrascrive. Gli orari sono quelli del PC dell'host; i giorni vanno da 0 (lunedì) a 6 (domenica).</p>"
+      },
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/api/servers/{id}/automation",
+          "auth": "token",
+          "title": {
+            "en": "Read the automation",
+            "it": "Leggi l'automazione"
+          },
+          "desc": {
+            "en": "Restart policy, schedules with their last outcome, backup policy, Discord settings and the last backup's result.",
+            "it": "Politica di riavvio, pianificazioni con l'ultimo esito, politica dei backup, impostazioni Discord ed esito dell'ultimo backup."
+          },
+          "use": {
+            "en": "A dashboard that shows when the next nightly backup runs and whether the last one succeeded.",
+            "it": "Una dashboard che mostra quando parte il prossimo backup notturno e se l'ultimo è riuscito."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Vanilla%20coi%20bro/automation\"",
+          "response": "{ \"restart\": { \"enabled\": true, \"max_attempts\": 3, \"window_minutes\": 10 }, \"schedules\": [ { \"id\": \"7f3a9c1d2e4b\", \"action\": \"backup\", \"command\": \"\", \"when\": { \"kind\": \"daily\", \"time\": \"04:00\" }, \"enabled\": true, \"warn_minutes\": 0, \"last_run\": 1789012800, \"last_ok\": true, \"last_result\": \"world-20260909-0400.zip (212 MB)\" } ], \"backup\": { \"keep_last\": 7, \"on_stop\": true }, \"discord\": { \"enabled\": true, \"url\": \"https://discord.com/api/webhooks/…\", \"on_start\": true, \"on_stop\": true, \"on_crash\": true, \"on_backup_failed\": true, \"on_backup_done\": false, \"on_join\": false, \"on_leave\": false, \"on_schedule\": false }, \"last_backup\": { \"at\": 1789012800, \"ok\": true, \"source\": \"schedule\", \"file\": \"world-20260909-0400.zip\" } }"
+        },
+        {
+          "method": "PUT",
+          "path": "/api/servers/{id}/automation",
+          "auth": "token",
+          "title": {
+            "en": "Save the automation",
+            "it": "Salva l'automazione"
+          },
+          "desc": {
+            "en": "Sends the whole object back. <code>action</code>: <code>start</code>, <code>stop</code>, <code>restart</code>, <code>backup</code>, <code>command</code> (with <code>command</code>). <code>when</code>: <code>{\"kind\":\"daily\",\"time\":\"HH:MM\"}</code>, <code>{\"kind\":\"weekly\",\"days\":[5,6],\"time\"}</code> or <code>{\"kind\":\"interval\",\"minutes\"}</code> (5 minimum). A schedule with an empty <code>id</code> gets one. <code>warn_minutes</code> warns the players in chat before a stop or restart. Validation errors come back as 400.",
+            "it": "Rimanda l'oggetto intero. <code>action</code>: <code>start</code>, <code>stop</code>, <code>restart</code>, <code>backup</code>, <code>command</code> (con <code>command</code>). <code>when</code>: <code>{\"kind\":\"daily\",\"time\":\"HH:MM\"}</code>, <code>{\"kind\":\"weekly\",\"days\":[5,6],\"time\"}</code> o <code>{\"kind\":\"interval\",\"minutes\"}</code> (minimo 5). Una pianificazione con <code>id</code> vuoto ne riceve uno. <code>warn_minutes</code> avvisa i giocatori in chat prima di uno stop o riavvio. Gli errori di validazione tornano come 400."
+          },
+          "use": {
+            "en": "Roll out the same policy to every server: nightly backup, keep seven, restart on crash.",
+            "it": "Applicare la stessa politica a tutti i server: backup notturno, tienine sette, riavvio su crash."
+          },
+          "request": "curl -X PUT -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" -d '{\"restart\":{\"enabled\":true,\"max_attempts\":3,\"window_minutes\":10},\"schedules\":[{\"id\":\"\",\"action\":\"restart\",\"command\":\"\",\"when\":{\"kind\":\"weekly\",\"days\":[6],\"time\":\"05:00\"},\"enabled\":true,\"warn_minutes\":5}],\"backup\":{\"keep_last\":7,\"on_stop\":false},\"discord\":{\"enabled\":false,\"url\":\"\"}}' \"$HOST/api/servers/Vanilla%20coi%20bro/automation\"",
+          "response": "{ \"restart\": { \"enabled\": true, \"max_attempts\": 3, \"window_minutes\": 10 }, \"schedules\": [ { \"id\": \"c0ffee123456\", \"action\": \"restart\", \"command\": \"\", \"when\": { \"kind\": \"weekly\", \"days\": [6], \"time\": \"05:00\" }, \"enabled\": true, \"warn_minutes\": 5 } ], \"backup\": { \"keep_last\": 7, \"on_stop\": false }, \"discord\": { \"enabled\": false, \"url\": \"\", \"on_start\": true, \"on_stop\": true, \"on_crash\": true, \"on_backup_failed\": true, \"on_backup_done\": false, \"on_join\": false, \"on_leave\": false, \"on_schedule\": false } }"
+        },
+        {
+          "method": "POST",
+          "path": "/api/servers/{id}/automation/run",
+          "auth": "token",
+          "title": {
+            "en": "Run a schedule now",
+            "it": "Esegui subito una pianificazione"
+          },
+          "desc": {
+            "en": "Runs the schedule immediately, without waiting for its time. The outcome arrives as the <code>schedule-run</code> event and in <code>last_result</code>.",
+            "it": "Esegue subito la pianificazione, senza aspettare l'orario. L'esito arriva come evento <code>schedule-run</code> e in <code>last_result</code>."
+          },
+          "use": {
+            "en": "A \"backup now\" button on a Stream Deck that reuses the schedule you already configured.",
+            "it": "Un pulsante \"backup adesso\" su uno Stream Deck che riusa la pianificazione già configurata."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" -d '{\"schedule_id\":\"7f3a9c1d2e4b\"}' \"$HOST/api/servers/Vanilla%20coi%20bro/automation/run\"",
+          "response": "{ \"ok\": true }"
+        },
+        {
+          "method": "POST",
+          "path": "/api/servers/{id}/automation/discord/test",
+          "auth": "token",
+          "title": {
+            "en": "Test a Discord webhook",
+            "it": "Prova un webhook Discord"
+          },
+          "desc": {
+            "en": "Sends a test embed to the given webhook URL and returns Discord's error if any.",
+            "it": "Manda un embed di prova all'URL del webhook e ritorna l'eventuale errore di Discord."
+          },
+          "use": {
+            "en": "Check the URL before saving it.",
+            "it": "Controllare l'URL prima di salvarlo."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" -d '{\"url\":\"https://discord.com/api/webhooks/123/abc\"}' \"$HOST/api/servers/Vanilla%20coi%20bro/automation/discord/test\"",
+          "response": "{ \"ok\": true }"
+        },
+        {
+          "method": "GET",
+          "path": "/api/servers/{id}/backups/stats",
+          "auth": "token",
+          "title": {
+            "en": "Backup space and last outcome",
+            "it": "Spazio dei backup ed ultimo esito"
+          },
+          "desc": {
+            "en": "How many backups there are, the space they take, and the result of the last one whoever started it (<code>source</code>: <code>manual</code>, <code>schedule</code>, <code>on_stop</code>, <code>pre_restore</code>).",
+            "it": "Quanti backup ci sono, lo spazio che occupano e l'esito dell'ultimo da chiunque avviato (<code>source</code>: <code>manual</code>, <code>schedule</code>, <code>on_stop</code>, <code>pre_restore</code>)."
+          },
+          "use": {
+            "en": "An alert when the last backup failed or the folder passes 20 GB.",
+            "it": "Un avviso quando l'ultimo backup è fallito o la cartella supera i 20 GB."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Vanilla%20coi%20bro/backups/stats\"",
+          "response": "{ \"count\": 7, \"bytes\": 1523000000, \"last_backup\": { \"at\": 1789012800, \"ok\": false, \"source\": \"schedule\", \"error\": \"No world folder found\" } }"
+        },
+        {
+          "method": "GET",
+          "path": "/api/servers/{id}/backups/{file}",
+          "auth": "token",
+          "title": {
+            "en": "Preview a backup",
+            "it": "Anteprima di un backup"
+          },
+          "desc": {
+            "en": "What the zip contains: world folders, number of files, uncompressed size, whether <code>level.dat</code> is there.",
+            "it": "Cosa contiene lo zip: cartelle dei mondi, numero di file, dimensione non compressa, se c'è <code>level.dat</code>."
+          },
+          "use": {
+            "en": "Show the user what a restore would bring back before asking for confirmation.",
+            "it": "Mostrare all'utente cosa riporterebbe un ripristino prima di chiedere conferma."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Vanilla%20coi%20bro/backups/world-20260909-0400.zip\"",
+          "response": "{ \"file\": \"world-20260909-0400.zip\", \"entries\": 1842, \"bytes\": 512000000, \"worlds\": [\"world\"], \"has_level_dat\": true }"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/servers/{id}/backups/{file}",
+          "auth": "token",
+          "title": {
+            "en": "Delete a backup",
+            "it": "Elimina un backup"
+          },
+          "desc": {
+            "en": "Removes one backup file. Only a bare file name is accepted.",
+            "it": "Elimina un file di backup. Si accetta solo il nome del file."
+          },
+          "use": {
+            "en": "Free space after copying a backup elsewhere.",
+            "it": "Liberare spazio dopo aver copiato un backup altrove."
+          },
+          "request": "curl -X DELETE -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Vanilla%20coi%20bro/backups/world-20260901-0400.zip\"",
+          "response": "{ \"ok\": true }"
+        },
+        {
+          "method": "POST",
+          "path": "/api/servers/{id}/backups/restore",
+          "auth": "token",
+          "title": {
+            "en": "Restore a backup",
+            "it": "Ripristina un backup"
+          },
+          "desc": {
+            "en": "Replaces the server's world folders with the ones in the backup. The server must be off. With <code>safety</code> (default <code>true</code>) a backup of the current world is taken first; if it fails, nothing is touched. Progress arrives as <code>backup-progress</code>.",
+            "it": "Sostituisce le cartelle del mondo con quelle del backup. Il server deve essere spento. Con <code>safety</code> (default <code>true</code>) prima fa un backup del mondo attuale; se fallisce non tocca nulla. L'avanzamento arriva come <code>backup-progress</code>."
+          },
+          "use": {
+            "en": "Undo a griefing: stop, restore last night's backup, start.",
+            "it": "Annullare un griefing: stop, ripristino del backup di stanotte, avvio."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" -d '{\"file\":\"world-20260909-0400.zip\",\"safety\":true}' \"$HOST/api/servers/Vanilla%20coi%20bro/backups/restore\"",
+          "response": "{ \"restored_files\": 1842, \"safety_backup\": \"world-20260909-2315.zip\" }"
+        }
+      ]
+    },
+    {
       "id": "map",
       "title": {
         "en": "Map and players",

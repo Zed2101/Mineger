@@ -110,6 +110,7 @@
             <button class="tab" data-target="view-map" data-i18n="ui.tabs.map">Mappa</button>
             <button class="tab" data-target="view-console" data-i18n="ui.tabs.console">Console</button>
             <button class="tab" data-target="view-webhooks"><span data-i18n="ui.tabs.webhooks">Webhook</span> <span id="tab-wh-count" class="tab-badge">0</span></button>
+            <button class="tab" data-target="view-automation"><span data-i18n="ui.tabs.automation">Automazione</span> <span id="tab-auto-count" class="tab-badge">0</span></button>
           </nav>
 
           <div class="relative min-h-0 flex-1">
@@ -168,6 +169,7 @@
                   <div class="flex-1"></div>
                   <button id="btn-backup" class="btn-outline-accent w-full" data-i18n="ui.details.backup_create">Crea backup</button>
                   <p id="backup-note" class="note mt-2 text-center" data-i18n="ui.details.backup_manual">manuale</p>
+                  <button id="btn-backup-manage" type="button" class="note mt-1 text-center text-accent hover:underline" data-i18n="ui.details.backup_manage">Pianifica, retention, ripristino →</button>
                 </div>
               </div>
 
@@ -503,6 +505,151 @@
                       <div class="card-title mb-3" data-i18n="ui.webhooks.recent_calls">Ultime chiamate</div>
                       <ul id="wh-calls" class="space-y-1.5"></ul>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- ===== Automazione ===== -->
+            <section id="view-automation" class="tab-content absolute inset-0 hidden flex flex-col">
+              <div class="flex items-start justify-between gap-4 px-6 pb-3 pt-5">
+                <div class="min-w-0">
+                  <h3 class="text-[15px] font-bold" data-i18n="ui.automation.title">Automazione</h3>
+                  <p class="note mt-0.5" data-i18n="ui.automation.intro">Riavvio dopo un crash, azioni a orari fissi, backup con retention e ripristino, notifiche Discord: il server si gestisce da solo.</p>
+                </div>
+                <span id="auto-note" class="note mt-1 shrink-0"></span>
+              </div>
+
+              <div class="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
+                <div class="grid grid-cols-2 items-start gap-4">
+                  <div class="space-y-4">
+                  <!-- Riavvio automatico -->
+                  <div class="card p-[18px]">
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0">
+                        <div class="card-title" data-i18n="ui.automation.restart_title">Riavvio automatico</div>
+                        <p class="note mt-1" data-i18n="ui.automation.restart_note">Se il server esce senza che tu l'abbia fermato, Mineger lo riavvia da solo con attese crescenti (5 s, 15 s, 45 s, poi 60 s). Uno stop dall'app, da un webhook o da una pianificazione non conta come crash.</p>
+                      </div>
+                      <label class="toggle mt-0.5 shrink-0"><input type="checkbox" id="auto-restart" /><span class="toggle-track"></span></label>
+                    </div>
+                    <div id="auto-restart-fields" class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-[12px] text-text-soft">
+                      <label class="flex items-center gap-2"><span data-i18n="ui.automation.restart_attempts">Al massimo</span> <input type="number" id="auto-restart-attempts" class="input w-16 text-center" min="1" max="20" /> <span data-i18n="ui.automation.restart_attempts_unit">tentativi</span></label>
+                      <label class="flex items-center gap-2"><span data-i18n="ui.automation.restart_window">in</span> <input type="number" id="auto-restart-window" class="input w-16 text-center" min="1" max="1440" /> <span data-i18n="ui.automation.restart_window_unit">minuti, poi rinuncia</span></label>
+                    </div>
+                  </div>
+
+                  <!-- Pianificazioni -->
+                  <div class="card p-[18px]">
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0">
+                        <div class="card-title" data-i18n="ui.automation.schedules_title">Pianificazioni</div>
+                        <p class="note mt-1" data-i18n="ui.automation.schedules_note">Avvia, ferma, riavvia, fai un backup o manda un comando a orari fissi. Gli orari sono quelli del PC che ospita il server; le scadenze passate ad app chiusa non si recuperano.</p>
+                      </div>
+                      <button type="button" id="btn-auto-new" class="btn-outline-accent shrink-0 px-3! py-1.5! text-[12px]" data-i18n="ui.automation.new_schedule">+ Nuova</button>
+                    </div>
+
+                    <div id="auto-sched-form" class="mt-3 hidden rounded-lg border border-line bg-bg-inset p-3">
+                      <div id="auto-form-title" class="text-[13px] font-semibold text-text-main" data-i18n="ui.automation.form_title">Nuova pianificazione</div>
+                      <div class="mt-2">
+                        <span class="field-label" data-i18n="ui.automation.action_label">Azione</span>
+                        <div id="auto-form-actions" class="flex flex-wrap gap-1 rounded-lg bg-bg-item/60 p-1"></div>
+                      </div>
+                      <div id="auto-form-command-row" class="mt-2 hidden">
+                        <label class="field-label" for="auto-form-command" data-i18n="ui.automation.command_label">Comando da inviare (senza /)</label>
+                        <input type="text" id="auto-form-command" class="input w-full font-mono text-[12px]" data-i18n-placeholder="ui.automation.command_placeholder" placeholder="es. say Fra poco si salva il mondo" autocomplete="off" spellcheck="false" />
+                      </div>
+                      <div class="mt-2">
+                        <span class="field-label" data-i18n="ui.automation.when_label">Quando</span>
+                        <div id="auto-form-kinds" class="flex flex-wrap gap-1 rounded-lg bg-bg-item/60 p-1"></div>
+                      </div>
+                      <div class="mt-2 flex flex-wrap items-end gap-x-4 gap-y-2">
+                        <div id="auto-form-time-row">
+                          <label class="field-label" for="auto-form-time" data-i18n="ui.automation.time_label">Alle</label>
+                          <input type="time" id="auto-form-time" class="input w-28" />
+                        </div>
+                        <div id="auto-form-days-row" class="hidden">
+                          <span class="field-label" data-i18n="ui.automation.days_label">Giorni</span>
+                          <div id="auto-form-days" class="flex gap-1 rounded-lg bg-bg-item/60 p-1"></div>
+                        </div>
+                        <div id="auto-form-interval-row" class="hidden">
+                          <label class="field-label" for="auto-form-interval" data-i18n="ui.automation.interval_label">Ogni (minuti, min. 5)</label>
+                          <input type="number" id="auto-form-interval" class="input w-24" min="5" max="10080" />
+                        </div>
+                        <div id="auto-form-warn-row" class="hidden">
+                          <label class="field-label" for="auto-form-warn" data-i18n="ui.automation.warn_label">Preavviso in chat (minuti, 0 = nessuno)</label>
+                          <input type="number" id="auto-form-warn" class="input w-24" min="0" max="60" />
+                        </div>
+                      </div>
+                      <div class="mt-3 flex items-center justify-between gap-3">
+                        <span id="auto-form-error" class="note-err"></span>
+                        <div class="flex gap-2">
+                          <button type="button" id="auto-form-cancel" class="btn-ghost" data-i18n="ui.automation.cancel">Annulla</button>
+                          <button type="button" id="auto-form-add" class="btn-primary" data-i18n="ui.automation.add">Aggiungi</button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div id="auto-sched-list" class="mt-3 space-y-2"></div>
+                  </div>
+
+                  </div>
+                  <div class="space-y-4">
+                  <!-- Notifiche Discord -->
+                  <div class="card p-[18px]">
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0">
+                        <div class="card-title" data-i18n="ui.automation.discord_title">Notifiche Discord</div>
+                        <p class="note mt-1" data-i18n="ui.automation.discord_note">Un webhook del canale, senza bot né token da custodire: in Discord apri Impostazioni canale → Integrazioni → Webhook, creane uno e copia l'URL. Se Discord non risponde il server parte lo stesso.</p>
+                      </div>
+                      <label class="toggle mt-0.5 shrink-0"><input type="checkbox" id="auto-discord-enabled" /><span class="toggle-track"></span></label>
+                    </div>
+                    <div class="mt-3">
+                      <label class="field-label" for="auto-discord-url" data-i18n="ui.automation.discord_url">URL del webhook</label>
+                      <input type="text" id="auto-discord-url" class="input w-full font-mono text-[11px]" placeholder="https://discord.com/api/webhooks/…" autocomplete="off" spellcheck="false" />
+                    </div>
+                    <div class="mt-3">
+                      <span class="field-label" data-i18n="ui.automation.discord_events">Eventi da notificare</span>
+                      <div class="flex flex-wrap gap-x-4 gap-y-1.5 text-[12px] text-text-soft">
+                        <label class="flex items-center gap-1.5"><input type="checkbox" data-ev="on_start" class="accent-[var(--color-accent)]" /> <span data-i18n="ui.automation.ev_start">avvio</span></label>
+                        <label class="flex items-center gap-1.5"><input type="checkbox" data-ev="on_stop" class="accent-[var(--color-accent)]" /> <span data-i18n="ui.automation.ev_stop">arresto</span></label>
+                        <label class="flex items-center gap-1.5"><input type="checkbox" data-ev="on_crash" class="accent-[var(--color-accent)]" /> <span data-i18n="ui.automation.ev_crash">crash</span></label>
+                        <label class="flex items-center gap-1.5"><input type="checkbox" data-ev="on_backup_failed" class="accent-[var(--color-accent)]" /> <span data-i18n="ui.automation.ev_backup_failed">backup fallito</span></label>
+                        <label class="flex items-center gap-1.5"><input type="checkbox" data-ev="on_backup_done" class="accent-[var(--color-accent)]" /> <span data-i18n="ui.automation.ev_backup_done">backup riuscito</span></label>
+                        <label class="flex items-center gap-1.5"><input type="checkbox" data-ev="on_join" class="accent-[var(--color-accent)]" /> <span data-i18n="ui.automation.ev_join">giocatore entra</span></label>
+                        <label class="flex items-center gap-1.5"><input type="checkbox" data-ev="on_leave" class="accent-[var(--color-accent)]" /> <span data-i18n="ui.automation.ev_leave">giocatore esce</span></label>
+                        <label class="flex items-center gap-1.5"><input type="checkbox" data-ev="on_schedule" class="accent-[var(--color-accent)]" /> <span data-i18n="ui.automation.ev_schedule">pianificazione eseguita</span></label>
+                      </div>
+                    </div>
+                    <div class="mt-3 flex items-center justify-between gap-3">
+                      <span id="auto-discord-note" class="note"></span>
+                      <div class="flex shrink-0 gap-2">
+                        <button type="button" id="auto-discord-test" class="btn-small" data-i18n="ui.automation.discord_test">Invia messaggio di prova</button>
+                        <button type="button" id="auto-discord-save" class="btn-primary px-3! py-1.5! text-[12px]" data-i18n="ui.automation.discord_save">Salva</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Backup -->
+                  <div class="card p-[18px]">
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0">
+                        <div class="card-title" data-i18n="ui.automation.backup_title">Backup</div>
+                        <p class="note mt-1" data-i18n="ui.automation.backup_note">Ogni backup zippa il mondo in backups/ nella cartella del server. Retention e backup allo stop valgono per tutti i backup, anche quelli fatti a mano.</p>
+                      </div>
+                      <button type="button" id="auto-backup-now" class="btn-outline-accent shrink-0 px-3! py-1.5! text-[12px]" data-i18n="ui.automation.backup_now">Crea backup</button>
+                    </div>
+                    <div id="auto-backup-stats" class="mt-3 font-mono text-[12px] text-text-soft">—</div>
+                    <div id="auto-backup-last" class="note mt-1"></div>
+                    <div class="mt-3 space-y-2 text-[12px] text-text-soft">
+                      <label class="flex items-center gap-2"><input type="checkbox" id="auto-keep-last" class="accent-[var(--color-accent)]" /> <span data-i18n="ui.automation.keep_last">Tieni solo gli ultimi</span> <input type="number" id="auto-keep-last-n" class="input w-16 text-center" min="1" max="500" /> <span data-i18n="ui.automation.keep_last_unit">backup</span></label>
+                      <label class="flex items-center gap-2"><input type="checkbox" id="auto-keep-days" class="accent-[var(--color-accent)]" /> <span data-i18n="ui.automation.keep_days">Elimina quelli più vecchi di</span> <input type="number" id="auto-keep-days-n" class="input w-16 text-center" min="1" max="3650" /> <span data-i18n="ui.automation.keep_days_unit">giorni (mai l'ultimo rimasto)</span></label>
+                      <label class="flex items-center gap-2"><input type="checkbox" id="auto-on-stop" class="accent-[var(--color-accent)]" /> <span data-i18n="ui.automation.on_stop">Backup automatico a ogni arresto</span></label>
+                    </div>
+                    <span id="auto-backup-note" class="note mt-2 block"></span>
+                    <div class="card-title mt-4" data-i18n="ui.automation.backups_list">Backup disponibili</div>
+                    <div id="auto-backup-list" class="mt-2 space-y-2"></div>
+                  </div>
+
                   </div>
                 </div>
               </div>

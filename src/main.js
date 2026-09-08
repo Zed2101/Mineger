@@ -19,6 +19,7 @@ import { t, initI18n, onLanguageChange } from './modules/i18n.js';
 import { setupLanguage } from './modules/ui-language.js';
 import { setupAppUpdate } from './modules/ui-update.js';
 import { setupNetwork, renderNetworkCard, handleNetworkEvent, renderTunnelSettings } from './modules/ui-network.js';
+import { setupAutomation, renderAutomationTab, handleAutomationEvent } from './modules/ui-automation.js';
 
 const { invoke } = window.__TAURI__.core;
 
@@ -192,6 +193,7 @@ function selectServer(id) {
   showConsoleFor(state, id);
   applyStatus(state, id);
   renderWebhooksTab(state, server);
+  renderAutomationTab(state, server);
   renderPackCard(state, server);
   if (document.querySelector('.tab.active')?.dataset.target === 'view-map') renderMapTab(id);
 
@@ -234,9 +236,12 @@ function handleRemoteEvent(hostId, type, payload) {
 
   if (type === 'server-output') handleOutputEvent(state, normalized);
   else if (type === 'server-status') handleStatusEvent(state, normalized, onStatusChange);
-  else if (type === 'backup-progress') handleBackupProgress(state, normalized);
-  else if (type === 'commands-ready') handleCommandsReady(state, normalized);
+  else if (type === 'backup-progress') {
+    handleBackupProgress(state, normalized);
+    handleAutomationEvent(type, normalized);
+  } else if (type === 'commands-ready') handleCommandsReady(state, normalized);
   else if (type === 'tunnel-status' || type === 'network-status') handleNetworkEvent(type, normalized);
+  else if (type === 'backup-result' || type === 'schedule-run') handleAutomationEvent(type, normalized);
 }
 
 async function refreshRemoteServers(hostId) {
@@ -318,6 +323,7 @@ function onStatusChange(id) {
   renderStats(state, id);
   renderPlayers(state, id);
   handleNetworkEvent('server-status', { id });
+  handleAutomationEvent('server-status', { id });
 }
 
 async function startServer(id) {
@@ -502,6 +508,7 @@ async function initApp() {
   });
   setupDetails(state);
   setupWebhooksTab(state);
+  setupAutomation(state);
   setupServerIcon(state);
   setupPacks(state, {
     stopServer: (id) => call('stop_server', { id }),

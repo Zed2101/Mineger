@@ -11,6 +11,10 @@
 //   POST /api/servers/{id}/eula
 //   GET  /api/servers/{id}/metrics
 //   GET  /api/servers/{id}/backups   POST  /api/servers/{id}/backups
+//   GET  /api/servers/{id}/backups/stats   POST /api/servers/{id}/backups/restore { file, safety }
+//   GET|DELETE /api/servers/{id}/backups/{file}
+//   GET|PUT /api/servers/{id}/automation   POST /api/servers/{id}/automation/run { schedule_id }
+//   POST /api/servers/{id}/automation/discord/test { url }
 //   PUT  /api/servers/{id}/info            { name, icon }
 //   PUT  /api/servers/{id}/launch          { max_ram_mb }
 //   PUT  /api/servers/{id}/properties      { properties }
@@ -439,6 +443,12 @@ fn build_router(state: HostState) -> Router {
         .route("/api/servers/{id}/eula", post(accept_eula))
         .route("/api/servers/{id}/metrics", get(metrics))
         .route("/api/servers/{id}/backups", get(list_backups).post(create_backup))
+        .route("/api/servers/{id}/backups/stats", get(backup_stats))
+        .route("/api/servers/{id}/backups/restore", post(restore_backup))
+        .route("/api/servers/{id}/backups/{file}", get(backup_contents).delete(delete_backup))
+        .route("/api/servers/{id}/automation", get(get_automation).put(put_automation))
+        .route("/api/servers/{id}/automation/run", post(run_schedule))
+        .route("/api/servers/{id}/automation/discord/test", post(discord_test))
         .route("/api/servers/{id}/info", put(update_info))
         .route("/api/servers/{id}/launch", put(update_launch))
         .route("/api/servers/{id}/properties", put(save_properties))
@@ -707,6 +717,66 @@ async fn list_backups(State(state): State<HostState>, Path(id): Path<String>) ->
 async fn create_backup(State(state): State<HostState>, Path(id): Path<String>) -> ApiResult<crate::models::BackupInfo> {
     let app = state.app.clone();
     Ok(Json(blocking(move || service::create_backup(&app, &id)).await?))
+}
+
+async fn backup_stats(State(state): State<HostState>, Path(id): Path<String>) -> ApiResult<crate::models::BackupStats> {
+    let app = state.app.clone();
+    Ok(Json(blocking(move || service::backup_stats(&app, &id)).await?))
+}
+
+async fn backup_contents(State(state): State<HostState>, Path((id, file)): Path<(String, String)>) -> ApiResult<crate::models::BackupContents> {
+    let app = state.app.clone();
+    Ok(Json(blocking(move || service::backup_contents(&app, &id, &file)).await?))
+}
+
+async fn delete_backup(State(state): State<HostState>, Path((id, file)): Path<(String, String)>) -> ApiResult<Value> {
+    let app = state.app.clone();
+    blocking(move || service::delete_backup(&app, &id, &file)).await?;
+    Ok(Json(json!({ "ok": true })))
+}
+
+#[derive(Deserialize)]
+struct RestoreBody {
+    file: String,
+    #[serde(default)]
+    safety: Option<bool>,
+}
+
+async fn restore_backup(State(state): State<HostState>, Path(id): Path<String>, Json(body): Json<RestoreBody>) -> ApiResult<crate::models::RestoreResult> {
+    let app = state.app.clone();
+    Ok(Json(blocking(move || service::restore_backup(&app, &id, &body.file, body.safety.unwrap_or(true))).await?))
+}
+
+async fn get_automation(State(state): State<HostState>, Path(id): Path<String>) -> ApiResult<crate::models::AutomationConfig> {
+    let app = state.app.clone();
+    Ok(Json(blocking(move || service::automation_config(&app, &id)).await?))
+}
+
+async fn put_automation(State(state): State<HostState>, Path(id): Path<String>, Json(body): Json<crate::models::AutomationConfig>) -> ApiResult<crate::models::AutomationConfig> {
+    let app = state.app.clone();
+    Ok(Json(blocking(move || service::save_automation(&app, &id, body)).await?))
+}
+
+#[derive(Deserialize)]
+struct RunScheduleBody {
+    schedule_id: String,
+}
+
+async fn run_schedule(State(state): State<HostState>, Path(id): Path<String>, Json(body): Json<RunScheduleBody>) -> ApiResult<Value> {
+    let app = state.app.clone();
+    blocking(move || service::run_schedule_now(&app, &id, &body.schedule_id)).await?;
+    Ok(Json(json!({ "ok": true })))
+}
+
+#[derive(Deserialize)]
+struct DiscordTestBody {
+    url: String,
+}
+
+async fn discord_test(State(state): State<HostState>, Path(id): Path<String>, Json(body): Json<DiscordTestBody>) -> ApiResult<Value> {
+    let app = state.app.clone();
+    blocking(move || service::test_discord(&app, &id, &body.url)).await?;
+    Ok(Json(json!({ "ok": true })))
 }
 
 async fn delete_server(State(state): State<HostState>, Path(id): Path<String>) -> ApiResult<Value> {

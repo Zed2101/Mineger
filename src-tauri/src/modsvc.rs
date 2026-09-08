@@ -301,6 +301,7 @@ mod tests {
             source: None,
             kind: kind.to_string(),
             mod_sources: HashMap::new(),
+            automation: Default::default(),
         }
     }
 

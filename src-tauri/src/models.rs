@@ -97,6 +97,165 @@ pub struct LaunchConfig {
     pub tunnel_id: Option<String>,
 }
 
+// ---------------------------------------------------------------------------
+// Fase 17 — il server si gestisce da solo
+// ---------------------------------------------------------------------------
+
+fn d_true() -> bool {
+    true
+}
+fn d_attempts() -> u32 {
+    3
+}
+fn d_window() -> u32 {
+    10
+}
+
+/// Riavvio automatico dopo un crash: al massimo `max_attempts` tentativi in
+/// `window_minutes`, con attesa crescente fra uno e l'altro.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct RestartPolicy {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default = "d_attempts")]
+    pub max_attempts: u32,
+    #[serde(default = "d_window")]
+    pub window_minutes: u32,
+}
+
+impl Default for RestartPolicy {
+    fn default() -> Self {
+        Self { enabled: false, max_attempts: 3, window_minutes: 10 }
+    }
+}
+
+/// Quando scatta una pianificazione. Orari e giorni sono nel fuso locale;
+/// i giorni vanno da 0 (lunedì) a 6 (domenica).
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[serde(tag = "kind", rename_all = "lowercase")]
+pub enum ScheduleWhen {
+    Daily { time: String },
+    Weekly { days: Vec<u8>, time: String },
+    Interval { minutes: u32 },
+}
+
+/// Un'azione pianificata: `start` · `stop` · `restart` · `backup` · `command`.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct Schedule {
+    #[serde(default)]
+    pub id: String,
+    pub action: String,
+    #[serde(default)]
+    pub command: String,
+    pub when: ScheduleWhen,
+    #[serde(default = "d_true")]
+    pub enabled: bool,
+    /// Preavviso in chat prima di stop/restart (0 = nessuno)
+    #[serde(default)]
+    pub warn_minutes: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_run: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_ok: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_result: Option<String>,
+}
+
+/// Retention dei backup e backup automatico allo stop.
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, Eq)]
+pub struct BackupPolicy {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub keep_last: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub keep_days: Option<u32>,
+    #[serde(default)]
+    pub on_stop: bool,
+}
+
+/// Notifiche Discord in uscita (webhook del canale, niente bot).
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct DiscordNotify {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default)]
+    pub url: String,
+    #[serde(default = "d_true")]
+    pub on_start: bool,
+    #[serde(default = "d_true")]
+    pub on_stop: bool,
+    #[serde(default = "d_true")]
+    pub on_crash: bool,
+    #[serde(default = "d_true")]
+    pub on_backup_failed: bool,
+    #[serde(default)]
+    pub on_backup_done: bool,
+    #[serde(default)]
+    pub on_join: bool,
+    #[serde(default)]
+    pub on_leave: bool,
+    #[serde(default)]
+    pub on_schedule: bool,
+}
+
+impl Default for DiscordNotify {
+    fn default() -> Self {
+        Self { enabled: false, url: String::new(), on_start: true, on_stop: true, on_crash: true, on_backup_failed: true, on_backup_done: false, on_join: false, on_leave: false, on_schedule: false }
+    }
+}
+
+/// Esito dell'ultimo backup, qualunque ne sia stata l'origine.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct LastBackup {
+    pub at: u64,
+    pub ok: bool,
+    /// `manual` · `schedule` · `on_stop` · `pre_restore`
+    #[serde(default)]
+    pub source: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, Eq)]
+pub struct AutomationConfig {
+    #[serde(default)]
+    pub restart: RestartPolicy,
+    #[serde(default)]
+    pub schedules: Vec<Schedule>,
+    #[serde(default)]
+    pub backup: BackupPolicy,
+    #[serde(default)]
+    pub discord: DiscordNotify,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_backup: Option<LastBackup>,
+}
+
+/// Contenuto di un backup, per l'anteprima prima del ripristino.
+#[derive(Serialize, Clone, Debug)]
+pub struct BackupContents {
+    pub file: String,
+    pub entries: usize,
+    pub bytes: u64,
+    pub worlds: Vec<String>,
+    pub has_level_dat: bool,
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct BackupStats {
+    pub count: usize,
+    pub bytes: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last_backup: Option<LastBackup>,
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct RestoreResult {
+    pub restored_files: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub safety_backup: Option<String>,
+}
+
 /// Card "Come entrano gli amici": LAN, UPnP e tunnel playit di un server.
 #[derive(Serialize, Clone, Debug)]
 pub struct NetworkStatus {
@@ -170,6 +329,10 @@ pub struct ServerDataFile {
     /// "vanilla" | "paper" | "forge" | "neoforge" | "fabric" (vuoto = da dedurre dal disco)
     #[serde(default)]
     pub kind: String,
+
+    /// Riavvio su crash, pianificazioni, retention dei backup, notifiche Discord.
+    #[serde(default)]
+    pub automation: AutomationConfig,
 
     /// Registro delle mod installate dall'app: nome file → sorgente
     #[serde(default)]

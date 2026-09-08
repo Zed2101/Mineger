@@ -182,7 +182,48 @@ pub async fn list_backups(app: AppHandle, id: String) -> Result<Vec<BackupInfo>,
 
 #[tauri::command]
 pub async fn create_backup(app: AppHandle, id: String) -> Result<BackupInfo, String> {
-    service::create_backup(&app, &id)
+    tauri::async_runtime::spawn_blocking(move || service::create_backup(&app, &id)).await.map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn delete_backup(app: AppHandle, id: String, file: String) -> Result<(), String> {
+    service::delete_backup(&app, &id, &file)
+}
+
+#[tauri::command]
+pub async fn get_backup_contents(app: AppHandle, id: String, file: String) -> Result<crate::models::BackupContents, String> {
+    tauri::async_runtime::spawn_blocking(move || service::backup_contents(&app, &id, &file)).await.map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn get_backup_stats(app: AppHandle, id: String) -> Result<crate::models::BackupStats, String> {
+    service::backup_stats(&app, &id)
+}
+
+/// Ripristina un backup sul server (spento). `safety`: prima un backup del mondo attuale.
+#[tauri::command]
+pub async fn restore_backup(app: AppHandle, id: String, file: String, safety: Option<bool>) -> Result<crate::models::RestoreResult, String> {
+    tauri::async_runtime::spawn_blocking(move || service::restore_backup(&app, &id, &file, safety.unwrap_or(true))).await.map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn get_automation(app: AppHandle, id: String) -> Result<crate::models::AutomationConfig, String> {
+    service::automation_config(&app, &id)
+}
+
+#[tauri::command]
+pub async fn save_automation(app: AppHandle, id: String, config: crate::models::AutomationConfig) -> Result<crate::models::AutomationConfig, String> {
+    service::save_automation(&app, &id, config)
+}
+
+#[tauri::command]
+pub async fn run_schedule_now(app: AppHandle, id: String, schedule_id: String) -> Result<(), String> {
+    service::run_schedule_now(&app, &id, &schedule_id)
+}
+
+#[tauri::command]
+pub async fn test_discord_webhook(app: AppHandle, id: String, url: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || service::test_discord(&app, &id, &url)).await.map_err(|e| e.to_string())?
 }
 
 /// Scrive eula=true. Va chiamato SOLO dopo conferma esplicita dell'utente.

@@ -94,7 +94,14 @@ Tiles are rendered from the region files, so the map works with the server off a
 | `PUT` | `/api/servers/{id}/launch` | RAM, UPnP and playit tunnel: `{max_ram_mb, upnp, tunnel}` |
 | `PUT` | `/api/servers/{id}/properties` | `server.properties`: `{properties: {...}}` |
 | `GET`/`PUT`/`DELETE` | `/api/servers/{id}/server-icon` | Server icon (64×64 PNG, resized by the app) |
-| `GET`/`POST` | `/api/servers/{id}/backups` | List or create a world backup |
+| `GET`/`POST` | `/api/servers/{id}/backups` | List or create a world backup (retention and the `backup-result` event apply to every backup) |
+| `GET` | `/api/servers/{id}/backups/stats` | `{count, bytes, last_backup?}`: how many backups, the space they take, and the outcome of the last one (`{at, ok, source, file?, error?}`; `source`: `manual`, `schedule`, `on_stop`, `pre_restore`) |
+| `GET` | `/api/servers/{id}/backups/{file}` | Preview of a backup: `{file, entries, bytes, worlds, has_level_dat}` |
+| `DELETE` | `/api/servers/{id}/backups/{file}` | Deletes one backup file |
+| `POST` | `/api/servers/{id}/backups/restore` | `{file, safety?}`: restores the backup over the server's world folders. Server must be off; with `safety` (default `true`) a backup of the current world is taken first. Returns `{restored_files, safety_backup?}` |
+| `GET`/`PUT` | `/api/servers/{id}/automation` | The server's automation: `{restart: {enabled, max_attempts, window_minutes}, schedules: [{id, action, command, when, enabled, warn_minutes, last_run?, last_ok?, last_result?}], backup: {keep_last?, keep_days?, on_stop}, discord: {enabled, url, on_start, on_stop, on_crash, on_backup_failed, on_backup_done, on_join, on_leave, on_schedule}, last_backup?}`. `action`: `start`, `stop`, `restart`, `backup`, `command`; `when`: `{kind: "daily", time: "04:00"}`, `{kind: "weekly", days: [0..6], time}` (0 = Monday) or `{kind: "interval", minutes}` (5 minimum). `PUT` sends the whole object (an empty `id` gets one assigned); run outcomes are kept server-side |
+| `POST` | `/api/servers/{id}/automation/run` | `{schedule_id}`: runs a schedule now. Outcome as the `schedule-run` event |
+| `POST` | `/api/servers/{id}/automation/discord/test` | `{url}`: sends a test message to a Discord webhook |
 
 ### Mods and plugins
 
@@ -127,7 +134,7 @@ Tiles are rendered from the region files, so the map works with the server off a
 GET /api/ws?token=<token>
 ```
 
-WebSocket that forwards the app's events: `server-status`, `server-output`, `create-progress`, `update-progress`, `mod-progress`, `backup-progress`, `pack-updates`, `webhook-call`, `map-progress`, `commands-ready`, `tunnel-status`, `network-status`.
+WebSocket that forwards the app's events: `server-status`, `server-output`, `create-progress`, `update-progress`, `mod-progress`, `backup-progress`, `pack-updates`, `webhook-call`, `map-progress`, `commands-ready`, `tunnel-status`, `network-status`, `backup-result` (`{id, ok, source, file?, error?, at, pruned}` after every backup, whoever started it), `schedule-run` (`{id, schedule_id, ok, message, at}`).
 
 ---
 
