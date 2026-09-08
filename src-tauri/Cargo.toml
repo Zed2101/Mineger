@@ -1,6 +1,6 @@
 [package]
 name = "mineger"
-version = "1.0.2"
+version = "1.1.0"
 description = "A Tauri app to manage minecraft servers easily!"
 authors = ["Zed"]
 edition = "2024"
