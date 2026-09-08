@@ -4,6 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Changed
+- **Settings redesigned.** A wider window with a section index on the left (General, Network, Integrations, System) that scrolls to each section and follows the scroll; every section has an icon, a real title and a one-line description; rows are aligned on a wider label column and the invite links sit in their own box. Detected Java gets a "Download a JDK (OpenLogic)" button and a hint about which Java each Minecraft version needs.
+
 ## [1.2.0] — 2026-09-08
 
 ### Added

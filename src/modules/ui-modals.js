@@ -451,6 +451,40 @@ function setupCurseforgeLink() {
   });
 }
 
+/** Indice a sinistra: clic → scorre alla sezione; lo scroll evidenzia la sezione in vista. */
+function setupSettingsNav() {
+  const scroll = document.getElementById('settings-scroll');
+  const items = [...document.querySelectorAll('#settings-nav .settings-nav-item')];
+  const sections = [...document.querySelectorAll('#settings-scroll [data-section]')];
+  const activate = (name) => items.forEach((b) => b.classList.toggle('settings-nav-active', b.dataset.target === name));
+  let clicked = null;
+  items.forEach((b) =>
+    b.addEventListener('click', () => {
+      const section = sections.find((s) => s.dataset.section === b.dataset.target);
+      if (!section) return;
+      clicked = b.dataset.target;
+      activate(clicked);
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => { clicked = null; }, 700);
+    }),
+  );
+  let ticking = false;
+  scroll.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      ticking = false;
+      if (clicked) return; // durante lo scorrimento animato resta evidenziata la voce scelta
+      const top = scroll.scrollTop + 24;
+      const atEnd = Math.ceil(scroll.scrollTop + scroll.clientHeight) >= scroll.scrollHeight - 4;
+      let current = sections[0];
+      for (const s of sections) if (s.offsetTop <= top) current = s;
+      if (atEnd) current = sections[sections.length - 1];
+      activate(current?.dataset.section);
+    });
+  }, { passive: true });
+}
+
 function setupSettings(state, hooks) {
   // I testi generati in JS (conteggi, elenchi) non hanno data-i18n: al cambio
   // lingua il pannello aperto va ridisegnato.
@@ -465,6 +499,10 @@ function setupSettings(state, hooks) {
   document.getElementById('btn-close-settings').addEventListener('click', () => hide('modal-settings'));
   document.getElementById('btn-settings-ok').addEventListener('click', () => hide('modal-settings'));
   document.getElementById('btn-settings-rescan').addEventListener('click', () => renderSettings(state, true));
+  document.getElementById('link-openlogic').addEventListener('click', (e) => {
+    invoke('open_url', { url: e.currentTarget.dataset.url }).catch(() => {});
+  });
+  setupSettingsNav();
   document.getElementById('btn-open-servers-dir').addEventListener('click', () => {
     invoke('open_app_folder', { kind: 'servers' }).catch((err) => alert(t('msg.settings.open_failed', { error: err })));
   });

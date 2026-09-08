@@ -975,7 +975,22 @@
       "update_latest": "",
       "update_available": "",
       "update_error": "",
-      "update_hint": ""
+      "update_hint": "",
+      "group_general": "",
+      "group_network": "",
+      "group_integrations": "",
+      "group_system": "",
+      "language_desc": "",
+      "folders_desc": "",
+      "update_desc": "",
+      "remote_desc": "",
+      "linked_hosts_desc": "",
+      "presence_desc": "",
+      "modpack_link_desc": "",
+      "java_desc": "",
+      "java_download": "",
+      "java_download_title": "",
+      "java_versions_hint": ""
     },
     "sidebar": {
       "add_server": "",

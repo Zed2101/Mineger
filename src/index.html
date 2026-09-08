@@ -694,181 +694,279 @@
     </div>
 
     <div id="modal-settings" class="modal-overlay hidden">
-      <div class="modal-box wide">
+      <div class="modal-box settings-box">
         <div class="modal-header">
-          <div class="flex items-baseline gap-3">
+          <div class="flex items-center gap-3">
             <h3 class="text-[15px] font-bold" data-i18n="ui.settings.title">Impostazioni</h3>
-            <span id="settings-version" class="font-mono text-[10px] text-text-faint">v—</span>
+            <span id="settings-version" class="rounded-md bg-white/6 px-1.5 py-0.5 font-mono text-[10px] text-text-muted">v—</span>
           </div>
           <button id="btn-close-settings" class="btn-icon" data-i18n-aria="ui.settings.close">&times;</button>
         </div>
 
-        <div class="modal-body max-h-[70vh] space-y-4 overflow-y-auto">
+        <div class="flex min-h-0 flex-1">
+          <!-- Indice delle sezioni -->
+          <nav id="settings-nav" class="settings-nav" aria-label="Sezioni">
+            <p class="settings-nav-group" data-i18n="ui.settings.group_general">Generale</p>
+            <button type="button" class="settings-nav-item settings-nav-active" data-target="language">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+              <span data-i18n="ui.settings.language_title">Lingua</span>
+            </button>
+            <button type="button" class="settings-nav-item" data-target="folders">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+              <span data-i18n="ui.settings.folders_title">Cartelle</span>
+            </button>
+            <button type="button" class="settings-nav-item" data-target="updates">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+              <span data-i18n="ui.settings.update_title">Aggiornamenti</span>
+            </button>
 
-          <!-- Lingua -->
-          <section class="settings-card">
-            <div class="settings-head">
-              <div class="card-title" data-i18n="ui.settings.language_title">Lingua</div>
-              <span class="note" data-i18n="ui.settings.language_hint_short">Completezza della traduzione</span>
-            </div>
-            <div id="language-list" class="pick-list" role="radiogroup" data-i18n-aria="ui.settings.language_label"></div>
-            <p id="language-note" class="note mt-1.5" data-i18n="ui.settings.language_hint">Il cambio è immediato: non serve riavviare l'app.</p>
-          </section>
+            <p class="settings-nav-group" data-i18n="ui.settings.group_network">Rete</p>
+            <button type="button" class="settings-nav-item" data-target="remote">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4M7.8 16.2a6 6 0 0 1 0-8.4M19.1 4.9a10 10 0 0 1 0 14.2M4.9 19.1a10 10 0 0 1 0-14.2"/></svg>
+              <span data-i18n="ui.settings.remote_title">Controllo remoto</span>
+            </button>
+            <button type="button" class="settings-nav-item" data-target="hosts">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
+              <span data-i18n="ui.settings.linked_hosts">Host collegati</span>
+            </button>
 
-          <!-- Cartelle -->
-          <section class="settings-card">
-            <div class="settings-head">
-              <div class="card-title" data-i18n="ui.settings.folders_title">Cartelle</div>
-            </div>
-            <div class="space-y-2">
-              <div class="settings-row">
-                <span class="settings-label" data-i18n="ui.settings.folder_servers">Server</span>
-                <span id="settings-servers-dir" class="settings-value">—</span>
-                <button id="btn-open-servers-dir" class="btn-small shrink-0" data-i18n="ui.settings.open">Apri</button>
+            <p class="settings-nav-group" data-i18n="ui.settings.group_integrations">Integrazioni</p>
+            <button type="button" class="settings-nav-item" data-target="discord">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 1-13.5 7.8L3 21l1.2-4.5A9 9 0 1 1 21 12z"/></svg>
+              <span data-i18n="ui.settings.presence_title">Discord</span>
+            </button>
+            <button type="button" class="settings-nav-item" data-target="curseforge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 9-9M15 6l3 3M18 3l3 3"/></svg>
+              <span data-i18n="ui.settings.modpack_link_title">Modpack da link</span>
+            </button>
+
+            <p class="settings-nav-group" data-i18n="ui.settings.group_system">Sistema</p>
+            <button type="button" class="settings-nav-item" data-target="java">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 8h1a3 3 0 0 1 0 6h-1M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M8 2c0 1.5 1 1.5 1 3M12 2c0 1.5 1 1.5 1 3"/></svg>
+              <span data-i18n="ui.settings.java_title">Java rilevate</span>
+            </button>
+          </nav>
+
+          <div id="settings-scroll" class="modal-body space-y-4">
+
+            <!-- Lingua -->
+            <section class="settings-card" data-section="language">
+              <div class="settings-head">
+                <div class="settings-heading">
+                  <span class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span>
+                  <div class="min-w-0">
+                    <div class="settings-title" data-i18n="ui.settings.language_title">Lingua</div>
+                    <p class="settings-desc" data-i18n="ui.settings.language_desc">Lingua dell'interfaccia e dei messaggi dell'app.</p>
+                  </div>
+                </div>
+                <span class="note shrink-0" data-i18n="ui.settings.language_hint_short">Completezza della traduzione</span>
               </div>
-              <div class="settings-row">
-                <span class="settings-label" data-i18n="ui.settings.folder_config">Config Java</span>
-                <span id="settings-config-path" class="settings-value">—</span>
-                <button id="btn-open-config-dir" class="btn-small shrink-0" data-i18n="ui.settings.open">Apri</button>
+              <div id="language-list" class="pick-list" role="radiogroup" data-i18n-aria="ui.settings.language_label"></div>
+              <p id="language-note" class="note mt-2" data-i18n="ui.settings.language_hint">Il cambio è immediato: non serve riavviare l'app.</p>
+            </section>
+
+            <!-- Cartelle -->
+            <section class="settings-card" data-section="folders">
+              <div class="settings-head">
+                <div class="settings-heading">
+                  <span class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
+                  <div class="min-w-0">
+                    <div class="settings-title" data-i18n="ui.settings.folders_title">Cartelle</div>
+                    <p class="settings-desc" data-i18n="ui.settings.folders_desc">Dove stanno i server e la configurazione, e quanto spazio resta sul disco.</p>
+                  </div>
+                </div>
               </div>
-              <div class="settings-row">
-                <span class="settings-label" data-i18n="ui.settings.disk">Disco</span>
-                <span class="min-w-0 flex-1">
-                  <span class="block h-1.5 w-full overflow-hidden rounded-full bg-line">
-                    <span id="settings-disk-fill" class="block h-full rounded-full bg-warning transition-[width]" style="width:0%"></span>
+              <div class="space-y-2">
+                <div class="settings-row">
+                  <span class="settings-label" data-i18n="ui.settings.folder_servers">Server</span>
+                  <span id="settings-servers-dir" class="settings-value">—</span>
+                  <button id="btn-open-servers-dir" class="btn-small shrink-0" data-i18n="ui.settings.open">Apri</button>
+                </div>
+                <div class="settings-row">
+                  <span class="settings-label" data-i18n="ui.settings.folder_config">Config Java</span>
+                  <span id="settings-config-path" class="settings-value">—</span>
+                  <button id="btn-open-config-dir" class="btn-small shrink-0" data-i18n="ui.settings.open">Apri</button>
+                </div>
+                <div class="settings-row">
+                  <span class="settings-label" data-i18n="ui.settings.disk">Disco</span>
+                  <span class="min-w-0 flex-1">
+                    <span class="block h-1.5 w-full overflow-hidden rounded-full bg-line">
+                      <span id="settings-disk-fill" class="block h-full rounded-full bg-warning transition-[width]" style="width:0%"></span>
+                    </span>
                   </span>
-                </span>
-                <span id="settings-disk" class="shrink-0 font-mono text-[11px] text-text-soft">—</span>
+                  <span id="settings-disk" class="shrink-0 font-mono text-[11px] text-text-soft">—</span>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
 
-          <!-- Controllo remoto -->
-          <section class="settings-card">
-            <div class="settings-head">
-              <div class="flex items-center gap-2">
-                <div class="card-title" data-i18n="ui.settings.remote_title">Controllo remoto (host)</div>
-                <span id="host-state-pill" class="pill-offline" data-i18n="ui.settings.remote_off">Disattivato</span>
-              </div>
-              <label class="flex cursor-pointer items-center gap-2.5">
-                <span class="text-[12px] text-text-soft" data-i18n="ui.settings.remote_enable">Consenti ad altri Mineger di gestire i miei server</span>
-                <span class="toggle"><input type="checkbox" id="host-enabled" /><span class="toggle-track"></span></span>
-              </label>
-            </div>
-            <div class="space-y-2.5">
-              <div class="flex items-center gap-2">
-                <span class="settings-label" data-i18n="ui.settings.host_name">Nome host</span>
-                <input type="text" id="host-name" class="input min-w-0 flex-1" data-i18n-placeholder="ui.settings.host_name_placeholder" placeholder="PC di Zed" autocomplete="off" />
-                <span class="shrink-0 text-[12px] text-text-muted" data-i18n="ui.settings.port">Porta</span>
-                <input type="number" id="host-port" class="input w-[84px] text-center" min="1024" max="65535" />
-                <button id="btn-host-apply" class="btn-outline-accent shrink-0" data-i18n="ui.settings.apply">Applica</button>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="settings-label" data-i18n="ui.settings.bind_label">In ascolto su</span>
-                <div id="host-bind" class="flex shrink-0 gap-2" role="radiogroup" data-i18n-aria="ui.settings.bind_label">
-                  <button type="button" class="loader-pill selected" data-bind="" role="radio" aria-checked="true" data-i18n="ui.settings.bind_all">Tutta la rete</button>
-                  <button type="button" class="loader-pill" data-bind="127.0.0.1" role="radio" aria-checked="false" data-i18n="ui.settings.bind_local">Solo questo PC</button>
+            <!-- Aggiornamenti dell'app -->
+            <section class="settings-card" data-section="updates">
+              <div class="settings-head">
+                <div class="settings-heading">
+                  <span class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></span>
+                  <div class="min-w-0">
+                    <div class="settings-title" data-i18n="ui.settings.update_title">Aggiornamenti</div>
+                    <p class="settings-desc" data-i18n="ui.settings.update_desc">Nuove versioni di Mineger, scaricate e installate dall'app.</p>
+                  </div>
                 </div>
-                <span class="note min-w-0 flex-1" data-i18n="ui.settings.bind_hint">"Solo questo PC" serve quando l'accesso passa da un tunnel o una VPN su questa macchina.</span>
-              </div>
-              <p id="host-status" class="note">—</p>
-              <div id="host-invites" class="hidden space-y-1.5">
-                <div class="flex items-center gap-2">
-                  <span class="settings-label" data-i18n="ui.settings.link_lan">Link LAN</span>
-                  <input type="text" id="host-invite-local" readonly class="input min-w-0 flex-1 text-[10px]" />
-                  <button class="btn-small shrink-0" data-copy="host-invite-local" data-i18n="ui.settings.copy">Copia</button>
-                </div>
-                <div id="host-invite-public-row" class="flex items-center gap-2">
-                  <span class="settings-label" data-i18n="ui.settings.link_internet">Link internet</span>
-                  <input type="text" id="host-invite-public" readonly class="input min-w-0 flex-1 text-[10px]" />
-                  <button class="btn-small shrink-0" data-copy="host-invite-public" data-i18n="ui.settings.copy">Copia</button>
-                </div>
-                <div class="flex justify-end">
-                  <button id="btn-host-regenerate" class="btn-small" data-i18n="ui.settings.regenerate_token">Rigenera token</button>
+                <div class="flex shrink-0 gap-2">
+                  <button id="btn-settings-update-open" class="btn-primary hidden px-3! py-1.5! text-[12px]" data-i18n="ui.update.install">Aggiorna ora</button>
+                  <button id="btn-settings-update-check" class="btn-small" data-i18n="ui.settings.update_check">Controlla aggiornamenti</button>
                 </div>
               </div>
-              <p class="note" data-i18n="ui.settings.tls_note">Connessione senza TLS: usala in LAN o con una VPN (Tailscale, ZeroTier) e condividi il link solo con persone fidate.</p>
-            </div>
-          </section>
+              <p id="settings-update-status" class="text-[12px] text-text-soft"></p>
+              <p class="note mt-1" data-i18n="ui.settings.update_hint">Mineger controlla da solo all'avvio e ogni 6 ore; l'installer scaricato è verificato con la firma del progetto.</p>
+            </section>
 
-          <!-- Discord Rich Presence -->
-          <section class="settings-card">
-            <div class="settings-head">
-              <div class="flex items-center gap-2">
-                <div class="card-title" data-i18n="ui.settings.presence_title">Discord</div>
-              </div>
-              <label class="flex cursor-pointer items-center gap-2.5">
-                <span class="text-[12px] text-text-soft" data-i18n="ui.settings.presence_enable">Mostra su Discord cosa sto facendo</span>
-                <span class="toggle"><input type="checkbox" id="presence-enabled" /><span class="toggle-track"></span></span>
-              </label>
-            </div>
-            <div class="space-y-2.5">
-              <div id="presence-options" class="flex flex-wrap items-center gap-x-6 gap-y-2 transition-opacity">
-                <label class="flex cursor-pointer items-center gap-2.5">
-                  <span class="toggle"><input type="checkbox" id="presence-show-name" /><span class="toggle-track"></span></span>
-                  <span class="text-[12px] text-text-soft" data-i18n="ui.settings.presence_show_name">Mostra il nome del server</span>
-                </label>
-                <label class="flex cursor-pointer items-center gap-2.5">
-                  <span class="toggle"><input type="checkbox" id="presence-show-players" /><span class="toggle-track"></span></span>
-                  <span class="text-[12px] text-text-soft" data-i18n="ui.settings.presence_show_players">Mostra quanti giocatori sono online</span>
+            <!-- Controllo remoto -->
+            <section class="settings-card" data-section="remote">
+              <div class="settings-head">
+                <div class="settings-heading">
+                  <span class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4M7.8 16.2a6 6 0 0 1 0-8.4M19.1 4.9a10 10 0 0 1 0 14.2M4.9 19.1a10 10 0 0 1 0-14.2"/></svg></span>
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                      <div class="settings-title" data-i18n="ui.settings.remote_title">Controllo remoto (host)</div>
+                      <span id="host-state-pill" class="pill-offline" data-i18n="ui.settings.remote_off">Disattivato</span>
+                    </div>
+                    <p class="settings-desc" data-i18n="ui.settings.remote_desc">Lascia che altre copie di Mineger, o i tuoi script, gestiscano questi server via rete.</p>
+                  </div>
+                </div>
+                <label class="flex shrink-0 cursor-pointer items-center gap-2.5">
+                  <span class="text-[12px] text-text-soft" data-i18n="ui.settings.remote_enable">Consenti ad altri Mineger di gestire i miei server</span>
+                  <span class="toggle"><input type="checkbox" id="host-enabled" /><span class="toggle-track"></span></span>
                 </label>
               </div>
-              <p class="note" data-i18n="ui.settings.presence_hint">Serve Discord aperto su questo PC. Sul tuo profilo compare "Hosting Nome server · 2/20 online" con il logo di Mineger. Da spento non parte nessuna connessione.</p>
-              <p id="presence-status" class="note-err hidden"></p>
-            </div>
-          </section>
-
-          <!-- Host collegati -->
-          <section class="settings-card">
-            <div class="settings-head">
-              <div class="card-title" data-i18n="ui.settings.linked_hosts">Host collegati</div>
-            </div>
-            <ul id="settings-hosts-list" class="space-y-1.5"></ul>
-            <p class="note mt-2" data-i18n-html="ui.settings.webhooks_note">I webhook in ingresso (Discord, Twitch, automazioni) si gestiscono nel tab <span class="font-semibold text-text-soft">Webhook</span> di ogni server; usano la stessa porta del controllo remoto.</p>
-          </section>
-
-          <!-- Modpack da link -->
-          <section class="settings-card">
-            <div class="settings-head">
-              <div class="card-title" data-i18n="ui.settings.modpack_link_title">Modpack da link</div>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="settings-label" data-i18n="ui.settings.cf_key_label">Chiave CurseForge</span>
-              <input type="text" id="cf-api-key" class="input min-w-0 flex-1 text-[10px]" data-i18n-placeholder="ui.settings.cf_key_placeholder" placeholder="incolla qui la tua chiave CurseForge" autocomplete="off" spellcheck="false" />
-              <button id="btn-cf-key-save" class="btn-outline-accent shrink-0" data-i18n="ui.settings.save">Salva</button>
-            </div>
-            <p class="note mt-1.5">
-              <span data-i18n-html="ui.settings.cf_note">CurseForge richiede una chiave API <span class="text-text-soft">personale</span>: senza, mod e modpack di CurseForge non sono disponibili.</span>
-              <span data-i18n="ui.settings.cf_note_free">È gratuita — generala su</span> <button type="button" id="link-cf-console" class="text-accent underline underline-offset-2 hover:text-text-main">console.curseforge.com</button>.
-              <span class="block mt-0.5" data-i18n="ui.settings.cf_note_others">Modrinth e FTB non richiedono nessuna chiave.</span>
-            </p>
-          </section>
-
-          <!-- Aggiornamenti dell'app -->
-          <section class="settings-card">
-            <div class="settings-head">
-              <div class="card-title" data-i18n="ui.settings.update_title">Aggiornamenti</div>
-              <div class="flex gap-2">
-                <button id="btn-settings-update-open" class="btn-primary hidden px-3! py-1.5! text-[12px]" data-i18n="ui.update.install">Aggiorna ora</button>
-                <button id="btn-settings-update-check" class="btn-small" data-i18n="ui.settings.update_check">Controlla aggiornamenti</button>
+              <div class="space-y-2.5">
+                <div class="settings-row">
+                  <span class="settings-label" data-i18n="ui.settings.host_name">Nome host</span>
+                  <input type="text" id="host-name" class="input min-w-0 flex-1" data-i18n-placeholder="ui.settings.host_name_placeholder" placeholder="PC di Zed" autocomplete="off" />
+                  <span class="shrink-0 text-[12px] text-text-muted" data-i18n="ui.settings.port">Porta</span>
+                  <input type="number" id="host-port" class="input w-[84px] text-center" min="1024" max="65535" />
+                  <button id="btn-host-apply" class="btn-outline-accent shrink-0" data-i18n="ui.settings.apply">Applica</button>
+                </div>
+                <div class="settings-row">
+                  <span class="settings-label" data-i18n="ui.settings.bind_label">In ascolto su</span>
+                  <div id="host-bind" class="flex shrink-0 gap-2" role="radiogroup" data-i18n-aria="ui.settings.bind_label">
+                    <button type="button" class="loader-pill selected" data-bind="" role="radio" aria-checked="true" data-i18n="ui.settings.bind_all">Tutta la rete</button>
+                    <button type="button" class="loader-pill" data-bind="127.0.0.1" role="radio" aria-checked="false" data-i18n="ui.settings.bind_local">Solo questo PC</button>
+                  </div>
+                  <span class="note min-w-0 flex-1" data-i18n="ui.settings.bind_hint">"Solo questo PC" serve quando l'accesso passa da un tunnel o una VPN su questa macchina.</span>
+                </div>
+                <p id="host-status" class="note">—</p>
+                <div id="host-invites" class="settings-sub hidden">
+                  <div class="settings-row">
+                    <span class="settings-label" data-i18n="ui.settings.link_lan">Link LAN</span>
+                    <input type="text" id="host-invite-local" readonly class="input min-w-0 flex-1 text-[10px]" />
+                    <button class="btn-small shrink-0" data-copy="host-invite-local" data-i18n="ui.settings.copy">Copia</button>
+                  </div>
+                  <div id="host-invite-public-row" class="settings-row">
+                    <span class="settings-label" data-i18n="ui.settings.link_internet">Link internet</span>
+                    <input type="text" id="host-invite-public" readonly class="input min-w-0 flex-1 text-[10px]" />
+                    <button class="btn-small shrink-0" data-copy="host-invite-public" data-i18n="ui.settings.copy">Copia</button>
+                  </div>
+                  <div class="flex justify-end">
+                    <button id="btn-host-regenerate" class="btn-small" data-i18n="ui.settings.regenerate_token">Rigenera token</button>
+                  </div>
+                </div>
+                <p class="note" data-i18n="ui.settings.tls_note">Connessione senza TLS: usala in LAN o con una VPN (Tailscale, ZeroTier) e condividi il link solo con persone fidate.</p>
               </div>
-            </div>
-            <p id="settings-update-status" class="text-[12px] text-text-soft"></p>
-            <p class="note mt-1" data-i18n="ui.settings.update_hint">Mineger controlla da solo all'avvio e ogni 6 ore; l'installer scaricato è verificato con la firma del progetto.</p>
-          </section>
+            </section>
 
-          <!-- Java -->
-          <section class="settings-card">
-            <div class="settings-head">
-              <div class="flex items-baseline gap-2">
-                <div class="card-title" data-i18n="ui.settings.java_title">Java rilevate</div>
-                <span id="settings-java-count" class="note"></span>
+            <!-- Host collegati -->
+            <section class="settings-card" data-section="hosts">
+              <div class="settings-head">
+                <div class="settings-heading">
+                  <span class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></span>
+                  <div class="min-w-0">
+                    <div class="settings-title" data-i18n="ui.settings.linked_hosts">Host collegati</div>
+                    <p class="settings-desc" data-i18n="ui.settings.linked_hosts_desc">Gli host remoti a cui questa app è collegata con un link d'invito.</p>
+                  </div>
+                </div>
               </div>
-              <button id="btn-settings-rescan" class="btn-small" data-i18n="ui.settings.rescan">Riscansiona</button>
-            </div>
-            <ul id="settings-java-list" class="max-h-[220px] space-y-1.5 overflow-y-auto"></ul>
-            <p class="note mt-2" data-i18n-html="ui.settings.java_note">Per forzare un percorso specifico modifica <span class="font-mono">java_paths</span> nel config.json (es. <span class="font-mono">"java_17": "C:\\...\\java.exe"</span>).</p>
-          </section>
+              <ul id="settings-hosts-list" class="space-y-1.5"></ul>
+              <p class="note mt-2" data-i18n-html="ui.settings.webhooks_note">I webhook in ingresso (Discord, Twitch, automazioni) si gestiscono nel tab <span class="font-semibold text-text-soft">Webhook</span> di ogni server; usano la stessa porta del controllo remoto.</p>
+            </section>
+
+            <!-- Discord Rich Presence -->
+            <section class="settings-card" data-section="discord">
+              <div class="settings-head">
+                <div class="settings-heading">
+                  <span class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 1-13.5 7.8L3 21l1.2-4.5A9 9 0 1 1 21 12z"/></svg></span>
+                  <div class="min-w-0">
+                    <div class="settings-title" data-i18n="ui.settings.presence_title">Discord</div>
+                    <p class="settings-desc" data-i18n="ui.settings.presence_desc">Rich Presence sul tuo profilo Discord mentre un server è acceso.</p>
+                  </div>
+                </div>
+                <label class="flex shrink-0 cursor-pointer items-center gap-2.5">
+                  <span class="text-[12px] text-text-soft" data-i18n="ui.settings.presence_enable">Mostra su Discord cosa sto facendo</span>
+                  <span class="toggle"><input type="checkbox" id="presence-enabled" /><span class="toggle-track"></span></span>
+                </label>
+              </div>
+              <div class="space-y-2.5">
+                <div id="presence-options" class="flex flex-wrap items-center gap-x-6 gap-y-2 transition-opacity">
+                  <label class="flex cursor-pointer items-center gap-2.5">
+                    <span class="toggle"><input type="checkbox" id="presence-show-name" /><span class="toggle-track"></span></span>
+                    <span class="text-[12px] text-text-soft" data-i18n="ui.settings.presence_show_name">Mostra il nome del server</span>
+                  </label>
+                  <label class="flex cursor-pointer items-center gap-2.5">
+                    <span class="toggle"><input type="checkbox" id="presence-show-players" /><span class="toggle-track"></span></span>
+                    <span class="text-[12px] text-text-soft" data-i18n="ui.settings.presence_show_players">Mostra quanti giocatori sono online</span>
+                  </label>
+                </div>
+                <p class="note" data-i18n="ui.settings.presence_hint">Serve Discord aperto su questo PC. Sul tuo profilo compare "Hosting Nome server · 2/20 online" con il logo di Mineger. Da spento non parte nessuna connessione.</p>
+                <p id="presence-status" class="note-err hidden"></p>
+              </div>
+            </section>
+
+            <!-- Modpack da link -->
+            <section class="settings-card" data-section="curseforge">
+              <div class="settings-head">
+                <div class="settings-heading">
+                  <span class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 9-9M15 6l3 3M18 3l3 3"/></svg></span>
+                  <div class="min-w-0">
+                    <div class="settings-title" data-i18n="ui.settings.modpack_link_title">Modpack da link</div>
+                    <p class="settings-desc" data-i18n="ui.settings.modpack_link_desc">Chiavi per installare mod e modpack dai link dei provider.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="settings-row">
+                <span class="settings-label" data-i18n="ui.settings.cf_key_label">Chiave CurseForge</span>
+                <input type="text" id="cf-api-key" class="input min-w-0 flex-1 text-[10px]" data-i18n-placeholder="ui.settings.cf_key_placeholder" placeholder="incolla qui la tua chiave CurseForge" autocomplete="off" spellcheck="false" />
+                <button id="btn-cf-key-save" class="btn-outline-accent shrink-0" data-i18n="ui.settings.save">Salva</button>
+              </div>
+              <p class="note mt-2">
+                <span data-i18n-html="ui.settings.cf_note">CurseForge richiede una chiave API <span class="text-text-soft">personale</span>: senza, mod e modpack di CurseForge non sono disponibili.</span>
+                <span data-i18n="ui.settings.cf_note_free">È gratuita — generala su</span> <button type="button" id="link-cf-console" class="text-accent underline underline-offset-2 hover:text-text-main">console.curseforge.com</button>.
+                <span class="block mt-0.5" data-i18n="ui.settings.cf_note_others">Modrinth e FTB non richiedono nessuna chiave.</span>
+              </p>
+            </section>
+
+            <!-- Java -->
+            <section class="settings-card" data-section="java">
+              <div class="settings-head">
+                <div class="settings-heading">
+                  <span class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 8h1a3 3 0 0 1 0 6h-1M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M8 2c0 1.5 1 1.5 1 3M12 2c0 1.5 1 1.5 1 3"/></svg></span>
+                  <div class="min-w-0">
+                    <div class="flex items-baseline gap-2">
+                      <div class="settings-title" data-i18n="ui.settings.java_title">Java rilevate</div>
+                      <span id="settings-java-count" class="note"></span>
+                    </div>
+                    <p class="settings-desc" data-i18n="ui.settings.java_desc">Le Java trovate su questo PC. Mineger sceglie da sola quella giusta per ogni versione di Minecraft.</p>
+                  </div>
+                </div>
+                <div class="flex shrink-0 gap-2">
+                  <button type="button" id="link-openlogic" class="btn-small" data-url="https://www.openlogic.com/openjdk-downloads" data-i18n-title="ui.settings.java_download_title">
+                    <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg>
+                    <span data-i18n="ui.settings.java_download">Scarica un JDK (OpenLogic)</span>
+                  </button>
+                  <button id="btn-settings-rescan" class="btn-small" data-i18n="ui.settings.rescan">Riscansiona</button>
+                </div>
+              </div>
+              <ul id="settings-java-list" class="max-h-[220px] space-y-1.5 overflow-y-auto"></ul>
+              <p class="note mt-2" data-i18n="ui.settings.java_versions_hint">Serve Java 8 fino alla 1.16, Java 17 dalla 1.17 alla 1.20.4, Java 21 dalla 1.20.5. Manca una versione? Scaricala da OpenLogic, installala e premi Riscansiona.</p>
+              <p class="note mt-1" data-i18n-html="ui.settings.java_note">Per forzare un percorso specifico modifica <span class="font-mono">java_paths</span> nel config.json (es. <span class="font-mono">"java_17": "C:\\...\\java.exe"</span>).</p>
+            </section>
+          </div>
         </div>
 
         <div class="modal-footer justify-between">

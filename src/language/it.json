@@ -975,7 +975,22 @@
       "update_latest": "Sei aggiornato: la {version} è la versione più recente.",
       "update_available": "È disponibile la {version}.",
       "update_error": "Controllo non riuscito: {error}",
-      "update_hint": "Mineger controlla da solo all'avvio e ogni 6 ore; l'installer scaricato viene verificato con la firma del progetto."
+      "update_hint": "Mineger controlla da solo all'avvio e ogni 6 ore; l'installer scaricato viene verificato con la firma del progetto.",
+      "group_general": "Generale",
+      "group_network": "Rete",
+      "group_integrations": "Integrazioni",
+      "group_system": "Sistema",
+      "language_desc": "Lingua dell'interfaccia e dei messaggi dell'app.",
+      "folders_desc": "Dove stanno i server e la configurazione, e quanto spazio resta sul disco.",
+      "update_desc": "Nuove versioni di Mineger, scaricate e installate dall'app.",
+      "remote_desc": "Lascia che altre copie di Mineger, o i tuoi script, gestiscano questi server via rete.",
+      "linked_hosts_desc": "Gli host remoti a cui questa app è collegata con un link d'invito.",
+      "presence_desc": "Rich Presence sul tuo profilo Discord mentre un server è acceso.",
+      "modpack_link_desc": "Chiavi per installare mod e modpack dai link dei provider.",
+      "java_desc": "Le Java trovate su questo PC. Mineger sceglie da sola quella giusta per ogni versione di Minecraft.",
+      "java_download": "Scarica un JDK (OpenLogic)",
+      "java_download_title": "Apre openlogic.com: build OpenJDK gratuite per Windows, Java 8, 11, 17 e 21",
+      "java_versions_hint": "Serve Java 8 fino alla 1.16, Java 17 dalla 1.17 alla 1.20.4, Java 21 dalla 1.20.5. Manca una versione? Scaricala da OpenLogic, installala e premi Riscansiona."
     },
     "sidebar": {
       "add_server": "+ Aggiungi Server",

@@ -180,10 +180,24 @@
   .markdown strong { @apply font-semibold text-text-main; }
   .markdown a { @apply text-accent underline-offset-2 hover:underline; }
 
-  .settings-card { @apply rounded-xl border border-line bg-bg-card/60 p-4; }
-  .settings-head { @apply mb-3 flex items-center justify-between gap-3; }
+  .settings-card { @apply scroll-mt-4 rounded-xl border border-line bg-bg-card/60 p-5; }
+  .settings-head { @apply mb-4 flex items-start justify-between gap-4; }
+  .settings-heading { @apply flex min-w-0 items-start gap-3; }
+  .settings-icon { @apply flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent; }
+  .settings-icon svg { @apply size-4; }
+  .settings-title { @apply text-[13px] font-bold leading-tight text-text-main; }
+  .settings-desc { @apply mt-1 text-[11px] leading-snug text-text-muted; }
+  .settings-sub { @apply space-y-2 rounded-lg border border-line bg-bg-inset/60 p-3; }
   .settings-row { @apply flex items-center gap-3; }
-  .settings-label { @apply w-[92px] shrink-0 text-[12px] leading-snug text-text-muted; }
+  .settings-label { @apply w-[104px] shrink-0 text-[12px] leading-snug text-text-muted; }
+  /* Finestra delle impostazioni: indice a sinistra, sezioni a destra */
+  .modal-box.settings-box { @apply h-[min(780px,calc(100vh-40px))] w-[960px]; }
+  .settings-nav { @apply flex w-[196px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-line bg-bg-sidebar/50 px-3 py-4; }
+  .settings-nav-group { @apply mt-4 mb-1 px-2.5 font-mono text-[9px] font-semibold uppercase tracking-[1.5px] text-text-faint first:mt-0; }
+  .settings-nav-item { @apply flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[12px] font-semibold text-text-muted transition-colors hover:bg-white/5 hover:text-text-main; }
+  .settings-nav-item svg { @apply size-4 shrink-0 opacity-70; }
+  .settings-nav-active { @apply bg-accent/10 text-accent hover:bg-accent/12 hover:text-accent; }
+  .settings-nav-active svg { @apply opacity-100; }
   .settings-value { @apply min-w-0 flex-1 truncate rounded-[7px] border border-line-strong bg-bg-inset px-3 py-2 font-mono text-[11px] text-text-soft; }
   .settings-empty { @apply rounded-lg border border-dashed border-line-strong px-4 py-5 text-center; }
 
