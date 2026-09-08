@@ -384,6 +384,24 @@ pub async fn get_app_info(app: AppHandle) -> Result<AppInfo, String> {
     service::app_info(&app)
 }
 
+/// Cerca una release più recente (manifest firmato su GitHub). `None` se si è aggiornati.
+#[tauri::command]
+pub async fn check_app_update(app: AppHandle) -> Result<Option<crate::appupdate::UpdateInfo>, String> {
+    crate::appupdate::check(&app).await
+}
+
+/// Scarica, verifica e installa l'aggiornamento trovato: l'app si riavvia da sola.
+#[tauri::command]
+pub async fn install_app_update(app: AppHandle) -> Result<(), String> {
+    crate::appupdate::install(&app).await
+}
+
+/// Note della versione appena installata, una sola volta.
+#[tauri::command]
+pub fn get_whats_new(app: AppHandle) -> Option<crate::appupdate::WhatsNew> {
+    crate::appupdate::whats_new(&app)
+}
+
 // ---------------------------------------------------------------------------
 // Impostazioni + host remoto
 // ---------------------------------------------------------------------------

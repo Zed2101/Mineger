@@ -44,6 +44,18 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQ0QURGOTI2QTkxMkJCNjkKUldScHV4S3BKdm10MU83RzJtZWU0UkZJcVFxYWhNQUJxR2VmL3AwUDllaU4waCtFSzBSZDFkRVEK",
+      "endpoints": [
+        "https://github.com/Zed2101/Mineger/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }

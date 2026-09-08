@@ -156,6 +156,9 @@ pub struct Settings {
     /// Vuota = segui la lingua del sistema operativo.
     #[serde(default)]
     pub language: String,
+    /// Ultima versione dell'app aperta: alla prima apertura di una versione nuova si mostrano le novità.
+    #[serde(default)]
+    pub last_seen_version: String,
 }
 
 impl Settings {

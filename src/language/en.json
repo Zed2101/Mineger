@@ -331,6 +331,9 @@
     "console": {
       "no_commands": "The server did not answer \"help\" with a list of commands",
       "bad_command_name": "Invalid command name"
+    },
+    "update": {
+      "none": "No update to install: check for one first"
     }
   },
   "msg": {
@@ -965,7 +968,14 @@
       "presence_enable": "Show on Discord what I am doing",
       "presence_show_name": "Show the server name",
       "presence_show_players": "Show how many players are online",
-      "presence_hint": "Needs Discord open on this PC. Your profile shows \"Hosting Server name · 2/20 online\" with the Mineger logo. While off, no connection is made."
+      "presence_hint": "Needs Discord open on this PC. Your profile shows \"Hosting Server name · 2/20 online\" with the Mineger logo. While off, no connection is made.",
+      "update_title": "Updates",
+      "update_check": "Check for updates",
+      "update_checking": "Checking…",
+      "update_latest": "You're up to date: {version} is the latest version.",
+      "update_available": "{version} is available.",
+      "update_error": "Check failed: {error}",
+      "update_hint": "Mineger checks on its own at start-up and every 6 hours; the downloaded installer is verified with the project signature."
     },
     "sidebar": {
       "add_server": "+ Add server",
@@ -1142,6 +1152,23 @@
         "entity": "creature",
         "sign": "sign"
       }
+    },
+    "update": {
+      "badge_title": "New version available: {version}. Click for details",
+      "title": "Mineger {version} is available",
+      "current": "you have {current}",
+      "install": "Update now",
+      "later": "Later",
+      "site": "Download from the website",
+      "servers_warning": "Running servers will be saved and stopped before the update; the app restarts on its own afterwards.",
+      "downloading": "Downloading… {percent}%",
+      "downloading_bytes": "Downloading… {size}",
+      "installing": "Installing, the app will restart on its own…",
+      "failed": "Update failed: {error}",
+      "no_notes": "No notes for this version.",
+      "whats_new": "What's new in Mineger {version}",
+      "changelog": "Full changelog",
+      "close": "Close"
     }
   },
   "presence": {

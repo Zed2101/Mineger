@@ -87,3 +87,36 @@ export function avatarClass(name) {
 export function formatInt(n) {
   return Number(n || 0).toLocaleString(currentLanguage());
 }
+
+/**
+ * Markdown minimo per le note di rilascio (titoli, elenchi, grassetto,
+ * codice, link). Tutto il testo passa da escapeHtml; i link diventano
+ * `<a data-url>` da aprire col browser di sistema.
+ */
+export function renderMarkdown(src) {
+  const inline = (s) =>
+    escapeHtml(s)
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,:;!?]|$)/g, '$1<em>$2</em>')
+      .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="#" data-url="$2">$1</a>');
+  const out = [];
+  let list = false;
+  const closeList = () => { if (list) { out.push('</ul>'); list = false; } };
+  for (const raw of String(src || '').split(/\r?\n/)) {
+    const line = raw.trim();
+    const li = line.match(/^[-*]\s+(.*)/);
+    if (li) {
+      if (!list) { out.push('<ul>'); list = true; }
+      out.push(`<li>${inline(li[1])}</li>`);
+      continue;
+    }
+    closeList();
+    if (!line) continue;
+    const h = line.match(/^(#{1,4})\s+(.*)/);
+    if (h) { out.push(`<h4>${inline(h[2])}</h4>`); continue; }
+    out.push(`<p>${inline(line)}</p>`);
+  }
+  closeList();
+  return out.join('');
+}

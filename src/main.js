@@ -17,6 +17,7 @@ import { setupPacks, renderPackCard, loadCachedUpdates, applyUpdatesToSidebar, h
 import { escapeHtml, formatGB } from './modules/utils.js';
 import { t, initI18n, onLanguageChange } from './modules/i18n.js';
 import { setupLanguage } from './modules/ui-language.js';
+import { setupAppUpdate } from './modules/ui-update.js';
 
 const { invoke } = window.__TAURI__.core;
 
@@ -469,6 +470,7 @@ async function initApp() {
     if (isMap && state.activeServerId) renderMapTab(state.activeServerId);
   });
   setupMap(state, { isRemote: isRemoteId });
+  setupAppUpdate(state, { isRemote: isRemoteId });
   setupModals(state, renderSidebar, updateBannerUI, {
     onServerCreated: async (newId) => {
       await loadServers();

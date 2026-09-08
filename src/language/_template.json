@@ -331,6 +331,9 @@
     "console": {
       "no_commands": "",
       "bad_command_name": ""
+    },
+    "update": {
+      "none": ""
     }
   },
   "msg": {
@@ -965,7 +968,14 @@
       "presence_enable": "",
       "presence_show_name": "",
       "presence_show_players": "",
-      "presence_hint": ""
+      "presence_hint": "",
+      "update_title": "",
+      "update_check": "",
+      "update_checking": "",
+      "update_latest": "",
+      "update_available": "",
+      "update_error": "",
+      "update_hint": ""
     },
     "sidebar": {
       "add_server": "",
@@ -1142,6 +1152,23 @@
         "entity": "",
         "sign": ""
       }
+    },
+    "update": {
+      "badge_title": "",
+      "title": "",
+      "current": "",
+      "install": "",
+      "later": "",
+      "site": "",
+      "servers_warning": "",
+      "downloading": "",
+      "downloading_bytes": "",
+      "installing": "",
+      "failed": "",
+      "no_notes": "",
+      "whats_new": "",
+      "changelog": "",
+      "close": ""
     }
   },
   "presence": {

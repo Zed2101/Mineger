@@ -1,5 +1,6 @@
 // src-tauri/src/lib.rs
 
+pub mod appupdate;
 pub mod backup;
 pub mod cmdsnap;
 pub mod commands;
@@ -32,13 +33,14 @@ use std::time::Duration;
 use tauri::RunEvent;
 
 /// Tempo massimo concesso ai server per salvare e chiudersi quando l'app viene chiusa.
-const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(10);
+pub const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             // I panic della libreria delle regioni sono gestiti nel render della mappa.
             worldmap::install_panic_filter();
@@ -79,6 +81,9 @@ pub fn run() {
             commands::render_world_map,
             commands::get_live_players,
             commands::get_command_snapshot,
+            commands::check_app_update,
+            commands::install_app_update,
+            commands::get_whats_new,
             commands::get_command_usage,
             commands::get_player_inventory,
             commands::search_world,

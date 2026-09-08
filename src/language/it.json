@@ -331,6 +331,9 @@
     "console": {
       "no_commands": "Il server non ha risposto a \"help\" con un elenco di comandi",
       "bad_command_name": "Nome di comando non valido"
+    },
+    "update": {
+      "none": "Nessun aggiornamento da installare: controlla prima se ce n'è uno"
     }
   },
   "msg": {
@@ -965,7 +968,14 @@
       "presence_enable": "Mostra su Discord cosa sto facendo",
       "presence_show_name": "Mostra il nome del server",
       "presence_show_players": "Mostra quanti giocatori sono online",
-      "presence_hint": "Serve Discord aperto su questo PC. Sul tuo profilo compare \"Hosting Nome server · 2/20 online\" con il logo di Mineger. Da spento non parte nessuna connessione."
+      "presence_hint": "Serve Discord aperto su questo PC. Sul tuo profilo compare \"Hosting Nome server · 2/20 online\" con il logo di Mineger. Da spento non parte nessuna connessione.",
+      "update_title": "Aggiornamenti",
+      "update_check": "Controlla aggiornamenti",
+      "update_checking": "Controllo in corso…",
+      "update_latest": "Sei aggiornato: la {version} è la versione più recente.",
+      "update_available": "È disponibile la {version}.",
+      "update_error": "Controllo non riuscito: {error}",
+      "update_hint": "Mineger controlla da solo all'avvio e ogni 6 ore; l'installer scaricato viene verificato con la firma del progetto."
     },
     "sidebar": {
       "add_server": "+ Aggiungi Server",
@@ -1142,6 +1152,23 @@
         "entity": "creatura",
         "sign": "cartello"
       }
+    },
+    "update": {
+      "badge_title": "Nuova versione disponibile: {version}. Clicca per i dettagli",
+      "title": "Mineger {version} è disponibile",
+      "current": "stai usando la {current}",
+      "install": "Aggiorna ora",
+      "later": "Più tardi",
+      "site": "Scarica dal sito",
+      "servers_warning": "I server accesi verranno salvati e fermati prima dell'aggiornamento; l'app si riavvia da sola alla fine.",
+      "downloading": "Scaricamento… {percent}%",
+      "downloading_bytes": "Scaricamento… {size}",
+      "installing": "Installazione in corso, l'app si riavvierà da sola…",
+      "failed": "Aggiornamento non riuscito: {error}",
+      "no_notes": "Nessuna nota per questa versione.",
+      "whats_new": "Novità di Mineger {version}",
+      "changelog": "Changelog completo",
+      "close": "Chiudi"
     }
   },
   "presence": {

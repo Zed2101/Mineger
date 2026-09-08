@@ -35,6 +35,11 @@ src-tauri/src/data/settings.json
 # Piano di lavoro interno
 PIANO.md
 
+# Chiavi di firma dell'updater (vivono in ~/.tauri, mai nel repo)
+*.key
+*.key.pub
+*.key.password
+
 # Sito (GitHub Pages): CSS compilato e release.json generati in CI
 site/tailwind.css
 site/release.json

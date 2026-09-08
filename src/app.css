@@ -172,6 +172,14 @@
   .perm-pill.off { @apply bg-white/5 text-text-faint line-through; }
 
   /* Impostazioni: riquadri per sezione */
+  /* Note di rilascio (renderMarkdown) nelle finestre di aggiornamento e novità */
+  .markdown h4 { @apply mt-3 mb-1 font-mono text-[10px] font-semibold uppercase tracking-[1.5px] text-accent first:mt-0; }
+  .markdown p { @apply mt-2 first:mt-0; }
+  .markdown ul { @apply mt-1 list-disc space-y-1 pl-5 marker:text-accent; }
+  .markdown code { @apply rounded bg-bg-inset px-1 py-0.5 font-mono text-[11px] text-accent; }
+  .markdown strong { @apply font-semibold text-text-main; }
+  .markdown a { @apply text-accent underline-offset-2 hover:underline; }
+
   .settings-card { @apply rounded-xl border border-line bg-bg-card/60 p-4; }
   .settings-head { @apply mb-3 flex items-center justify-between gap-3; }
   .settings-row { @apply flex items-center gap-3; }

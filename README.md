@@ -108,6 +108,7 @@ npm run tauri dev
 
 - `npm run css:build` / `css:watch` — compile Tailwind (`src/app.css` → `src/tailwind.css`).
 - `npm run tauri build` — produce the installers under `src-tauri/target/release/bundle/`.
+- `npm run release:build` — same, but signed for the in-app updater, plus `latest.json` (see *Releasing*).
 - `cd src-tauri && cargo test --lib` — backend test suite.
 - Tests marked `#[ignore]` hit the network or install real loaders: `cargo test --lib -- --ignored`.
 
@@ -116,6 +117,12 @@ You'll need [Rust](https://rustup.rs) and Node.js 18+.
 Technical documentation: [architecture](docs/ARCHITECTURE.md) · [host API and webhooks](docs/API-HOST.md) · [API reference on the website](https://zed2101.github.io/Mineger/api.html), one example per endpoint.
 
 ---
+
+### Releasing
+
+Installed copies update themselves from the latest GitHub release, so a release needs three things: the version bumped in `package.json`, `src-tauri/tauri.conf.json` and `src-tauri/Cargo.toml`; the `Unreleased` notes of `CHANGELOG.md` moved under the new version (they become the release notes and the "What's new" dialog); and the signing key. The key is generated once with `npx tauri signer generate -w ~/.tauri/mineger.key -p <password>`, with the password saved next to it in `~/.tauri/mineger.key.password`: its public half is `plugins.updater.pubkey` in `src-tauri/tauri.conf.json`, the private half and the password never enter the repository. Losing them means shipped apps can no longer update themselves, so back up the whole `~/.tauri` folder.
+
+`npm run release:build` builds the installers, signs them and writes `src-tauri/target/release/bundle/latest.json`, then prints the `gh release create` command: the NSIS installer, the MSI and `latest.json` must all be attached to the release.
 
 ## Translating Mineger
 
