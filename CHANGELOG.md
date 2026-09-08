@@ -13,6 +13,9 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Changed
 - Discord Rich Presence: the site address is shown as text in the idle state too ("Managing 5 servers · zed2101.github.io/Mineger"), since Discord never shows an activity's buttons to its owner.
 
+### Documentation
+- **API reference on the website** ([zed2101.github.io/Mineger/api.html](https://zed2101.github.io/Mineger/api.html)): every host endpoint, the WebSocket event stream and the webhooks, grouped by area (host and servers, lifecycle and console, mods and plugins, modpacks, backups, map and players, webhooks), each with a description, a use case, a `curl` request and the response shape. English and Italian, filterable, with a host/token pair that fills the examples without leaving the page. `docs/API-HOST.md` remains the Markdown version; the site's "Docs" link now points to the page.
+
 ## [1.1.0] — 2026-09-08
 
 ### Added
