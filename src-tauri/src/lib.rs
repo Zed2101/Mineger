@@ -88,6 +88,7 @@ pub fn run() {
             commands::playit_claim_start,
             commands::playit_unlink,
             commands::get_tunnel_status,
+            commands::get_network_status,
             commands::get_command_usage,
             commands::get_player_inventory,
             commands::search_world,

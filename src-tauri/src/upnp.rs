@@ -52,9 +52,23 @@ fn is_private_ip(ip: IpAddr) -> bool {
     }
 }
 
+/// Esito di un'apertura riuscita: messaggio per la console più i dati per la UI.
+#[derive(Debug, Clone)]
+pub struct UpnpResult {
+    pub message: String,
+    pub public_ip: Option<IpAddr>,
+    /// Il router stesso ha un IP privato: da fuori casa la porta non è raggiungibile.
+    pub cgnat: bool,
+}
+
 /// Apre `port` (TCP + UDP) verso questa macchina. Successo se almeno TCP va a buon fine.
 /// Il messaggio include l'IP pubblico visto dal router.
 pub fn map_port(port: u16) -> Result<String, String> {
+    map_port_info(port).map(|r| r.message)
+}
+
+/// Come `map_port`, con IP pubblico e flag CGNAT separati dal messaggio.
+pub fn map_port_info(port: u16) -> Result<UpnpResult, String> {
     let ip = local_ip().ok_or_else(|| tr!("errors.upnp.no_local_ip"))?;
     let gateway = find_gateway(ip)?;
 
@@ -92,18 +106,21 @@ pub fn map_port(port: u16) -> Result<String, String> {
         }
     }
 
-    let public = match gateway.get_external_ip() {
-        Ok(ext) if is_private_ip(ext) => tr!("console.upnp.public_ip_cgnat", "ip" => ext),
-        Ok(ext) => tr!("console.upnp.public_ip", "ip" => ext),
-        Err(_) => tr!("console.upnp.public_ip_unavailable"),
+    let external = gateway.get_external_ip().ok();
+    let cgnat = external.map(is_private_ip).unwrap_or(false);
+    let public = match external {
+        Some(ext) if cgnat => tr!("console.upnp.public_ip_cgnat", "ip" => ext),
+        Some(ext) => tr!("console.upnp.public_ip", "ip" => ext),
+        None => tr!("console.upnp.public_ip_unavailable"),
     };
 
-    match (tcp, udp) {
-        (Ok(_), Ok(_)) => Ok(tr!("console.upnp.port_open", "port" => port, "gateway" => gateway.addr, "public" => public)),
-        (Ok(_), Err(e)) => Ok(tr!("console.upnp.port_open_tcp_only", "port" => port, "gateway" => gateway.addr, "error" => e, "public" => public)),
-        (Err(e), Ok(_)) => Ok(tr!("console.upnp.port_open_udp_only", "port" => port, "gateway" => gateway.addr, "error" => e, "public" => public)),
-        (Err(e1), Err(e2)) => Err(tr!("errors.upnp.open_failed", "port" => port, "tcp" => e1, "udp" => e2, "hint" => hint())),
-    }
+    let message = match (tcp, udp) {
+        (Ok(_), Ok(_)) => tr!("console.upnp.port_open", "port" => port, "gateway" => gateway.addr, "public" => public),
+        (Ok(_), Err(e)) => tr!("console.upnp.port_open_tcp_only", "port" => port, "gateway" => gateway.addr, "error" => e, "public" => public),
+        (Err(e), Ok(_)) => tr!("console.upnp.port_open_udp_only", "port" => port, "gateway" => gateway.addr, "error" => e, "public" => public),
+        (Err(e1), Err(e2)) => return Err(tr!("errors.upnp.open_failed", "port" => port, "tcp" => e1, "udp" => e2, "hint" => hint())),
+    };
+    Ok(UpnpResult { message, public_ip: external, cgnat })
 }
 
 /// IP pubblico visto dal router (richiede un gateway UPnP).

@@ -67,6 +67,7 @@ Il token è accettato **solo nell'header**. L'unica eccezione è `/api/ws?token=
 | `GET` | `/api/servers/{id}/logs` | Ultime righe di console |
 | `GET` | `/api/servers/{id}/commands` | Comandi accettati dal server, per l'autocompletamento: `{version, taken_at, commands: [{name, usage, alias_of?}]}`; `null` fino al primo avvio (lo snapshot viene preso da `help` quando il server va online) |
 | `GET` | `/api/servers/{id}/commands/{name}` | Tutte le forme di un comando (`help <nome>`, server acceso): `["/tp <destination>", "/tp <targets> <location>", …]` |
+| `GET` | `/api/servers/{id}/network` | Le tre vie d'ingresso in una risposta: `{lan_ip, port, running, upnp_enabled, upnp_state, upnp_message?, public_ip?, upnp_cgnat, tunnel}` (`upnp_state`: `off`, `idle`, `opening`, `open`, `failed`; `tunnel` come sotto). Cambiare `upnp`/`tunnel` con `PUT /launch` ha effetto subito a server acceso; l'evento `network-status` segue i cambi UPnP |
 | `GET` | `/api/servers/{id}/tunnel` | Tunnel playit.gg del server: `{linked, account?, enabled, agent_running, state, address?, message?}` (`state`: `off`, `starting`, `online`, `error`). Il collegamento dell'account si fa solo dall'app host |
 | `GET` | `/api/servers/{id}/metrics` | CPU e RAM del processo Java |
 | `GET` | `/api/servers/{id}/disk-usage` | Byte e numero di file della cartella |
@@ -125,7 +126,7 @@ Le tile vengono rese dai file di regione: la mappa funziona anche a server spent
 GET /api/ws?token=<token>
 ```
 
-WebSocket che inoltra gli eventi dell'app: `server-status`, `server-output`, `create-progress`, `update-progress`, `mod-progress`, `backup-progress`, `pack-updates`, `webhook-call`, `map-progress`, `commands-ready`, `tunnel-status`.
+WebSocket che inoltra gli eventi dell'app: `server-status`, `server-output`, `create-progress`, `update-progress`, `mod-progress`, `backup-progress`, `pack-updates`, `webhook-call`, `map-progress`, `commands-ready`, `tunnel-status`, `network-status`.
 
 ---
 

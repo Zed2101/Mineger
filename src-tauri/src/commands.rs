@@ -419,6 +419,12 @@ pub fn get_tunnel_status(app: AppHandle, id: String) -> crate::tunnel::TunnelSta
     service::tunnel_status(&app, &id)
 }
 
+/// LAN, UPnP e tunnel di un server in una sola risposta (card "Come entrano gli amici").
+#[tauri::command]
+pub async fn get_network_status(app: AppHandle, id: String) -> Result<crate::models::NetworkStatus, String> {
+    tauri::async_runtime::spawn_blocking(move || service::network_status(&app, &id)).await.map_err(|e| e.to_string())?
+}
+
 // ---------------------------------------------------------------------------
 // Impostazioni + host remoto
 // ---------------------------------------------------------------------------

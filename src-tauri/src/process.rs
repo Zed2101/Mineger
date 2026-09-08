@@ -29,6 +29,11 @@ pub struct RunningServer {
     pub status: ServerStatus,
     /// true se il mapping UPnP è stato aperto con successo (va chiuso all'uscita)
     pub upnp_mapped: bool,
+    /// `off` · `opening` · `open` · `failed`: stato UPnP mostrato nella card di rete
+    pub upnp_state: &'static str,
+    pub upnp_message: Option<String>,
+    pub public_ip: Option<String>,
+    pub upnp_cgnat: bool,
     /// Epoch ms dello spawn
     pub started_at: u64,
     /// Giocatori online, dedotti dalle righe "joined the game" / "left the game"
@@ -302,7 +307,18 @@ pub fn spawn_server(app: &AppHandle, id: &str, spec: LaunchSpec) -> Result<(), S
 
     lock().insert(
         id.to_string(),
-        RunningServer { child, port: spec.port, status: ServerStatus::Starting, upnp_mapped: false, started_at, players: BTreeSet::new() },
+        RunningServer {
+            child,
+            port: spec.port,
+            status: ServerStatus::Starting,
+            upnp_mapped: false,
+            upnp_state: if spec.upnp { "opening" } else { "off" },
+            upnp_message: None,
+            public_ip: None,
+            upnp_cgnat: false,
+            started_at,
+            players: BTreeSet::new(),
+        },
     );
     let port = spec.port;
     emit_status(app, id, ServerStatus::Starting, None, Some(started_at));
@@ -362,34 +378,118 @@ pub fn spawn_server(app: &AppHandle, id: &str, spec: LaunchSpec) -> Result<(), S
         thread::spawn(move || monitor_loop(app, id));
     }
 
-    // --- UPnP: in background, l'esito finisce in console ---
+    // --- UPnP: in background, l'esito finisce in console e nella card di rete ---
     if !spec.upnp {
         emit_line(app, id, &tr!("console.upnp.disabled"));
     } else {
-        let app = app.clone();
-        let id = id.to_string();
-        let port = spec.port;
-        thread::spawn(move || match upnp::map_port(port) {
-            Ok(msg) => {
-                let mut map = lock();
-                match map.get_mut(&id) {
-                    Some(rs) => {
-                        rs.upnp_mapped = true;
-                        drop(map);
-                        emit_line(&app, &id, &tr!("console.upnp.result", "message" => msg));
-                    }
-                    None => {
-                        // Il server è già uscito nel frattempo: non lasciare la porta aperta.
-                        drop(map);
-                        let _ = upnp::unmap_port(port);
-                    }
-                }
-            }
-            Err(e) => emit_line(&app, &id, &tr!("console.upnp.unavailable", "error" => e)),
-        });
+        map_upnp_in_background(app, id, spec.port);
     }
 
     Ok(())
+}
+
+/// Stato di rete di un server acceso, per la card "Come entrano gli amici".
+#[derive(serde::Serialize, Clone, Debug)]
+pub struct NetworkSnapshot {
+    pub upnp_state: String,
+    pub upnp_message: Option<String>,
+    pub public_ip: Option<String>,
+    pub upnp_cgnat: bool,
+}
+
+pub fn network_snapshot(id: &str) -> Option<NetworkSnapshot> {
+    lock().get(id).map(|rs| NetworkSnapshot {
+        upnp_state: rs.upnp_state.to_string(),
+        upnp_message: rs.upnp_message.clone(),
+        public_ip: rs.public_ip.clone(),
+        upnp_cgnat: rs.upnp_cgnat,
+    })
+}
+
+fn emit_network(app: &AppHandle, id: &str) {
+    let Some(snap) = network_snapshot(id) else { return };
+    let mut payload = serde_json::to_value(&snap).unwrap_or_default();
+    payload["id"] = serde_json::Value::String(id.to_string());
+    let _ = app.emit("network-status", payload.clone());
+    events::publish("network-status", payload);
+}
+
+fn map_upnp_in_background(app: &AppHandle, id: &str, port: u16) {
+    {
+        let mut map = lock();
+        let Some(rs) = map.get_mut(id) else { return };
+        rs.upnp_state = "opening";
+        rs.upnp_message = None;
+    }
+    emit_network(app, id);
+    let app = app.clone();
+    let id = id.to_string();
+    thread::spawn(move || {
+        let outcome = upnp::map_port_info(port);
+        let mut map = lock();
+        match map.get_mut(&id) {
+            Some(rs) => {
+                match &outcome {
+                    Ok(res) => {
+                        rs.upnp_mapped = true;
+                        rs.upnp_state = "open";
+                        rs.upnp_message = Some(res.message.clone());
+                        rs.public_ip = res.public_ip.map(|ip| ip.to_string());
+                        rs.upnp_cgnat = res.cgnat;
+                    }
+                    Err(e) => {
+                        rs.upnp_state = "failed";
+                        rs.upnp_message = Some(e.clone());
+                    }
+                }
+                drop(map);
+                match outcome {
+                    Ok(res) => emit_line(&app, &id, &tr!("console.upnp.result", "message" => res.message)),
+                    Err(e) => emit_line(&app, &id, &tr!("console.upnp.unavailable", "error" => e)),
+                }
+                emit_network(&app, &id);
+            }
+            None => {
+                // Il server è già uscito nel frattempo: non lasciare la porta aperta.
+                drop(map);
+                if outcome.is_ok() {
+                    let _ = upnp::unmap_port(port);
+                }
+            }
+        }
+    });
+}
+
+/// Toggle UPnP cambiato a server acceso: apre o chiude la porta subito.
+pub fn set_upnp(app: &AppHandle, id: &str, enabled: bool) {
+    let (port, mapped, state) = {
+        let map = lock();
+        let Some(rs) = map.get(id) else { return };
+        (rs.port, rs.upnp_mapped, rs.upnp_state)
+    };
+    if enabled {
+        if !mapped && state != "opening" {
+            map_upnp_in_background(app, id, port);
+        }
+        return;
+    }
+    {
+        let mut map = lock();
+        if let Some(rs) = map.get_mut(id) {
+            rs.upnp_mapped = false;
+            rs.upnp_state = "off";
+            rs.upnp_message = None;
+        }
+    }
+    emit_network(app, id);
+    if mapped {
+        let app = app.clone();
+        let id = id.to_string();
+        thread::spawn(move || match upnp::unmap_port(port) {
+            Ok(msg) => emit_line(&app, &id, &tr!("console.upnp.result", "message" => msg)),
+            Err(e) => emit_line(&app, &id, &tr!("console.upnp.cleanup_failed", "error" => e)),
+        });
+    }
 }
 
 fn monitor_loop(app: AppHandle, id: String) {

@@ -428,6 +428,7 @@ fn build_router(state: HostState) -> Router {
         .route("/api/servers/{id}/players/live", get(players_live))
         .route("/api/servers/{id}/commands", get(command_snapshot))
         .route("/api/servers/{id}/tunnel", get(tunnel_status))
+        .route("/api/servers/{id}/network", get(network_status))
         .route("/api/servers/{id}/commands/{name}", get(command_usage))
         .route("/api/servers/{id}/players/{name}/inventory", get(player_inventory))
         .route("/api/servers/{id}/start", post(start_server))
@@ -743,6 +744,11 @@ struct LaunchBody {
 async fn update_launch(State(state): State<HostState>, Path(id): Path<String>, Json(body): Json<LaunchBody>) -> ApiResult<String> {
     let app = state.app.clone();
     Ok(Json(blocking(move || service::update_launch_config(&app, &id, body.max_ram_mb, body.upnp, body.tunnel)).await?))
+}
+
+async fn network_status(State(state): State<HostState>, Path(id): Path<String>) -> ApiResult<crate::models::NetworkStatus> {
+    let app = state.app.clone();
+    Ok(Json(blocking(move || service::network_status(&app, &id)).await?))
 }
 
 async fn tunnel_status(State(state): State<HostState>, Path(id): Path<String>) -> ApiResult<crate::tunnel::TunnelStatus> {

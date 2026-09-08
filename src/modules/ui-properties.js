@@ -34,8 +34,6 @@ export function populatePropertiesPanel(server) {
   el('prop-online-mode').checked = isTrue(p['online-mode']);
 
   el('prop-max-ram').value = server?.launch?.max_ram_mb ?? DEFAULT_RAM_MB;
-  el('prop-upnp').checked = server?.launch?.upnp ?? true;
-  el('prop-tunnel').checked = server?.launch?.tunnel ?? false;
 
   const java = el('props-java');
   java.textContent = server?.java_info ?? '—';
@@ -52,7 +50,7 @@ export function setPropsNote(text, cls = '') {
   note.className = cls ? `note-${cls}` : 'note';
 }
 
-/** Legge i valori del form. Ritorna { properties: {k: v}, maxRamMb: number|null, upnp: boolean, tunnel: boolean }. */
+/** Legge i valori del form. Ritorna { properties: {k: v}, maxRamMb: number|null }. UPnP e tunnel stanno nella card di rete in Dettagli. */
 export function readPropertiesForm() {
   const bool = (id) => (el(id).checked ? 'true' : 'false');
   const properties = {
@@ -69,9 +67,7 @@ export function readPropertiesForm() {
   };
   const ramRaw = el('prop-max-ram').value;
   const maxRamMb = ramRaw === '' ? null : Number(ramRaw);
-  const upnp = el('prop-upnp').checked;
-  const tunnel = el('prop-tunnel').checked;
-  return { properties, maxRamMb, upnp, tunnel };
+  return { properties, maxRamMb };
 }
 
 // ---------------------------------------------------------------------------

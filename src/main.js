@@ -18,7 +18,7 @@ import { escapeHtml, formatGB } from './modules/utils.js';
 import { t, initI18n, onLanguageChange } from './modules/i18n.js';
 import { setupLanguage } from './modules/ui-language.js';
 import { setupAppUpdate } from './modules/ui-update.js';
-import { setupTunnel, renderTunnelCard, handleTunnelEvent, renderTunnelSettings } from './modules/ui-tunnel.js';
+import { setupNetwork, renderNetworkCard, handleNetworkEvent, renderTunnelSettings } from './modules/ui-network.js';
 
 const { invoke } = window.__TAURI__.core;
 
@@ -186,7 +186,7 @@ function selectServer(id) {
   serverDetailsEl.classList.remove('hidden');
 
   updateBannerUI(server);
-  renderTunnelCard(server, { isRemote: isRemoteId });
+  renderNetworkCard(server, { isRemote: isRemoteId });
   populatePropertiesPanel(server);
   renderModsList(server.mods, id, server);
   showConsoleFor(state, id);
@@ -236,7 +236,7 @@ function handleRemoteEvent(hostId, type, payload) {
   else if (type === 'server-status') handleStatusEvent(state, normalized, onStatusChange);
   else if (type === 'backup-progress') handleBackupProgress(state, normalized);
   else if (type === 'commands-ready') handleCommandsReady(state, normalized);
-  else if (type === 'tunnel-status') handleTunnelEvent(normalized);
+  else if (type === 'tunnel-status' || type === 'network-status') handleNetworkEvent(type, normalized);
 }
 
 async function refreshRemoteServers(hostId) {
@@ -317,6 +317,7 @@ function redrawForLanguage() {
 function onStatusChange(id) {
   renderStats(state, id);
   renderPlayers(state, id);
+  handleNetworkEvent('server-status', { id });
 }
 
 async function startServer(id) {
@@ -383,16 +384,16 @@ async function handleSaveProps() {
   const server = state.serverList.find((s) => s.id === id);
   if (!server) return;
 
-  const { properties, maxRamMb, upnp, tunnel } = readPropertiesForm();
+  const { properties, maxRamMb } = readPropertiesForm();
   const btn = document.getElementById('btn-save-props');
   btn.disabled = true;
   setPropsNote(t('msg2.app.props_saving'));
 
   try {
     server.properties = await call('save_server_properties', { id, properties });
-    const launchInfo = await call('update_launch_config', { id, maxRamMb, upnp, tunnel });
-    server.launch = { ...(server.launch || {}), max_ram_mb: maxRamMb, upnp, tunnel };
-    renderTunnelCard(server, { isRemote: isRemoteId });
+    const launchInfo = await call('update_launch_config', { id, maxRamMb, upnp: null, tunnel: null });
+    server.launch = { ...(server.launch || {}), max_ram_mb: maxRamMb };
+    renderNetworkCard(server, { isRemote: isRemoteId });
     server.launch_info = launchInfo;
     server.launch_ok = !String(launchInfo).startsWith('non avviabile');
 
@@ -475,7 +476,7 @@ async function initApp() {
   });
   setupMap(state, { isRemote: isRemoteId });
   setupAppUpdate(state, { isRemote: isRemoteId });
-  setupTunnel(state, { isRemote: isRemoteId, onSettingsChanged: renderTunnelSettings });
+  setupNetwork(state, { isRemote: isRemoteId, onSettingsChanged: renderTunnelSettings });
   window.__minegerRenderTunnelSettings = renderTunnelSettings;
   setupModals(state, renderSidebar, updateBannerUI, {
     onServerCreated: async (newId) => {

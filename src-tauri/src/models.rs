@@ -97,6 +97,23 @@ pub struct LaunchConfig {
     pub tunnel_id: Option<String>,
 }
 
+/// Card "Come entrano gli amici": LAN, UPnP e tunnel playit di un server.
+#[derive(Serialize, Clone, Debug)]
+pub struct NetworkStatus {
+    pub lan_ip: Option<String>,
+    pub port: u16,
+    pub running: bool,
+    pub upnp_enabled: bool,
+    /// `off` · `idle` (acceso, si apre all'avvio) · `opening` · `open` · `failed`
+    pub upnp_state: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub upnp_message: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub public_ip: Option<String>,
+    pub upnp_cgnat: bool,
+    pub tunnel: crate::tunnel::TunnelStatus,
+}
+
 /// Da dove è stato installato il server (CurseForge / Modrinth / FTB): serve per gli aggiornamenti.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SourceInfo {

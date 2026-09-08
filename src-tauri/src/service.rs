@@ -255,6 +255,29 @@ pub fn tunnel_status(app: &AppHandle, id: &str) -> crate::tunnel::TunnelStatus {
     crate::tunnel::status(app, id)
 }
 
+pub fn network_status(app: &AppHandle, id: &str) -> Result<crate::models::NetworkStatus, String> {
+    let dir = server_dir(app, id)?;
+    let data = read_server_data(&dir)?;
+    let upnp_enabled = data.launch.upnp.unwrap_or(true);
+    let snap = process::network_snapshot(id);
+    let running = snap.is_some();
+    Ok(crate::models::NetworkStatus {
+        lan_ip: crate::upnp::local_ip().map(|ip| ip.to_string()),
+        port: server_port(&dir),
+        running,
+        upnp_enabled,
+        upnp_state: match &snap {
+            Some(s) => s.upnp_state.clone(),
+            None if upnp_enabled => "idle".to_string(),
+            None => "off".to_string(),
+        },
+        upnp_message: snap.as_ref().and_then(|s| s.upnp_message.clone()),
+        public_ip: snap.as_ref().and_then(|s| s.public_ip.clone()),
+        upnp_cgnat: snap.as_ref().map(|s| s.upnp_cgnat).unwrap_or(false),
+        tunnel: crate::tunnel::status(app, id),
+    })
+}
+
 pub fn search_world(app: &AppHandle, id: &str, query: &str, dimension: &str, x: f64, z: f64) -> Result<Vec<crate::worldindex::SearchHit>, String> {
     use tauri::Emitter;
     let dir = server_dir(app, id)?;
@@ -308,10 +331,12 @@ pub fn update_server_info(app: &AppHandle, id: &str, name: &str, icon: Option<&s
 pub fn update_launch_config(app: &AppHandle, id: &str, max_ram_mb: Option<u32>, upnp: Option<bool>, tunnel: Option<bool>) -> Result<String, String> {
     let dir = server_dir(app, id)?;
     let mut data = read_server_data(&dir)?;
+    // Cambi da applicare subito se il server è acceso: vanno rilevati prima di sovrascrivere.
+    let upnp_changed = upnp.is_some() && upnp != Some(data.launch.upnp.unwrap_or(true));
+    let tunnel_changed = tunnel.is_some() && tunnel != Some(data.launch.tunnel.unwrap_or(false));
     if let Some(u) = upnp {
         data.launch.upnp = Some(u);
     }
-    let tunnel_changed = tunnel.is_some() && tunnel != Some(data.launch.tunnel.unwrap_or(false));
     if let Some(t) = tunnel {
         data.launch.tunnel = Some(t);
     }
@@ -323,6 +348,9 @@ pub fn update_launch_config(app: &AppHandle, id: &str, max_ram_mb: Option<u32>, 
     }
     data.launch.max_ram_mb = max_ram_mb;
     write_server_data(&dir, &data)?;
+    if upnp_changed {
+        process::set_upnp(app, id, data.launch.upnp.unwrap_or(true));
+    }
     if tunnel_changed {
         crate::tunnel::set_enabled(app, id, data.launch.tunnel.unwrap_or(false));
     }
