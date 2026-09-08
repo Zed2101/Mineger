@@ -91,7 +91,7 @@ Servers live in `servers/<name>` next to the app (in development, inside the pro
 
 ## Playing with friends
 
-**No port forwarding possible?** Open the server's Details tab, link your playit.gg account (free, approval in the browser) and turn the tunnel on in Properties: at the next start the server gets a public address to give to friends, the same every time. Only the Minecraft port goes through playit; the account and its terms are theirs, Mineger just runs their agent with your key.
+**No port forwarding possible?** Open the server's Details tab, link your playit.gg account (free, approval in the browser) and turn the tunnel on in Properties: at the next start the server gets a public address to give to friends, the same every time. Sign in on playit.gg first, then link. Only the Minecraft port goes through playit; the account and its terms are theirs, Mineger just runs their agent with your key and is in no way affiliated with playit.gg.
 
 Three options, simplest first:
 

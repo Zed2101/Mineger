@@ -91,7 +91,7 @@ I server stanno in `servers/<nome>` accanto all'app (in sviluppo, nella cartella
 
 ## Giocare con gli amici
 
-**Il port forwarding non si può fare?** Apri il tab Dettagli del server, collega il tuo account playit.gg (gratuito, approvazione nel browser) e attiva il tunnel in Proprietà: al prossimo avvio il server ha un indirizzo pubblico da dare agli amici, sempre lo stesso. Dal tunnel passa solo la porta di Minecraft; account e termini sono di playit, Mineger si limita a far girare il loro agent con la tua chiave.
+**Il port forwarding non si può fare?** Apri il tab Dettagli del server, collega il tuo account playit.gg (gratuito, approvazione nel browser) e attiva il tunnel in Proprietà: al prossimo avvio il server ha un indirizzo pubblico da dare agli amici, sempre lo stesso. Prima accedi su playit.gg, poi collega. Dal tunnel passa solo la porta di Minecraft; account e termini sono di playit, Mineger si limita a far girare il loro agent con la tua chiave e non è in alcun modo affiliato a playit.gg.
 
 Tre strade, dalla più semplice:
 

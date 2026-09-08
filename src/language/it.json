@@ -1015,10 +1015,10 @@
       "playit_linked": "Account playit.gg collegato.",
       "playit_linked_account": "Account playit.gg collegato ({account}).",
       "playit_not_linked": "Nessun account collegato.",
-      "playit_hint": "Il traffico del server passa dai server di playit.gg (piano gratuito: indirizzo casuale ma fisso, fino a 4 porte). Dal tunnel passa solo la porta di Minecraft, mai l'API di Mineger.",
+      "playit_hint": "Servizio di terzi: Mineger non è in alcun modo affiliato a playit.gg; account, termini e traffico sono loro (piano gratuito: indirizzo casuale ma fisso, fino a 4 porte). Prima di collegare l'account devi aver fatto l'accesso su playit.gg nel browser. Dal tunnel passa solo la porta di Minecraft, mai l'API di Mineger.",
       "playit_login": "Accedi o crea l'account ↗",
       "playit_link": "Collega Mineger",
-      "playit_steps": "1. Accedi (o registrati) su playit.gg nel browser. 2. Premi \"Collega Mineger\": si apre la pagina di approvazione, approva e torna qui. Senza l'accesso fatto prima, la pagina resta in caricamento."
+      "playit_steps": "1. Accedi (o registrati) su playit.gg nel browser e resta collegato. 2. Solo dopo premi \"Collega Mineger\": si apre la pagina di approvazione, approva e torna qui. Senza l'accesso fatto prima, la pagina resta in caricamento."
     },
     "sidebar": {
       "add_server": "+ Aggiungi Server",
@@ -1216,10 +1216,10 @@
     "tunnel": {
       "link": "Collega account playit.gg",
       "terms": "Termini di playit.gg",
-      "waiting": "Approva Mineger nella pagina di playit.gg aperta nel browser (devi essere già dentro il tuo account)…",
+      "waiting": "Approva Mineger nella pagina di playit.gg aperta nel browser (devi essere già dentro il tuo account: se la pagina resta in caricamento, accedi prima e premi Riapri)…",
       "waiting_short": "In attesa del browser…",
       "claim_failed": "Collegamento non riuscito: {error}",
-      "disclaimer": "Servizio di terzi: l'account e i termini sono di playit.gg, il traffico del server passa dai loro server. Mineger usa solo il tuo account e non condivide nulla.",
+      "disclaimer": "Servizio di terzi, in nessun modo affiliato a Mineger: account, termini e traffico sono di playit.gg. Devi aver fatto l'accesso sul loro sito prima di collegare l'account. Mineger usa solo il tuo account e non condivide nulla.",
       "manage": "Gestisci su playit.gg",
       "address": "Indirizzo",
       "copy": "Copia",
@@ -1256,7 +1256,7 @@
       "upnp_failed": "non riuscito",
       "upnp_cgnat": "Il router ha un IP privato (CGNAT): da fuori casa non si entra. Usa il tunnel.",
       "tunnel": "Tunnel playit.gg",
-      "tunnel_note": "Senza aprire porte: funziona anche dietro CGNAT e rete mobile. Serve un account playit.gg gratuito, collegato dalle Impostazioni.",
+      "tunnel_note": "Senza aprire porte: funziona anche dietro CGNAT e rete mobile. Serve un account playit.gg gratuito (servizio di terzi, non affiliato a Mineger): accedi sul loro sito e poi collegalo dalle Impostazioni.",
       "tunnel_unlinked": "Nessun account playit.gg collegato: collegalo prima dalle Impostazioni.",
       "open_settings": "Apri Impostazioni → Tunnel playit.gg",
       "address": "Indirizzo",
