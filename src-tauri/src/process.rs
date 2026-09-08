@@ -304,6 +304,7 @@ pub fn spawn_server(app: &AppHandle, id: &str, spec: LaunchSpec) -> Result<(), S
         id.to_string(),
         RunningServer { child, port: spec.port, status: ServerStatus::Starting, upnp_mapped: false, started_at, players: BTreeSet::new() },
     );
+    let port = spec.port;
     emit_status(app, id, ServerStatus::Starting, None, Some(started_at));
     emit_line(app, id, &tr!("console.launch", "java" => spec.java, "args" => spec.args.join(" ")));
 
@@ -322,6 +323,7 @@ pub fn spawn_server(app: &AppHandle, id: &str, spec: LaunchSpec) -> Result<(), S
                             drop(map);
                             emit_status(&app, &id, ServerStatus::Online, None, Some(started));
                             crate::cmdsnap::schedule(app.clone(), id.clone());
+                            crate::tunnel::server_online(&app, &id, port);
                         }
                     }
                 }
@@ -415,6 +417,7 @@ fn monitor_loop(app: AppHandle, id: String) {
             emit_line(&app, &id, &tr!("console.process_exited",
                 "code" => code.map(|c| c.to_string()).unwrap_or_else(|| tr!("console.exit_code_unknown"))));
             emit_status(&app, &id, ServerStatus::Offline, code, None);
+            crate::tunnel::server_stopped(&app, &id);
 
             if upnp_mapped {
                 match upnp::unmap_port(port) {

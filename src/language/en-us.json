@@ -62,6 +62,11 @@
       "say": "chat message → {message}",
       "start_requested": "start requested",
       "stop_requested": "stop requested"
+    },
+    "tunnel": {
+      "starting": "[Mineger] playit.gg: connecting the tunnel…",
+      "online": "[Mineger] playit.gg: public address {address}",
+      "error": "[Mineger] playit.gg: tunnel not active ({error})"
     }
   },
   "errors": {
@@ -334,6 +339,20 @@
     },
     "update": {
       "none": "No update to install: check for one first"
+    },
+    "tunnel": {
+      "network": "playit.gg unreachable: {error}",
+      "rate_limited": "playit.gg asks to slow down (too many requests): try again in a minute",
+      "bad_response": "unexpected answer from playit.gg: {body}",
+      "api_fail": "playit.gg refused the request: {reason}",
+      "api_error": "playit.gg error: {reason}",
+      "claim_timeout": "no approval within 10 minutes: try again",
+      "claim_rejected": "linking rejected in the browser",
+      "not_linked": "no playit.gg account linked (Details → Friends from outside)",
+      "agent_missing": "the playit agent (playitd.exe) is not included in this installation",
+      "agent_spawn": "could not start the playit agent: {error}",
+      "agent_exited": "the playit agent exited",
+      "ready_timeout": "the tunnel did not come up in time ({detail})"
     }
   },
   "msg": {
@@ -915,7 +934,9 @@
       "server_port": "Server Port",
       "structures": "Generate structures",
       "upnp": "Open the port on the router (UPnP)",
-      "upnp_note": "Turn it off if you already forward the port manually or want the server on the LAN only"
+      "upnp_note": "Turn it off if you already forward the port manually or want the server on the LAN only",
+      "tunnel": "Reachable from the Internet with playit.gg",
+      "tunnel_note": "No ports to open: at start-up the server gets a public address through the playit.gg account linked in Details"
     },
     "settings": {
       "apply": "Apply",
@@ -990,7 +1011,14 @@
       "java_desc": "The Java runtimes found on this PC. Mineger picks the right one for each Minecraft version on its own.",
       "java_download": "Download a JDK (OpenLogic)",
       "java_download_title": "Opens openlogic.com: free OpenJDK builds for Windows, Java 8, 11, 17 and 21",
-      "java_versions_hint": "Java 8 is needed up to 1.16, Java 17 from 1.17 to 1.20.4, Java 21 from 1.20.5. Missing one? Download it from OpenLogic, install it and press Rescan."
+      "java_versions_hint": "Java 8 is needed up to 1.16, Java 17 from 1.17 to 1.20.4, Java 21 from 1.20.5. Missing one? Download it from OpenLogic, install it and press Rescan.",
+      "playit_title": "playit.gg tunnel",
+      "playit_desc": "playit.gg account used to give servers a public address without port forwarding. Enabled per server in Properties.",
+      "playit_unlink": "Unlink",
+      "playit_linked": "playit.gg account linked.",
+      "playit_linked_account": "playit.gg account linked ({account}).",
+      "playit_not_linked": "No account linked.",
+      "playit_hint": "Server traffic goes through playit.gg servers (free plan: random but fixed address, up to 4 ports). Only the Minecraft port goes through the tunnel, never the Mineger API."
     },
     "sidebar": {
       "add_server": "+ Add server",
@@ -1184,6 +1212,38 @@
       "whats_new": "What's new in Mineger {version}",
       "changelog": "Full changelog",
       "close": "Close"
+    },
+    "tunnel": {
+      "title": "Friends from outside",
+      "subtitle": "Public address without port forwarding, through playit.gg",
+      "pill_off": "off",
+      "pill_starting": "starting",
+      "pill_online": "online",
+      "pill_error": "error",
+      "loading": "Checking…",
+      "intro": "When the router won't cooperate (CGNAT, mobile data, someone else's network), playit.gg gives the server a public address for free: link your account, turn the tunnel on and friends join with that address.",
+      "link": "Link playit.gg account",
+      "terms": "playit.gg terms",
+      "waiting": "Approve Mineger on the playit.gg page opened in your browser (a playit.gg account is needed: it takes a minute to create there, free)…",
+      "waiting_short": "Waiting for the browser…",
+      "claim_failed": "Linking failed: {error}",
+      "disclaimer": "Third-party service: the account and the terms are playit.gg's, the server traffic goes through their servers. Mineger only uses your own account and shares nothing.",
+      "linked_off": "Account linked. Turn the tunnel on for this server: at the next start (or right away, if it is running) the address to give your friends appears here.",
+      "enable": "Turn the tunnel on",
+      "disable": "Turn off",
+      "manage": "Manage on playit.gg",
+      "address": "Address",
+      "copy": "Copy",
+      "copied": "Copied",
+      "retry": "Retry",
+      "hint_off": "The tunnel starts with the server. The address stays the same at every start.",
+      "hint_starting": "Connecting to playit.gg, the address arrives in a few seconds…",
+      "hint_online": "Friends join with this address, from any network. Copy it and paste it in the chat.",
+      "hint_error": "Tunnel not active: {error}",
+      "remote_hint": "The tunnel is managed from the host's PC.",
+      "account_guest": "guest account",
+      "account_email_not_verified": "email not verified",
+      "account_verified": "verified account"
     }
   },
   "presence": {

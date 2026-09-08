@@ -62,6 +62,11 @@
       "say": "",
       "start_requested": "",
       "stop_requested": ""
+    },
+    "tunnel": {
+      "starting": "",
+      "online": "",
+      "error": ""
     }
   },
   "errors": {
@@ -334,6 +339,20 @@
     },
     "update": {
       "none": ""
+    },
+    "tunnel": {
+      "network": "",
+      "rate_limited": "",
+      "bad_response": "",
+      "api_fail": "",
+      "api_error": "",
+      "claim_timeout": "",
+      "claim_rejected": "",
+      "not_linked": "",
+      "agent_missing": "",
+      "agent_spawn": "",
+      "agent_exited": "",
+      "ready_timeout": ""
     }
   },
   "msg": {
@@ -915,7 +934,9 @@
       "server_port": "",
       "structures": "",
       "upnp": "",
-      "upnp_note": ""
+      "upnp_note": "",
+      "tunnel": "",
+      "tunnel_note": ""
     },
     "settings": {
       "apply": "",
@@ -990,7 +1011,14 @@
       "java_desc": "",
       "java_download": "",
       "java_download_title": "",
-      "java_versions_hint": ""
+      "java_versions_hint": "",
+      "playit_title": "",
+      "playit_desc": "",
+      "playit_unlink": "",
+      "playit_linked": "",
+      "playit_linked_account": "",
+      "playit_not_linked": "",
+      "playit_hint": ""
     },
     "sidebar": {
       "add_server": "",
@@ -1184,6 +1212,38 @@
       "whats_new": "",
       "changelog": "",
       "close": ""
+    },
+    "tunnel": {
+      "title": "",
+      "subtitle": "",
+      "pill_off": "",
+      "pill_starting": "",
+      "pill_online": "",
+      "pill_error": "",
+      "loading": "",
+      "intro": "",
+      "link": "",
+      "terms": "",
+      "waiting": "",
+      "waiting_short": "",
+      "claim_failed": "",
+      "disclaimer": "",
+      "linked_off": "",
+      "enable": "",
+      "disable": "",
+      "manage": "",
+      "address": "",
+      "copy": "",
+      "copied": "",
+      "retry": "",
+      "hint_off": "",
+      "hint_starting": "",
+      "hint_online": "",
+      "hint_error": "",
+      "remote_hint": "",
+      "account_guest": "",
+      "account_email_not_verified": "",
+      "account_verified": ""
     }
   },
   "presence": {

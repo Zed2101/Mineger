@@ -143,6 +143,9 @@ pub struct Settings {
     pub host: HostConfig,
     #[serde(default)]
     pub presence: PresenceConfig,
+    /// Account playit.gg collegato per i tunnel (chiave dell'agent).
+    #[serde(default)]
+    pub playit: crate::tunnel::PlayitConfig,
     #[serde(default)]
     pub remote_hosts: Vec<RemoteHost>,
     #[serde(default)]

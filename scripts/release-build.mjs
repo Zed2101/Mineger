@@ -49,6 +49,9 @@ if (!conf.plugins?.updater?.pubkey) fail('tauri.conf.json has no plugins.updater
 const notes = changelogSection(fs.readFileSync(path.join(root, 'CHANGELOG.md'), 'utf8'), version);
 if (!notes) fail(`CHANGELOG.md has no "## [${version}]" section: move the Unreleased notes under the new version first.`);
 
+const sidecar = path.join(root, 'src-tauri', 'binaries', 'playitd-x86_64-pc-windows-msvc.exe');
+if (!fs.existsSync(sidecar)) fail(`playit agent missing at ${sidecar}. Build it once with: npm run playit:build`);
+
 const keyPath = path.join(os.homedir(), '.tauri', 'mineger.key');
 const passwordPath = `${keyPath}.password`;
 if (!process.env.TAURI_SIGNING_PRIVATE_KEY && !fs.existsSync(keyPath)) {

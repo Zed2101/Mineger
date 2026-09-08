@@ -62,6 +62,11 @@
       "say": "messaggio in chat → {message}",
       "start_requested": "richiesto avvio",
       "stop_requested": "richiesto arresto"
+    },
+    "tunnel": {
+      "starting": "[Mineger] playit.gg: collegamento del tunnel…",
+      "online": "[Mineger] playit.gg: indirizzo pubblico {address}",
+      "error": "[Mineger] playit.gg: tunnel non attivo ({error})"
     }
   },
   "errors": {
@@ -334,6 +339,20 @@
     },
     "update": {
       "none": "Nessun aggiornamento da installare: controlla prima se ce n'è uno"
+    },
+    "tunnel": {
+      "network": "playit.gg non raggiungibile: {error}",
+      "rate_limited": "playit.gg chiede di rallentare (troppe richieste): riprova tra un minuto",
+      "bad_response": "risposta inattesa da playit.gg: {body}",
+      "api_fail": "playit.gg ha rifiutato la richiesta: {reason}",
+      "api_error": "errore di playit.gg: {reason}",
+      "claim_timeout": "nessuna approvazione entro 10 minuti: riprova",
+      "claim_rejected": "collegamento rifiutato nel browser",
+      "not_linked": "nessun account playit.gg collegato (Dettagli → Amici da fuori casa)",
+      "agent_missing": "l'agent playit (playitd.exe) non è incluso in questa installazione",
+      "agent_spawn": "impossibile avviare l'agent playit: {error}",
+      "agent_exited": "l'agent playit si è chiuso",
+      "ready_timeout": "il tunnel non è diventato attivo in tempo ({detail})"
     }
   },
   "msg": {
@@ -915,7 +934,9 @@
       "server_port": "Server Port",
       "structures": "Genera Strutture",
       "upnp": "Apri la porta sul router (UPnP)",
-      "upnp_note": "Disattivalo se hai già un port-forward manuale o vuoi il server solo in LAN"
+      "upnp_note": "Disattivalo se hai già un port-forward manuale o vuoi il server solo in LAN",
+      "tunnel": "Raggiungibile da Internet con playit.gg",
+      "tunnel_note": "Senza aprire porte: all'avvio il server ottiene un indirizzo pubblico tramite l'account playit.gg collegato in Dettagli"
     },
     "settings": {
       "apply": "Applica",
@@ -990,7 +1011,14 @@
       "java_desc": "Le Java trovate su questo PC. Mineger sceglie da sola quella giusta per ogni versione di Minecraft.",
       "java_download": "Scarica un JDK (OpenLogic)",
       "java_download_title": "Apre openlogic.com: build OpenJDK gratuite per Windows, Java 8, 11, 17 e 21",
-      "java_versions_hint": "Serve Java 8 fino alla 1.16, Java 17 dalla 1.17 alla 1.20.4, Java 21 dalla 1.20.5. Manca una versione? Scaricala da OpenLogic, installala e premi Riscansiona."
+      "java_versions_hint": "Serve Java 8 fino alla 1.16, Java 17 dalla 1.17 alla 1.20.4, Java 21 dalla 1.20.5. Manca una versione? Scaricala da OpenLogic, installala e premi Riscansiona.",
+      "playit_title": "Tunnel playit.gg",
+      "playit_desc": "Account playit.gg usato per dare ai server un indirizzo pubblico senza port forwarding. Si attiva server per server in Proprietà.",
+      "playit_unlink": "Scollega",
+      "playit_linked": "Account playit.gg collegato.",
+      "playit_linked_account": "Account playit.gg collegato ({account}).",
+      "playit_not_linked": "Nessun account collegato.",
+      "playit_hint": "Il traffico del server passa dai server di playit.gg (piano gratuito: indirizzo casuale ma fisso, fino a 4 porte). Dal tunnel passa solo la porta di Minecraft, mai l'API di Mineger."
     },
     "sidebar": {
       "add_server": "+ Aggiungi Server",
@@ -1184,6 +1212,38 @@
       "whats_new": "Novità di Mineger {version}",
       "changelog": "Changelog completo",
       "close": "Chiudi"
+    },
+    "tunnel": {
+      "title": "Amici da fuori casa",
+      "subtitle": "Indirizzo pubblico senza port forwarding, tramite playit.gg",
+      "pill_off": "spento",
+      "pill_starting": "in avvio",
+      "pill_online": "online",
+      "pill_error": "errore",
+      "loading": "Controllo…",
+      "intro": "Se il router non si lascia aprire (CGNAT, rete mobile, casa altrui), playit.gg dà al server un indirizzo pubblico gratis: collega il tuo account, attiva il tunnel e gli amici entrano con quell'indirizzo.",
+      "link": "Collega account playit.gg",
+      "terms": "Termini di playit.gg",
+      "waiting": "Approva Mineger nella pagina di playit.gg aperta nel browser (serve un account playit.gg: si crea lì in un minuto, gratis)…",
+      "waiting_short": "In attesa del browser…",
+      "claim_failed": "Collegamento non riuscito: {error}",
+      "disclaimer": "Servizio di terzi: l'account e i termini sono di playit.gg, il traffico del server passa dai loro server. Mineger usa solo il tuo account e non condivide nulla.",
+      "linked_off": "Account collegato. Attiva il tunnel per questo server: al prossimo avvio (o subito, se è acceso) compare qui l'indirizzo da dare agli amici.",
+      "enable": "Attiva il tunnel",
+      "disable": "Disattiva",
+      "manage": "Gestisci su playit.gg",
+      "address": "Indirizzo",
+      "copy": "Copia",
+      "copied": "Copiato",
+      "retry": "Riprova",
+      "hint_off": "Il tunnel parte con il server. L'indirizzo resta lo stesso a ogni avvio.",
+      "hint_starting": "Collegamento a playit.gg in corso, l'indirizzo arriva tra qualche secondo…",
+      "hint_online": "Gli amici entrano con questo indirizzo, da qualsiasi rete. Copialo e mandalo in chat.",
+      "hint_error": "Tunnel non attivo: {error}",
+      "remote_hint": "Il tunnel si gestisce dal PC dell'host.",
+      "account_guest": "account ospite",
+      "account_email_not_verified": "email non verificata",
+      "account_verified": "account verificato"
     }
   },
   "presence": {

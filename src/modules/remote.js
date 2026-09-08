@@ -145,7 +145,9 @@ export class RemoteHost {
       case 'update_server_info':
         return this.request('PUT', s('/info'), { json: { name: args.name, icon: args.icon ?? null } });
       case 'update_launch_config':
-        return this.request('PUT', s('/launch'), { json: { max_ram_mb: args.maxRamMb ?? null, upnp: args.upnp ?? null } });
+        return this.request('PUT', s('/launch'), { json: { max_ram_mb: args.maxRamMb ?? null, upnp: args.upnp ?? null, tunnel: args.tunnel ?? null } });
+      case 'get_tunnel_status':
+        return this.request('GET', s('/tunnel'));
       case 'save_server_properties':
         return this.request('PUT', s('/properties'), { json: { properties: args.properties } });
       case 'toggle_mod':

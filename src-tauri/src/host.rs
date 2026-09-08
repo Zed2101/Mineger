@@ -427,6 +427,7 @@ fn build_router(state: HostState) -> Router {
         .route("/api/servers/{id}/map/search", post(map_search))
         .route("/api/servers/{id}/players/live", get(players_live))
         .route("/api/servers/{id}/commands", get(command_snapshot))
+        .route("/api/servers/{id}/tunnel", get(tunnel_status))
         .route("/api/servers/{id}/commands/{name}", get(command_usage))
         .route("/api/servers/{id}/players/{name}/inventory", get(player_inventory))
         .route("/api/servers/{id}/start", post(start_server))
@@ -735,11 +736,18 @@ struct LaunchBody {
     max_ram_mb: Option<u32>,
     #[serde(default)]
     upnp: Option<bool>,
+    #[serde(default)]
+    tunnel: Option<bool>,
 }
 
 async fn update_launch(State(state): State<HostState>, Path(id): Path<String>, Json(body): Json<LaunchBody>) -> ApiResult<String> {
     let app = state.app.clone();
-    Ok(Json(blocking(move || service::update_launch_config(&app, &id, body.max_ram_mb, body.upnp)).await?))
+    Ok(Json(blocking(move || service::update_launch_config(&app, &id, body.max_ram_mb, body.upnp, body.tunnel)).await?))
+}
+
+async fn tunnel_status(State(state): State<HostState>, Path(id): Path<String>) -> ApiResult<crate::tunnel::TunnelStatus> {
+    let app = state.app.clone();
+    Ok(Json(blocking(move || Ok::<_, String>(service::tunnel_status(&app, &id))).await?))
 }
 
 #[derive(Deserialize)]

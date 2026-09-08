@@ -251,6 +251,10 @@ pub fn command_usage(app: &AppHandle, id: &str, name: &str) -> Result<Vec<String
     crate::cmdsnap::usage(app, id, name)
 }
 
+pub fn tunnel_status(app: &AppHandle, id: &str) -> crate::tunnel::TunnelStatus {
+    crate::tunnel::status(app, id)
+}
+
 pub fn search_world(app: &AppHandle, id: &str, query: &str, dimension: &str, x: f64, z: f64) -> Result<Vec<crate::worldindex::SearchHit>, String> {
     use tauri::Emitter;
     let dir = server_dir(app, id)?;
@@ -301,11 +305,15 @@ pub fn update_server_info(app: &AppHandle, id: &str, name: &str, icon: Option<&s
 }
 
 /// Aggiorna la RAM massima. Ritorna la nuova descrizione di avvio per la UI.
-pub fn update_launch_config(app: &AppHandle, id: &str, max_ram_mb: Option<u32>, upnp: Option<bool>) -> Result<String, String> {
+pub fn update_launch_config(app: &AppHandle, id: &str, max_ram_mb: Option<u32>, upnp: Option<bool>, tunnel: Option<bool>) -> Result<String, String> {
     let dir = server_dir(app, id)?;
     let mut data = read_server_data(&dir)?;
     if let Some(u) = upnp {
         data.launch.upnp = Some(u);
+    }
+    let tunnel_changed = tunnel.is_some() && tunnel != Some(data.launch.tunnel.unwrap_or(false));
+    if let Some(t) = tunnel {
+        data.launch.tunnel = Some(t);
     }
 
     if let Some(ram) = max_ram_mb {
@@ -315,6 +323,9 @@ pub fn update_launch_config(app: &AppHandle, id: &str, max_ram_mb: Option<u32>, 
     }
     data.launch.max_ram_mb = max_ram_mb;
     write_server_data(&dir, &data)?;
+    if tunnel_changed {
+        crate::tunnel::set_enabled(app, id, data.launch.tunnel.unwrap_or(false));
+    }
 
     Ok(match launch::resolve(&dir, &data.launch) {
         Ok(plan) => plan.description,

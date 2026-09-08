@@ -67,6 +67,7 @@ The token is accepted **only in the header**. The single exception is `/api/ws?t
 | `GET` | `/api/servers/{id}/logs` | Latest console lines |
 | `GET` | `/api/servers/{id}/commands` | Commands the server accepts, for autocompletion: `{version, taken_at, commands: [{name, usage, alias_of?}]}`; `null` until the first start (the snapshot is taken from `help` when the server comes online) |
 | `GET` | `/api/servers/{id}/commands/{name}` | Every form of one command (`help <name>`, server running): `["/tp <destination>", "/tp <targets> <location>", …]` |
+| `GET` | `/api/servers/{id}/tunnel` | playit.gg tunnel of the server: `{linked, account?, enabled, agent_running, state, address?, message?}` (`state`: `off`, `starting`, `online`, `error`). Linking the account is local to the host app |
 | `GET` | `/api/servers/{id}/metrics` | CPU and RAM of the Java process |
 | `GET` | `/api/servers/{id}/disk-usage` | Bytes and file count of the folder |
 
@@ -88,7 +89,7 @@ Tiles are rendered from the region files, so the map works with the server off a
 | Method | Path | Description |
 |---|---|---|
 | `PUT` | `/api/servers/{id}/info` | Name and icon: `{name, icon}` |
-| `PUT` | `/api/servers/{id}/launch` | RAM and UPnP: `{max_ram_mb, upnp}` |
+| `PUT` | `/api/servers/{id}/launch` | RAM, UPnP and playit tunnel: `{max_ram_mb, upnp, tunnel}` |
 | `PUT` | `/api/servers/{id}/properties` | `server.properties`: `{properties: {...}}` |
 | `GET`/`PUT`/`DELETE` | `/api/servers/{id}/server-icon` | Server icon (64×64 PNG, resized by the app) |
 | `GET`/`POST` | `/api/servers/{id}/backups` | List or create a world backup |
@@ -124,7 +125,7 @@ Tiles are rendered from the region files, so the map works with the server off a
 GET /api/ws?token=<token>
 ```
 
-WebSocket that forwards the app's events: `server-status`, `server-output`, `create-progress`, `update-progress`, `mod-progress`, `backup-progress`, `pack-updates`, `webhook-call`, `map-progress`, `commands-ready`.
+WebSocket that forwards the app's events: `server-status`, `server-output`, `create-progress`, `update-progress`, `mod-progress`, `backup-progress`, `pack-updates`, `webhook-call`, `map-progress`, `commands-ready`, `tunnel-status`.
 
 ---
 

@@ -128,14 +128,14 @@
             "it": "RAM e UPnP"
           },
           "desc": {
-            "en": "Maximum heap in MB and whether to open the port on the router at start-up. Takes effect at the next start. Returns the new launch description.",
-            "it": "Heap massimo in MB e se aprire la porta sul router all'avvio. Vale dal prossimo avvio. Ritorna la nuova descrizione di avvio."
+            "en": "Maximum heap in MB, whether to open the port on the router at start-up, and whether to bring up the <strong>playit.gg tunnel</strong> (public address without port forwarding, account linked in the host app). Takes effect at the next start; the tunnel flag applies right away when the server runs. Returns the new launch description.",
+            "it": "Heap massimo in MB, se aprire la porta sul router all'avvio e se tirare su il <strong>tunnel playit.gg</strong> (indirizzo pubblico senza port forwarding, account collegato nell'app host). Vale dal prossimo avvio; il flag del tunnel si applica subito se il server è acceso. Ritorna la nuova descrizione di avvio."
           },
           "use": {
             "en": "Give the modpack 8 GB before the big update and go back to 4 GB afterwards, from a script.",
             "it": "Dai 8 GB al modpack prima del grande aggiornamento e torna a 4 GB dopo, da script."
           },
-          "request": "curl -X PUT -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\\n  -d '{\"max_ram_mb\":8192,\"upnp\":true}' \"$HOST/api/servers/Cave%20Horror/launch\"",
+          "request": "curl -X PUT -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\\n  -d '{\"max_ram_mb\":8192,\"upnp\":true,\"tunnel\":true}' \"$HOST/api/servers/Cave%20Horror/launch\"",
           "response": "\"java -jar server.jar · 8192 MB\""
         },
         {
@@ -418,6 +418,25 @@
           "response": "{ \"cpu_percent\": 12.4, \"memory_bytes\": 1638400000, \"cores\": 16 }"
         },
         {
+          "method": "GET",
+          "path": "/api/servers/{id}/tunnel",
+          "auth": "token",
+          "title": {
+            "en": "playit.gg tunnel",
+            "it": "Tunnel playit.gg"
+          },
+          "desc": {
+            "en": "State of the server's playit.gg tunnel: whether an account is linked on the host, whether the tunnel is enabled for this server, whether the agent runs, and the <strong>public address</strong> once it is online. Linking the account happens in the host app (browser approval), not through the API.",
+            "it": "Stato del tunnel playit.gg del server: se l'host ha un account collegato, se il tunnel è attivo per questo server, se l'agent gira e l'<strong>indirizzo pubblico</strong> quando è online. Il collegamento dell'account si fa nell'app host (approvazione nel browser), non via API."
+          },
+          "use": {
+            "en": "A Discord bot that answers <code>!ip</code> with the address friends must use, even when the host is behind CGNAT.",
+            "it": "Un bot Discord che risponde a <code>!ip</code> con l'indirizzo che gli amici devono usare, anche se l'host è dietro CGNAT."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Vanilla%20coi%20bro/tunnel\"",
+          "response": "{ \"linked\": true, \"account\": \"verified\", \"enabled\": true, \"agent_running\": true, \"state\": \"online\", \"address\": \"quiet-forest.gl.joinmc.link:31245\" }"
+        },
+        {
           "method": "WS",
           "path": "/api/ws?token=…",
           "auth": "token",
@@ -426,8 +445,8 @@
             "it": "Eventi in tempo reale"
           },
           "desc": {
-            "en": "A WebSocket that forwards every app event as <code>{ \"type\", \"payload\" }</code>: <code>server-status</code>, <code>server-output</code>, <code>create-progress</code>, <code>update-progress</code>, <code>mod-progress</code>, <code>backup-progress</code>, <code>pack-updates</code>, <code>webhook-call</code>, <code>map-progress</code>, <code>commands-ready</code>. This is the only route that accepts the token in the query string, because browsers cannot set headers on a WebSocket.",
-            "it": "Un WebSocket che inoltra ogni evento dell'app come <code>{ \"type\", \"payload\" }</code>: <code>server-status</code>, <code>server-output</code>, <code>create-progress</code>, <code>update-progress</code>, <code>mod-progress</code>, <code>backup-progress</code>, <code>pack-updates</code>, <code>webhook-call</code>, <code>map-progress</code>, <code>commands-ready</code>. È l'unica rotta che accetta il token nella query string, perché un browser non può impostare header su un WebSocket."
+            "en": "A WebSocket that forwards every app event as <code>{ \"type\", \"payload\" }</code>: <code>server-status</code>, <code>server-output</code>, <code>create-progress</code>, <code>update-progress</code>, <code>mod-progress</code>, <code>backup-progress</code>, <code>pack-updates</code>, <code>webhook-call</code>, <code>map-progress</code>, <code>commands-ready</code>, <code>tunnel-status</code>. This is the only route that accepts the token in the query string, because browsers cannot set headers on a WebSocket.",
+            "it": "Un WebSocket che inoltra ogni evento dell'app come <code>{ \"type\", \"payload\" }</code>: <code>server-status</code>, <code>server-output</code>, <code>create-progress</code>, <code>update-progress</code>, <code>mod-progress</code>, <code>backup-progress</code>, <code>pack-updates</code>, <code>webhook-call</code>, <code>map-progress</code>, <code>commands-ready</code>, <code>tunnel-status</code>. È l'unica rotta che accetta il token nella query string, perché un browser non può impostare header su un WebSocket."
           },
           "use": {
             "en": "A chat bridge: forward <code>joined the game</code> lines to Discord, and Discord messages back with <code>/command</code>.",

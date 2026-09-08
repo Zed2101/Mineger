@@ -67,6 +67,7 @@ Il token è accettato **solo nell'header**. L'unica eccezione è `/api/ws?token=
 | `GET` | `/api/servers/{id}/logs` | Ultime righe di console |
 | `GET` | `/api/servers/{id}/commands` | Comandi accettati dal server, per l'autocompletamento: `{version, taken_at, commands: [{name, usage, alias_of?}]}`; `null` fino al primo avvio (lo snapshot viene preso da `help` quando il server va online) |
 | `GET` | `/api/servers/{id}/commands/{name}` | Tutte le forme di un comando (`help <nome>`, server acceso): `["/tp <destination>", "/tp <targets> <location>", …]` |
+| `GET` | `/api/servers/{id}/tunnel` | Tunnel playit.gg del server: `{linked, account?, enabled, agent_running, state, address?, message?}` (`state`: `off`, `starting`, `online`, `error`). Il collegamento dell'account si fa solo dall'app host |
 | `GET` | `/api/servers/{id}/metrics` | CPU e RAM del processo Java |
 | `GET` | `/api/servers/{id}/disk-usage` | Byte e numero di file della cartella |
 
@@ -88,7 +89,7 @@ Le tile vengono rese dai file di regione: la mappa funziona anche a server spent
 | Metodo | Percorso | Descrizione |
 |---|---|---|
 | `PUT` | `/api/servers/{id}/info` | Nome e icona: `{name, icon}` |
-| `PUT` | `/api/servers/{id}/launch` | RAM e UPnP: `{max_ram_mb, upnp}` |
+| `PUT` | `/api/servers/{id}/launch` | RAM, UPnP e tunnel playit: `{max_ram_mb, upnp, tunnel}` |
 | `PUT` | `/api/servers/{id}/properties` | `server.properties`: `{properties: {...}}` |
 | `GET`/`PUT`/`DELETE` | `/api/servers/{id}/server-icon` | Icona del server (PNG 64×64, ridimensionata dall'app) |
 | `GET`/`POST` | `/api/servers/{id}/backups` | Elenca o crea un backup del mondo |
@@ -124,7 +125,7 @@ Le tile vengono rese dai file di regione: la mappa funziona anche a server spent
 GET /api/ws?token=<token>
 ```
 
-WebSocket che inoltra gli eventi dell'app: `server-status`, `server-output`, `create-progress`, `update-progress`, `mod-progress`, `backup-progress`, `pack-updates`, `webhook-call`, `map-progress`, `commands-ready`.
+WebSocket che inoltra gli eventi dell'app: `server-status`, `server-output`, `create-progress`, `update-progress`, `mod-progress`, `backup-progress`, `pack-updates`, `webhook-call`, `map-progress`, `commands-ready`, `tunnel-status`.
 
 ---
 

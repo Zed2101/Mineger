@@ -4,6 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- **Friends from outside, without port forwarding (playit.gg).** Details gets a "Friends from outside" card: link your own playit.gg account (approval in the browser, guest accounts work too), turn the tunnel on per server in Properties, and at the next start the server gets a public address such as `something.joinmc.link:12345` to hand to friends, shown in the card and in the console, the same at every start. Works behind CGNAT, mobile data and routers that refuse UPnP. Mineger runs the official playit agent (`playitd`, BSD-2-Clause, built from source with `npm run playit:build`) as a child process with the user's own key, only while a server with the tunnel is running; only the Minecraft port goes through the tunnel, never the host API. Settings → playit.gg tunnel shows the account and unlinks it. Host API: `tunnel` in `PUT /launch`, `GET /api/servers/{id}/tunnel`, `tunnel-status` event.
+
 ### Changed
 - **Settings redesigned.** A wider window with a section index on the left (General, Network, Integrations, System) that scrolls to each section and follows the scroll; every section has an icon, a real title and a one-line description; rows are aligned on a wider label column and the invite links sit in their own box. Detected Java gets a "Download a JDK (OpenLogic)" button and a hint about which Java each Minecraft version needs.
 

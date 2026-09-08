@@ -91,6 +91,8 @@ I server stanno in `servers/<nome>` accanto all'app (in sviluppo, nella cartella
 
 ## Giocare con gli amici
 
+**Il port forwarding non si può fare?** Apri il tab Dettagli del server, collega il tuo account playit.gg (gratuito, approvazione nel browser) e attiva il tunnel in Proprietà: al prossimo avvio il server ha un indirizzo pubblico da dare agli amici, sempre lo stesso. Dal tunnel passa solo la porta di Minecraft; account e termini sono di playit, Mineger si limita a far girare il loro agent con la tua chiave.
+
 Tre strade, dalla più semplice:
 
 1. **Stessa rete locale** — gli amici si collegano all'IP locale mostrato nella schermata Dettagli.
@@ -109,6 +111,7 @@ npm run tauri dev
 - `npm run css:build` / `css:watch` — compila Tailwind (`src/app.css` → `src/tailwind.css`).
 - `npm run tauri build` — genera gli installer in `src-tauri/target/release/bundle/`.
 - `npm run release:build` — come sopra, ma firmato per l'aggiornamento dall'app, più `latest.json` (vedi *Rilasciare*).
+- `npm run playit:build` — compila l'agent di playit.gg (`playitd`, BSD-2-Clause) dal sorgente ufficiale in `src-tauri/binaries/`; serve una volta prima di `tauri dev` o `tauri build`, perché viene distribuito come sidecar.
 - `cd src-tauri && cargo test --lib` — suite di test del backend.
 - I test marcati `#[ignore]` toccano la rete o installano loader veri: `cargo test --lib -- --ignored`.
 

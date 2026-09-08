@@ -14,7 +14,8 @@
     "site:build": "tailwindcss -i ./site/src/site.css -o ./site/tailwind.css --minify",
     "site:watch": "tailwindcss -i ./site/src/site.css -o ./site/tailwind.css --watch",
     "site:og": "node scripts/render-og.mjs",
-    "release:build": "node scripts/release-build.mjs"
+    "release:build": "node scripts/release-build.mjs",
+    "playit:build": "node scripts/build-playit.mjs"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4",

@@ -89,6 +89,12 @@ pub struct LaunchConfig {
     /// Apertura porta sul router via UPnP all'avvio (default: sì)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub upnp: Option<bool>,
+    /// Tunnel playit.gg all'avvio (default: no)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tunnel: Option<bool>,
+    /// Id del tunnel creato su playit per questo server (riusato per tenere lo stesso indirizzo)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tunnel_id: Option<String>,
 }
 
 /// Da dove è stato installato il server (CurseForge / Modrinth / FTB): serve per gli aggiornamenti.

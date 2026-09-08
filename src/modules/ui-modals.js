@@ -422,6 +422,7 @@ async function renderSettings(state, refreshJava = false) {
   }
   await refreshHostStatus();
   renderRemoteHosts(state);
+  window.__minegerRenderTunnelSettings?.();
 
   try {
     const runtimes = await invoke('get_java_runtimes', { refresh: refreshJava });

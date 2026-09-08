@@ -40,6 +40,9 @@ PIANO.md
 *.key.pub
 *.key.password
 
+# Agent playit.gg compilato dal sorgente (`npm run playit:build`)
+src-tauri/binaries/
+
 # Sito (GitHub Pages): CSS compilato e release.json generati in CI
 site/tailwind.css
 site/release.json

@@ -126,8 +126,8 @@ pub async fn get_server_disk_usage(app: AppHandle, id: String) -> Result<serde_j
 }
 
 #[tauri::command]
-pub async fn update_launch_config(app: AppHandle, id: String, max_ram_mb: Option<u32>, upnp: Option<bool>) -> Result<String, String> {
-    service::update_launch_config(&app, &id, max_ram_mb, upnp)
+pub async fn update_launch_config(app: AppHandle, id: String, max_ram_mb: Option<u32>, upnp: Option<bool>, tunnel: Option<bool>) -> Result<String, String> {
+    service::update_launch_config(&app, &id, max_ram_mb, upnp, tunnel)
 }
 
 #[tauri::command]
@@ -400,6 +400,23 @@ pub async fn install_app_update(app: AppHandle) -> Result<(), String> {
 #[tauri::command]
 pub fn get_whats_new(app: AppHandle) -> Option<crate::appupdate::WhatsNew> {
     crate::appupdate::whats_new(&app)
+}
+
+/// Collega l'account playit.gg: ritorna l'URL da aprire nel browser; l'esito arriva con `playit-claim`.
+#[tauri::command]
+pub fn playit_claim_start(app: AppHandle) -> Result<String, String> {
+    crate::tunnel::claim_start(&app)
+}
+
+#[tauri::command]
+pub fn playit_unlink(app: AppHandle) -> Result<(), String> {
+    crate::tunnel::unlink(&app)
+}
+
+/// Stato del tunnel playit di un server (account collegato, indirizzo pubblico, errori).
+#[tauri::command]
+pub fn get_tunnel_status(app: AppHandle, id: String) -> crate::tunnel::TunnelStatus {
+    service::tunnel_status(&app, &id)
 }
 
 // ---------------------------------------------------------------------------

@@ -91,6 +91,8 @@ Servers live in `servers/<name>` next to the app (in development, inside the pro
 
 ## Playing with friends
 
+**No port forwarding possible?** Open the server's Details tab, link your playit.gg account (free, approval in the browser) and turn the tunnel on in Properties: at the next start the server gets a public address to give to friends, the same every time. Only the Minecraft port goes through playit; the account and its terms are theirs, Mineger just runs their agent with your key.
+
 Three options, simplest first:
 
 1. **Same local network** — friends connect to the local IP shown on the Details screen.
@@ -109,6 +111,7 @@ npm run tauri dev
 - `npm run css:build` / `css:watch` — compile Tailwind (`src/app.css` → `src/tailwind.css`).
 - `npm run tauri build` — produce the installers under `src-tauri/target/release/bundle/`.
 - `npm run release:build` — same, but signed for the in-app updater, plus `latest.json` (see *Releasing*).
+- `npm run playit:build` — builds the playit.gg agent (`playitd`, BSD-2-Clause) from the official source into `src-tauri/binaries/`; required once before `tauri dev` or `tauri build`, since it ships as a sidecar.
 - `cd src-tauri && cargo test --lib` — backend test suite.
 - Tests marked `#[ignore]` hit the network or install real loaders: `cargo test --lib -- --ignored`.
 
