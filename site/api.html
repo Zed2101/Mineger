@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mineger Host API | REST, WebSocket and webhooks for your Minecraft servers</title>
+  <meta name="description" content="Reference for the Mineger host API: every REST endpoint, the WebSocket event stream and the per-server webhooks, with a small example and a use case for each. Start, stop and command Minecraft servers, install mods and modpacks, read the world map, from bots and scripts.">
+  <meta name="google-site-verification" content="ipMnhRdP8DGzb9EF7KdJMNUyE6qThfNxW7aOE_FZdts">
+  <meta name="theme-color" content="#0b0e12">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Mineger Host API | REST, WebSocket and webhooks for your Minecraft servers">
+  <meta property="og:description" content="Every endpoint of the Mineger host API with an example and a use case: servers, console, mods, modpacks, backups, world map, players and webhooks.">
+  <meta property="og:image" content="https://zed2101.github.io/Mineger/assets/og.png">
+  <meta property="og:image:width" content="2400">
+  <meta property="og:image:height" content="1260">
+  <meta property="og:image:alt" content="Mineger: Minecraft servers, without the command line">
+  <meta property="og:site_name" content="Mineger">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="https://zed2101.github.io/Mineger/api.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://zed2101.github.io/Mineger/assets/og.png">
+  <link rel="canonical" href="https://zed2101.github.io/Mineger/api.html">
+  <link rel="icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="assets/icon-512.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="tailwind.css">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Mineger Host API reference","description":"Every REST endpoint, the WebSocket event stream and the webhooks of the Mineger host, with an example and a use case for each.","url":"https://zed2101.github.io/Mineger/api.html","inLanguage":["en","it"],"author":{"@type":"Person","name":"Daniel Crantoc","url":"https://github.com/Zed2101"},"about":{"@type":"SoftwareApplication","name":"Mineger","url":"https://zed2101.github.io/Mineger/"}}</script>
+</head>
+<body class="bg-ink text-fg" data-title-key="meta.title_api">
+
+<header class="sticky top-0 z-40 border-b border-line/60 bg-ink/80 backdrop-blur-md">
+  <nav class="relative mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3">
+    <a href="./" class="flex items-center gap-3">
+      <img src="assets/logo.svg" alt="" width="36" height="36" class="size-9 rounded-lg">
+      <span class="text-lg font-extrabold tracking-tight">Mineger</span>
+    </a>
+    <div id="nav-menu" class="hidden items-center gap-1 text-sm font-semibold text-fg-muted md:flex max-md:absolute max-md:inset-x-0 max-md:top-full max-md:flex-col max-md:items-stretch max-md:border-b max-md:border-line max-md:bg-ink max-md:p-4">
+      <a href="./#features" class="rounded-lg px-3 py-2 transition hover:bg-panel-2 hover:text-fg" data-i18n="nav.features">Features</a>
+      <a href="./#screens" class="rounded-lg px-3 py-2 transition hover:bg-panel-2 hover:text-fg" data-i18n="nav.screens">Screenshots</a>
+      <a href="api.html" class="rounded-lg px-3 py-2 text-fg transition hover:bg-panel-2" data-i18n="nav.docs" aria-current="page">API</a>
+      <a href="https://github.com/Zed2101/Mineger" class="rounded-lg px-3 py-2 transition hover:bg-panel-2 hover:text-fg" data-i18n="nav.github">GitHub</a>
+      <a href="download.html" class="btn-primary ml-2 px-4! py-2! max-md:mt-2 max-md:ml-0" data-i18n="nav.download">Download</a>
+      <button id="lang-toggle" type="button" class="btn-ghost ml-1 px-3! py-2! font-mono text-xs max-md:mt-2 max-md:ml-0" data-i18n="nav.lang" data-i18n-title="nav.lang_title">IT</button>
+    </div>
+    <button id="nav-toggle" type="button" class="rounded-lg border border-line p-2 text-fg-muted md:hidden" aria-label="Menu" aria-expanded="false" aria-controls="nav-menu">
+      <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </nav>
+</header>
+
+<main>
+<!-- ============================================================ hero -->
+<section class="relative overflow-hidden border-b border-line/60">
+  <div class="hero-grid absolute inset-0 [mask-image:radial-gradient(ellipse_at_top_left,black_10%,transparent_65%)]"></div>
+  <div class="absolute -top-56 left-1/4 h-[480px] w-[760px] -translate-x-1/2 rounded-full bg-accent/10 blur-3xl motion-safe:animate-glow"></div>
+
+  <div class="relative mx-auto grid max-w-6xl items-center gap-10 px-5 pb-14 pt-14 lg:grid-cols-[1.1fr_.9fr] lg:pb-20 lg:pt-20">
+    <div class="min-w-0">
+      <p class="micro reveal" data-i18n="api.kicker">Host API · REST, WebSocket, webhooks</p>
+      <h1 class="reveal mt-4 text-4xl font-black leading-[1.05] tracking-tight [transition-delay:80ms] md:text-5xl" data-i18n="api.title" data-i18n-html>Everything the app does, <span class="text-glow">from a script</span>.</h1>
+      <p class="reveal mt-5 max-w-xl text-lg text-fg-muted [transition-delay:160ms]" data-i18n="api.sub">Turn on the host in Settings and your Mineger becomes an HTTP server: start and stop servers, send commands, install mods, take backups, read the world map. Bots, dashboards, cron jobs, a Stream Deck.</p>
+      <div class="reveal mt-7 flex flex-wrap gap-x-8 gap-y-3 font-mono text-xs text-fg-muted [transition-delay:240ms]">
+        <div class="flex items-center gap-2"><span class="size-2 rounded-full bg-accent shadow-[0_0_12px_rgba(45,212,191,.8)]"></span><span><span class="font-semibold text-fg" data-api-stat="endpoints">44</span> <span data-i18n="api.stat_endpoints">endpoints</span></span></div>
+        <div class="flex items-center gap-2"><span class="size-2 rounded-full bg-accent shadow-[0_0_12px_rgba(45,212,191,.8)]"></span><span><span class="font-semibold text-fg" data-api-stat="groups">7</span> <span data-i18n="api.stat_groups">areas</span></span></div>
+        <div class="flex items-center gap-2"><span class="size-2 rounded-full bg-accent shadow-[0_0_12px_rgba(45,212,191,.8)]"></span><span data-i18n="api.stat_json">JSON in, JSON out</span></div>
+        <div class="flex items-center gap-2"><span class="size-2 rounded-full bg-accent shadow-[0_0_12px_rgba(45,212,191,.8)]"></span><span data-i18n="api.stat_port">Port 25580 · no account</span></div>
+      </div>
+    </div>
+
+    <!-- quick start -->
+    <div class="reveal panel min-w-0 p-5 [transition-delay:200ms]">
+      <p class="micro" data-i18n="api.quick_title">Quick start</p>
+      <ol class="mt-3 space-y-2 text-sm text-fg-muted">
+        <li class="flex gap-3"><span class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md bg-accent/15 font-mono text-[11px] font-semibold text-accent">1</span><span data-i18n="api.quick_1" data-i18n-html>In Mineger open <strong class="text-fg">Settings → Remote control</strong> and turn the host on.</span></li>
+        <li class="flex gap-3"><span class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md bg-accent/15 font-mono text-[11px] font-semibold text-accent">2</span><span data-i18n="api.quick_2" data-i18n-html>Copy the token from the invite link (<code class="rounded bg-ink-2 px-1.5 py-0.5 font-mono text-[0.85em] text-accent">mineger://…</code>).</span></li>
+        <li class="flex gap-3"><span class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md bg-accent/15 font-mono text-[11px] font-semibold text-accent">3</span><span data-i18n="api.quick_3">Call any endpoint with the token in the Authorization header:</span></li>
+      </ol>
+      <pre class="mt-3 overflow-x-auto rounded-xl border border-line bg-ink p-3 font-mono text-[12px] leading-5 text-fg-soft"><code><span class="text-accent">curl</span> <span class="text-fg-faint">-H</span> "Authorization: Bearer <span class="text-warning">$TOKEN</span>" \
+  <span class="text-warning">http://HOST:25580</span>/api/info</code></pre>
+      <div class="mt-4 grid gap-3 sm:grid-cols-2">
+        <label class="block">
+          <span class="micro text-fg-faint!" data-i18n="api.host_label">Your host</span>
+          <input id="api-host" type="text" placeholder="192.168.1.10" autocomplete="off" spellcheck="false" class="mt-1 w-full rounded-lg border border-line bg-ink px-3 py-2 font-mono text-xs text-fg outline-none transition placeholder:text-fg-faint focus:border-accent/60">
+        </label>
+        <label class="block">
+          <span class="micro text-fg-faint!" data-i18n="api.token_label">Token</span>
+          <input id="api-token" type="password" placeholder="••••••••" autocomplete="off" spellcheck="false" class="mt-1 w-full rounded-lg border border-line bg-ink px-3 py-2 font-mono text-xs text-fg outline-none transition placeholder:text-fg-faint focus:border-accent/60">
+        </label>
+      </div>
+      <p class="mt-2 font-mono text-[11px] text-fg-faint" data-i18n="api.token_note">Optional: fills the examples below. Stays in this tab, never sent anywhere.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ reference -->
+<section class="mx-auto max-w-6xl px-5 py-12 lg:grid lg:grid-cols-[230px_1fr] lg:gap-12">
+  <aside class="mb-10 lg:mb-0">
+    <div class="lg:sticky lg:top-20">
+      <label class="relative block">
+        <svg class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="api-filter" type="search" data-i18n-placeholder="api.filter" placeholder="Filter endpoints…" autocomplete="off" class="w-full rounded-xl border border-line bg-panel/70 py-2 pl-9 pr-3 text-sm text-fg outline-none transition placeholder:text-fg-faint focus:border-accent/60">
+      </label>
+      <p id="api-count" class="mt-2 font-mono text-[11px] text-fg-faint"></p>
+      <p class="micro mt-6" data-i18n="api.contents">Contents</p>
+      <nav id="api-toc" class="mt-3 flex flex-wrap gap-1 lg:flex-col"></nav>
+      <div class="mt-8 hidden space-y-2 text-sm text-fg-muted lg:block">
+        <a href="https://github.com/Zed2101/Mineger/blob/main/docs/API-HOST.md" class="flex items-center gap-2 transition hover:text-fg">
+          <svg class="size-4 text-fg-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
+          <span data-i18n="api.more_docs">Markdown version on GitHub</span>
+        </a>
+        <a href="https://github.com/Zed2101/Mineger/blob/main/src-tauri/src/host.rs" class="flex items-center gap-2 transition hover:text-fg">
+          <svg class="size-4 text-fg-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 8-4 4 4 4M16 8l4 4-4 4M14 4l-4 16"/></svg>
+          <span data-i18n="api.more_source">Source: host.rs</span>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <div class="min-w-0">
+    <div id="api-main"></div>
+    <p id="api-empty" class="hidden rounded-2xl border border-dashed border-line p-8 text-center text-sm text-fg-muted" data-i18n="api.no_results">Nothing matches. Try a path fragment like "map" or a word like "backup".</p>
+    <noscript><p class="text-sm text-fg-muted">This page needs JavaScript. The same reference is on GitHub: <a class="text-accent" href="https://github.com/Zed2101/Mineger/blob/main/docs/API-HOST.md">docs/API-HOST.md</a>.</p></noscript>
+  </div>
+</section>
+
+<!-- ============================================================ cta -->
+<section class="border-t border-line/60 bg-ink-2/50">
+  <div class="mx-auto max-w-6xl px-5 py-14 md:flex md:items-center md:justify-between md:gap-10">
+    <div>
+      <h2 class="reveal text-2xl font-extrabold tracking-tight" data-i18n="api.cta_title">Built something with it?</h2>
+      <p class="reveal mt-2 max-w-xl text-sm text-fg-muted [transition-delay:80ms]" data-i18n="api.cta_text">A Discord bot, a dashboard, a Home Assistant integration: open an issue or a discussion and it will end up linked here. Missing an endpoint? Ask for it.</p>
+    </div>
+    <div class="reveal mt-6 flex flex-wrap gap-3 [transition-delay:160ms] md:mt-0">
+      <a href="https://github.com/Zed2101/Mineger/issues" class="btn-ghost" data-i18n="api.cta_issue">Open an issue</a>
+      <a href="download.html" class="btn-primary" data-i18n="api.cta_download">Download Mineger</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="border-t border-line/60 bg-ink-2/60">
+  <div class="mx-auto grid max-w-6xl gap-10 px-5 py-14 md:grid-cols-[1.4fr_1fr_1fr]">
+    <div>
+      <div class="flex items-center gap-3">
+        <img src="assets/logo.svg" alt="" width="32" height="32" class="size-8 rounded-lg">
+        <span class="text-lg font-extrabold tracking-tight">Mineger</span>
+      </div>
+      <p class="mt-3 max-w-sm text-sm text-fg-muted" data-i18n="footer.tagline">Minecraft server manager for Windows.</p>
+      <p class="mt-6 font-mono text-[11px] text-fg-faint" data-i18n="footer.made">Made by Daniel Crantoc. Not affiliated with Mojang or Microsoft.</p>
+    </div>
+    <div>
+      <p class="micro" data-i18n="footer.product">Product</p>
+      <ul class="mt-4 space-y-2 text-sm text-fg-muted">
+        <li><a href="./" class="transition hover:text-fg" data-i18n="nav.features">Features</a></li>
+        <li><a href="download.html" class="transition hover:text-fg" data-i18n="nav.download">Download</a></li>
+        <li><a href="https://github.com/Zed2101/Mineger/releases" class="transition hover:text-fg" data-i18n="footer.releases">All releases</a></li>
+        <li><a href="https://github.com/Zed2101/Mineger/blob/main/CHANGELOG.md" class="transition hover:text-fg" data-i18n="footer.changelog">Changelog</a></li>
+        <li><a href="https://github.com/Zed2101/Mineger/issues" class="transition hover:text-fg" data-i18n="footer.issues">Report a bug</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="micro" data-i18n="footer.docs">Documentation</p>
+      <ul class="mt-4 space-y-2 text-sm text-fg-muted">
+        <li><a href="https://github.com/Zed2101/Mineger#readme" class="transition hover:text-fg">README</a></li>
+        <li><a href="https://github.com/Zed2101/Mineger/blob/main/docs/ARCHITECTURE.md" class="transition hover:text-fg" data-i18n="footer.arch">Architecture</a></li>
+        <li><a href="api.html" class="transition hover:text-fg" data-i18n="footer.api">Host API &amp; webhooks</a></li>
+        <li><a href="https://github.com/Zed2101/Mineger" class="transition hover:text-fg" data-i18n="footer.source">Source code</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+<script src="api.js"></script>
+</body>
+</html>

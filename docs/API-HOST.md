@@ -2,6 +2,8 @@
 
 *[Leggi questo file in italiano](API-HOST.it.md)*
 
+> Prefer a browsable version? Every endpoint, with an example and a use case, is on the website: **[zed2101.github.io/Mineger/api.html](https://zed2101.github.io/Mineger/api.html)**.
+
 A Mineger installation can act as a **host**: it exposes its servers on the network, so other copies of the app (or any HTTP client) can manage them remotely. Enable it under **Settings → Remote control**.
 
 The host serves two different things:

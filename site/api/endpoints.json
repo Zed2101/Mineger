@@ -1,0 +1,944 @@
+{
+  "base": "http://HOST:25580",
+  "groups": [
+    {
+      "id": "basics",
+      "title": {
+        "en": "Basics",
+        "it": "Le basi"
+      },
+      "intro": {
+        "en": "<p>An installation of Mineger can act as a <strong>host</strong>: it exposes its servers over HTTP on port <code>25580</code> (Settings → Remote control). Everything under <code>/api</code> needs the host token in an <code>Authorization: Bearer</code> header; <code>/hook/&lt;id&gt;</code> endpoints are webhooks with their own per-hook tokens and permissions.</p><p>The invite link the app generates (<code>mineger://…</code>) carries address, port and token: paste it into another copy of Mineger and it configures itself, or take the token out of it for your own scripts. The token gives <strong>full control</strong> over the host's servers: share it only with people you would give the keyboard to.</p><p>Errors come back as JSON <code>{ \"error\": \"…\" }</code> with <code>400</code> (bad request or operation failed), <code>401</code> (wrong token), <code>403</code> (remote control disabled), <code>413</code> (body too large) or <code>429</code> (too many failed logins from your address: 20 per minute). Body limits: 1 MB on <code>/api</code>, 16 MB for the server icon, 1 GB for mod uploads, 64 KB on webhooks. The connection is plain HTTP: use it on a LAN or a VPN, or put a reverse proxy with TLS in front of it.</p>",
+        "it": "<p>Un'installazione di Mineger può fare da <strong>host</strong>: espone i suoi server via HTTP sulla porta <code>25580</code> (Impostazioni → Controllo remoto). Tutto ciò che sta sotto <code>/api</code> richiede il token dell'host nell'header <code>Authorization: Bearer</code>; gli endpoint <code>/hook/&lt;id&gt;</code> sono webhook con token e permessi propri.</p><p>Il link d'invito che l'app genera (<code>mineger://…</code>) contiene indirizzo, porta e token: incollato in un'altra copia di Mineger la configura da sola, oppure ne estrai il token per i tuoi script. Il token dà il <strong>controllo completo</strong> dei server dell'host: condividilo solo con chi lasceresti la tastiera.</p><p>Gli errori tornano come JSON <code>{ \"error\": \"…\" }</code> con <code>400</code> (richiesta non valida o operazione fallita), <code>401</code> (token sbagliato), <code>403</code> (controllo remoto disattivato), <code>413</code> (body troppo grande) o <code>429</code> (troppi login falliti dal tuo indirizzo: 20 al minuto). Limiti del body: 1 MB su <code>/api</code>, 16 MB per l'icona del server, 1 GB per l'upload delle mod, 64 KB sui webhook. La connessione è HTTP in chiaro: usala in LAN o in VPN, oppure metti davanti un reverse proxy con TLS.</p>"
+      },
+      "endpoints": []
+    },
+    {
+      "id": "host",
+      "title": {
+        "en": "Host and servers",
+        "it": "Host e server"
+      },
+      "intro": {
+        "en": "<p>Who the host is and what it manages. Server ids are the folder names under <code>servers/</code>; URL-encode them.</p>",
+        "it": "<p>Chi è l'host e cosa gestisce. Gli id dei server sono i nomi delle cartelle sotto <code>servers/</code>: vanno codificati nell'URL.</p>"
+      },
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/api/info",
+          "auth": "token",
+          "title": {
+            "en": "Host information",
+            "it": "Informazioni sull'host"
+          },
+          "desc": {
+            "en": "Name of the host, Mineger version and how many servers it manages. The cheapest call there is, so it doubles as a health check.",
+            "it": "Nome dell'host, versione di Mineger e quanti server gestisce. È la chiamata più leggera che c'è, quindi vale anche come health check."
+          },
+          "use": {
+            "en": "Point an uptime monitor at it and get a notification when the gaming PC goes to sleep.",
+            "it": "Puntaci un monitor di uptime e ricevi una notifica quando il PC da gioco va in sospensione."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" $HOST/api/info",
+          "response": "{ \"app\": \"mineger\", \"name\": \"PC di Luca\", \"version\": \"1.1.0\", \"servers\": 5 }"
+        },
+        {
+          "method": "GET",
+          "path": "/api/servers",
+          "auth": "token",
+          "title": {
+            "en": "List the servers",
+            "it": "Elenco dei server"
+          },
+          "desc": {
+            "en": "Every server with status, version, kind, installed mods, <code>server.properties</code>, launch settings and modpack origin. It is the same data the app shows in the sidebar and the Details tab.",
+            "it": "Ogni server con stato, versione, tipo, mod installate, <code>server.properties</code>, impostazioni di avvio e origine del modpack. Sono gli stessi dati che l'app mostra nella sidebar e in Dettagli."
+          },
+          "use": {
+            "en": "A dashboard on the TV in the gaming room, or a Home Assistant sensor that turns a lamp green when the server is online.",
+            "it": "Un pannello sulla TV della sala giochi, o un sensore Home Assistant che accende una lampada verde quando il server è online."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" $HOST/api/servers",
+          "response": "[ { \"id\": \"Vanilla coi bro\", \"name\": \"Vanilla coi bro\", \"version\": \"1.21.9\", \"kind\": \"vanilla\", \"status\": \"online\", \"started_at\": 1789000000000, \"mods_count\": 0, \"properties\": { \"max-players\": \"20\", \"online-mode\": \"true\" }, \"launch\": { \"max_ram_mb\": 2048, \"upnp\": true }, \"java_info\": \"Java 21 (21.0.8)\", \"source\": null } ]"
+        },
+        {
+          "method": "POST",
+          "path": "/api/servers/create",
+          "auth": "token",
+          "title": {
+            "en": "Create a server",
+            "it": "Crea un server"
+          },
+          "desc": {
+            "en": "Downloads and installs a new server: <code>kind</code> is <code>vanilla</code>, <code>paper</code>, <code>forge</code>, <code>neoforge</code> or <code>fabric</code>; <code>loader_version</code> is needed for modded kinds (see the loaders endpoints). Progress arrives on the WebSocket as <code>create-progress</code>.",
+            "it": "Scarica e installa un server nuovo: <code>kind</code> è <code>vanilla</code>, <code>paper</code>, <code>forge</code>, <code>neoforge</code> o <code>fabric</code>; <code>loader_version</code> serve per i tipi moddati (vedi gli endpoint dei loader). L'avanzamento arriva sul WebSocket come <code>create-progress</code>."
+          },
+          "use": {
+            "en": "A Discord slash command that spins up a fresh vanilla world for a one-night event.",
+            "it": "Un comando slash di Discord che tira su un mondo vanilla nuovo per una serata evento."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\\n  -d '{\"name\":\"Friday night\",\"kind\":\"paper\",\"mc_version\":\"1.21.9\"}' $HOST/api/servers/create",
+          "response": "{ \"id\": \"Friday night\" }"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/servers/{id}",
+          "auth": "token",
+          "title": {
+            "en": "Delete a server",
+            "it": "Elimina un server"
+          },
+          "desc": {
+            "en": "Removes the folder for good. Refused while the server is running; there is no undo, so make a backup first.",
+            "it": "Cancella la cartella per sempre. Rifiutato se il server è acceso; non si torna indietro, quindi prima fai un backup."
+          },
+          "use": {
+            "en": "The cleanup step of the event script above, the morning after.",
+            "it": "Il passo di pulizia dello script dell'evento, la mattina dopo."
+          },
+          "request": "curl -X DELETE -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Friday%20night\"",
+          "response": "{ \"ok\": true }"
+        },
+        {
+          "method": "PUT",
+          "path": "/api/servers/{id}/info",
+          "auth": "token",
+          "title": {
+            "en": "Rename, change the icon",
+            "it": "Rinomina, cambia l'icona"
+          },
+          "desc": {
+            "en": "Name shown in the app and, optionally, the icon id from the app's icon set.",
+            "it": "Nome mostrato nell'app e, opzionalmente, l'id dell'icona dal set dell'app."
+          },
+          "use": {
+            "en": "Rename the server at every season change from the same script that swaps the modpack.",
+            "it": "Rinomina il server a ogni cambio di stagione dallo stesso script che cambia il modpack."
+          },
+          "request": "curl -X PUT -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\\n  -d '{\"name\":\"Season 3\"}' \"$HOST/api/servers/Vanilla%20coi%20bro/info\"",
+          "response": "{ \"ok\": true }"
+        },
+        {
+          "method": "PUT",
+          "path": "/api/servers/{id}/launch",
+          "auth": "token",
+          "title": {
+            "en": "RAM and UPnP",
+            "it": "RAM e UPnP"
+          },
+          "desc": {
+            "en": "Maximum heap in MB and whether to open the port on the router at start-up. Takes effect at the next start. Returns the new launch description.",
+            "it": "Heap massimo in MB e se aprire la porta sul router all'avvio. Vale dal prossimo avvio. Ritorna la nuova descrizione di avvio."
+          },
+          "use": {
+            "en": "Give the modpack 8 GB before the big update and go back to 4 GB afterwards, from a script.",
+            "it": "Dai 8 GB al modpack prima del grande aggiornamento e torna a 4 GB dopo, da script."
+          },
+          "request": "curl -X PUT -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\\n  -d '{\"max_ram_mb\":8192,\"upnp\":true}' \"$HOST/api/servers/Cave%20Horror/launch\"",
+          "response": "\"java -jar server.jar · 8192 MB\""
+        },
+        {
+          "method": "PUT",
+          "path": "/api/servers/{id}/properties",
+          "auth": "token",
+          "title": {
+            "en": "Edit server.properties",
+            "it": "Modifica server.properties"
+          },
+          "desc": {
+            "en": "Writes only the keys you pass; the rest of the file stays. Returns the whole file re-read from disk. Changes apply at the next restart.",
+            "it": "Scrive solo le chiavi che passi; il resto del file resta. Ritorna il file intero riletto da disco. Le modifiche valgono dal prossimo riavvio."
+          },
+          "use": {
+            "en": "\"PvP Friday\": a cron job that turns <code>pvp=true</code> on Friday evening and off on Sunday.",
+            "it": "\"PvP del venerdì\": un cron che mette <code>pvp=true</code> il venerdì sera e lo toglie la domenica."
+          },
+          "request": "curl -X PUT -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\\n  -d '{\"properties\":{\"pvp\":\"true\",\"motd\":\"PvP weekend!\"}}' \\\n  \"$HOST/api/servers/Vanilla%20coi%20bro/properties\"",
+          "response": "{ \"pvp\": \"true\", \"motd\": \"PvP weekend!\", \"max-players\": \"20\", \"server-port\": \"25565\", \"…\": \"…\" }"
+        },
+        {
+          "method": "GET PUT DELETE",
+          "path": "/api/servers/{id}/server-icon",
+          "auth": "token",
+          "title": {
+            "en": "Server icon (multiplayer list)",
+            "it": "Icona del server (lista multiplayer)"
+          },
+          "desc": {
+            "en": "The <code>server-icon.png</code> players see in their server list. <code>GET</code> returns it as a data URL, <code>PUT</code> takes any image as base64 and resizes it to 64×64, <code>DELETE</code> removes it.",
+            "it": "Il <code>server-icon.png</code> che i giocatori vedono nella lista dei server. <code>GET</code> lo ritorna come data URL, <code>PUT</code> accetta qualsiasi immagine in base64 e la ridimensiona a 64×64, <code>DELETE</code> la toglie."
+          },
+          "use": {
+            "en": "Swap in a pumpkin for Halloween on October 31st, automatically.",
+            "it": "Metti una zucca il 31 ottobre, in automatico."
+          },
+          "request": "curl -X PUT -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\\n  -d \"{\\\"data_base64\\\":\\\"$(base64 -w0 pumpkin.png)\\\"}\" \\\n  \"$HOST/api/servers/Vanilla%20coi%20bro/server-icon\"",
+          "response": "{ \"data_url\": \"data:image/png;base64,…\", \"size\": 9720, \"width\": 64, \"height\": 64 }"
+        },
+        {
+          "method": "GET",
+          "path": "/api/servers/{id}/disk-usage",
+          "auth": "token",
+          "title": {
+            "en": "Disk usage",
+            "it": "Spazio su disco"
+          },
+          "desc": {
+            "en": "Bytes and number of files of the server folder, world and backups included.",
+            "it": "Byte e numero di file della cartella del server, mondo e backup compresi."
+          },
+          "use": {
+            "en": "Alert on Discord when a world grows past 20 GB, before the disk fills up.",
+            "it": "Avviso su Discord quando un mondo supera i 20 GB, prima che il disco si riempia."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Cave%20Horror/disk-usage\"",
+          "response": "{ \"bytes\": 4831838208, \"files\": 12480 }"
+        },
+        {
+          "method": "POST",
+          "path": "/api/loaders/mc-versions",
+          "auth": "token",
+          "title": {
+            "en": "Minecraft versions for a kind",
+            "it": "Versioni di Minecraft per un tipo"
+          },
+          "desc": {
+            "en": "The Minecraft versions available for <code>vanilla</code>, <code>paper</code>, <code>forge</code>, <code>neoforge</code> or <code>fabric</code>, straight from the official sources.",
+            "it": "Le versioni di Minecraft disponibili per <code>vanilla</code>, <code>paper</code>, <code>forge</code>, <code>neoforge</code> o <code>fabric</code>, dalle fonti ufficiali."
+          },
+          "use": {
+            "en": "The version dropdown of your own \"new server\" form.",
+            "it": "Il menu delle versioni nel tuo modulo \"nuovo server\"."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\\n  -d '{\"kind\":\"fabric\"}' $HOST/api/loaders/mc-versions",
+          "response": "[ \"1.21.9\", \"1.21.8\", \"1.21.7\", \"…\" ]"
+        },
+        {
+          "method": "POST",
+          "path": "/api/loaders/versions",
+          "auth": "token",
+          "title": {
+            "en": "Loader builds",
+            "it": "Build del loader"
+          },
+          "desc": {
+            "en": "The loader builds for a kind and Minecraft version, with the recommended one flagged.",
+            "it": "Le build del loader per un tipo e una versione di Minecraft, con quella consigliata segnalata."
+          },
+          "use": {
+            "en": "Pick <code>recommended: true</code> and pass it to <code>/api/servers/create</code> without asking the user.",
+            "it": "Prendi quella con <code>recommended: true</code> e passala a <code>/api/servers/create</code> senza chiedere all'utente."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\\n  -d '{\"kind\":\"neoforge\",\"mc_version\":\"1.21.1\"}' $HOST/api/loaders/versions",
+          "response": "[ { \"version\": \"21.1.209\", \"tag\": \"latest\", \"recommended\": true, \"date\": \"2026-06-12\" }, \"…\" ]"
+        }
+      ]
+    },
+    {
+      "id": "lifecycle",
+      "title": {
+        "en": "Lifecycle and console",
+        "it": "Ciclo di vita e console"
+      },
+      "intro": {
+        "en": "<p>Start, stop, talk to the server and watch it live.</p>",
+        "it": "<p>Avvia, ferma, parla col server e guardalo dal vivo.</p>"
+      },
+      "endpoints": [
+        {
+          "method": "POST",
+          "path": "/api/servers/{id}/start",
+          "auth": "token",
+          "title": {
+            "en": "Start",
+            "it": "Avvia"
+          },
+          "desc": {
+            "en": "Launches the server with the right Java and, if enabled, opens the port via UPnP. Returns immediately; the state goes <code>starting → online</code> on the WebSocket. Fails with a clear message if the EULA has not been accepted.",
+            "it": "Lancia il server con la Java giusta e, se attivo, apre la porta via UPnP. Ritorna subito; lo stato passa <code>starting → online</code> sul WebSocket. Fallisce con un messaggio chiaro se la EULA non è stata accettata."
+          },
+          "use": {
+            "en": "A Stream Deck button, or a bot that wakes the server when a friend types <code>!up</code>.",
+            "it": "Un tasto dello Stream Deck, o un bot che sveglia il server quando un amico scrive <code>!up</code>."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Vanilla%20coi%20bro/start\"",
+          "response": "\"Server avviato\""
+        },
+        {
+          "method": "POST",
+          "path": "/api/servers/{id}/stop",
+          "auth": "token",
+          "title": {
+            "en": "Stop",
+            "it": "Ferma"
+          },
+          "desc": {
+            "en": "Sends <code>stop</code>: the world is saved and the process exits on its own.",
+            "it": "Manda <code>stop</code>: il mondo viene salvato e il processo esce da solo."
+          },
+          "use": {
+            "en": "Shut everything down at 3 a.m. from Task Scheduler so the PC can sleep.",
+            "it": "Spegni tutto alle 3 di notte dall'Utilità di pianificazione così il PC può andare in sospensione."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Vanilla%20coi%20bro/stop\"",
+          "response": "\"Comando stop inviato\""
+        },
+        {
+          "method": "POST",
+          "path": "/api/servers/{id}/kill",
+          "auth": "token",
+          "title": {
+            "en": "Force stop",
+            "it": "Forza l'arresto"
+          },
+          "desc": {
+            "en": "Terminates the Java process without waiting for the save. Only for a frozen server: whatever was not saved is lost.",
+            "it": "Termina il processo Java senza aspettare il salvataggio. Solo per un server bloccato: quello che non era salvato si perde."
+          },
+          "use": {
+            "en": "The last resort of a watchdog that sees no <code>server-output</code> for ten minutes.",
+            "it": "L'ultima spiaggia di un watchdog che non vede <code>server-output</code> da dieci minuti."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Vanilla%20coi%20bro/kill\"",
+          "response": "\"Processo terminato\""
+        },
+        {
+          "method": "POST",
+          "path": "/api/servers/{id}/command",
+          "auth": "token",
+          "title": {
+            "en": "Send a console command",
+            "it": "Manda un comando in console"
+          },
+          "desc": {
+            "en": "Any command the console accepts, without the leading slash. The answer shows up in the console stream, not in this response.",
+            "it": "Qualsiasi comando accettato dalla console, senza la barra iniziale. La risposta compare nel flusso della console, non in questa risposta."
+          },
+          "use": {
+            "en": "A Twitch channel-point reward that summons a creeper next to the streamer, or a Discord command that adds someone to the whitelist.",
+            "it": "Una ricompensa punti canale di Twitch che evoca un creeper accanto allo streamer, o un comando Discord che aggiunge qualcuno alla whitelist."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\\n  -d '{\"command\":\"whitelist add Steve\"}' \"$HOST/api/servers/Vanilla%20coi%20bro/command\"",
+          "response": "{ \"ok\": true }"
+        },
+        {
+          "method": "POST",
+          "path": "/api/servers/{id}/eula",
+          "auth": "token",
+          "title": {
+            "en": "Accept the EULA",
+            "it": "Accetta la EULA"
+          },
+          "desc": {
+            "en": "Writes <code>eula=true</code>. Do it only after the owner has actually read the <a href=\"https://aka.ms/MinecraftEULA\">Minecraft EULA</a>.",
+            "it": "Scrive <code>eula=true</code>. Fallo solo dopo che il proprietario ha davvero letto la <a href=\"https://aka.ms/MinecraftEULA\">EULA di Minecraft</a>."
+          },
+          "use": {
+            "en": "Unattended provisioning: create, accept, start, all from one script.",
+            "it": "Provisioning senza mani: crea, accetta, avvia, tutto da un solo script."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Friday%20night/eula\"",
+          "response": "{ \"ok\": true }"
+        },
+        {
+          "method": "GET",
+          "path": "/api/servers/{id}/logs",
+          "auth": "token",
+          "title": {
+            "en": "Recent console lines",
+            "it": "Ultime righe di console"
+          },
+          "desc": {
+            "en": "The last 500 lines the host has seen for this server, including Mineger's own notices. For a live feed use the WebSocket.",
+            "it": "Le ultime 500 righe che l'host ha visto per questo server, compresi gli avvisi di Mineger. Per il flusso dal vivo usa il WebSocket."
+          },
+          "use": {
+            "en": "Grab the last lines into the bug report when the server crashes.",
+            "it": "Allega le ultime righe alla segnalazione quando il server va in crash."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Vanilla%20coi%20bro/logs\"",
+          "response": "[ \"[12:00:07] [Server thread/INFO]: Done (6.213s)! For help, type \\\"help\\\"\", \"[12:00:31] [Server thread/INFO]: Steve joined the game\" ]"
+        },
+        {
+          "method": "GET",
+          "path": "/api/servers/{id}/metrics",
+          "auth": "token",
+          "title": {
+            "en": "CPU and RAM",
+            "it": "CPU e RAM"
+          },
+          "desc": {
+            "en": "CPU percentage and memory of the Java process, plus the number of cores. <code>null</code> when the server is off.",
+            "it": "Percentuale di CPU e memoria del processo Java, più il numero di core. <code>null</code> a server spento."
+          },
+          "use": {
+            "en": "A Prometheus exporter, or a Discord embed that updates every minute with live CPU/RAM.",
+            "it": "Un exporter Prometheus, o un embed Discord che si aggiorna ogni minuto con CPU e RAM dal vivo."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Vanilla%20coi%20bro/metrics\"",
+          "response": "{ \"cpu_percent\": 12.4, \"memory_bytes\": 1638400000, \"cores\": 16 }"
+        },
+        {
+          "method": "WS",
+          "path": "/api/ws?token=…",
+          "auth": "token",
+          "title": {
+            "en": "Live events",
+            "it": "Eventi in tempo reale"
+          },
+          "desc": {
+            "en": "A WebSocket that forwards every app event as <code>{ \"type\", \"payload\" }</code>: <code>server-status</code>, <code>server-output</code>, <code>create-progress</code>, <code>update-progress</code>, <code>mod-progress</code>, <code>backup-progress</code>, <code>pack-updates</code>, <code>webhook-call</code>, <code>map-progress</code>. This is the only route that accepts the token in the query string, because browsers cannot set headers on a WebSocket.",
+            "it": "Un WebSocket che inoltra ogni evento dell'app come <code>{ \"type\", \"payload\" }</code>: <code>server-status</code>, <code>server-output</code>, <code>create-progress</code>, <code>update-progress</code>, <code>mod-progress</code>, <code>backup-progress</code>, <code>pack-updates</code>, <code>webhook-call</code>, <code>map-progress</code>. È l'unica rotta che accetta il token nella query string, perché un browser non può impostare header su un WebSocket."
+          },
+          "use": {
+            "en": "A chat bridge: forward <code>joined the game</code> lines to Discord, and Discord messages back with <code>/command</code>.",
+            "it": "Un ponte con la chat: inoltra le righe <code>joined the game</code> su Discord, e i messaggi di Discord al server con <code>/command</code>."
+          },
+          "request": "websocat \"ws://HOST:25580/api/ws?token=$TOKEN\"",
+          "response": "{ \"type\": \"server-output\", \"payload\": { \"id\": \"Vanilla coi bro\", \"line\": \"[12:00:31] [Server thread/INFO]: Steve joined the game\" } }\n{ \"type\": \"server-status\", \"payload\": { \"id\": \"Vanilla coi bro\", \"status\": \"online\", \"started_at\": 1789000000000 } }"
+        }
+      ]
+    },
+    {
+      "id": "mods",
+      "title": {
+        "en": "Mods and plugins",
+        "it": "Mod e plugin"
+      },
+      "intro": {
+        "en": "<p>Search and install from Modrinth and CurseForge, always filtered by the server's loader; manage the files in <code>mods/</code> or <code>plugins/</code>. <code>provider</code> is <code>modrinth</code> or <code>curseforge</code>. CurseForge needs the personal API key set in the host's Settings.</p>",
+        "it": "<p>Cerca e installa da Modrinth e CurseForge, sempre filtrati per il loader del server; gestisci i file in <code>mods/</code> o <code>plugins/</code>. <code>provider</code> è <code>modrinth</code> o <code>curseforge</code>. CurseForge richiede la chiave API personale impostata nelle Impostazioni dell'host.</p>"
+      },
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/api/servers/{id}/content",
+          "auth": "token",
+          "title": {
+            "en": "Content context",
+            "it": "Contesto dei contenuti"
+          },
+          "desc": {
+            "en": "What this server accepts: kind, content folder, Minecraft version, loader, whether it supports mods at all and whether CurseForge is configured.",
+            "it": "Cosa accetta questo server: tipo, cartella dei contenuti, versione di Minecraft, loader, se supporta mod e se CurseForge è configurato."
+          },
+          "use": {
+            "en": "Show the CurseForge tab in your UI only when <code>curseforge_ready</code> is true.",
+            "it": "Mostra la scheda CurseForge nella tua UI solo quando <code>curseforge_ready</code> è vero."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Cave%20Horror/content\"",
+          "response": "{ \"kind\": \"forge\", \"content\": \"mods\", \"folder\": \"mods\", \"mc_version\": \"1.20.1\", \"loader\": \"forge\", \"supports_content\": true, \"curseforge_ready\": true }"
+        },
+        {
+          "method": "POST",
+          "path": "/api/servers/{id}/content/search",
+          "auth": "token",
+          "title": {
+            "en": "Search mods",
+            "it": "Cerca mod"
+          },
+          "desc": {
+            "en": "Searches the provider filtered by the server's loader and Minecraft version. When nothing exists for that exact version the answer has <code>relaxed_mc: true</code> and the builds are marked <code>compatible: false</code>.",
+            "it": "Cerca sul provider filtrando per loader e versione di Minecraft del server. Quando per quella versione non esiste nulla, la risposta ha <code>relaxed_mc: true</code> e le build sono marcate <code>compatible: false</code>."
+          },
+          "use": {
+            "en": "A bot command <code>!mod sodium</code> that answers with the top hits and an install button.",
+            "it": "Un comando bot <code>!mod sodium</code> che risponde con i primi risultati e un pulsante Installa."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\\n  -d '{\"provider\":\"modrinth\",\"query\":\"jei\",\"limit\":5}' \\\n  \"$HOST/api/servers/Cave%20Horror/content/search\"",
+          "response": "{ \"hits\": [ { \"provider\": \"modrinth\", \"project_id\": \"u6dRKJwZ\", \"slug\": \"jei\", \"name\": \"Just Enough Items (JEI)\", \"summary\": \"View items and recipes\", \"author\": \"mezz\", \"downloads\": 74100687, \"icon_url\": \"https://cdn.modrinth.com/…\", \"page_url\": \"https://modrinth.com/mod/jei\", \"distribution_allowed\": true } ], \"relaxed_mc\": false, \"mc_version\": \"1.20.1\", \"loader\": \"forge\" }"
+        },
+        {
+          "method": "POST",
+          "path": "/api/servers/{id}/content/versions",
+          "auth": "token",
+          "title": {
+            "en": "Versions of a project",
+            "it": "Versioni di un progetto"
+          },
+          "desc": {
+            "en": "The downloadable files of a project, newest first, each with its Minecraft versions and loaders.",
+            "it": "I file scaricabili di un progetto, dal più recente, ognuno con le sue versioni di Minecraft e i loader."
+          },
+          "use": {
+            "en": "Pin a specific build for a modpack that breaks on the latest one.",
+            "it": "Blocca una build precisa per un modpack che si rompe con l'ultima."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\\n  -d '{\"provider\":\"modrinth\",\"project_id\":\"u6dRKJwZ\"}' \\\n  \"$HOST/api/servers/Cave%20Horror/content/versions\"",
+          "response": "{ \"files\": [ { \"id\": \"Yp8wLtY3\", \"name\": \"jei-1.20.1-forge-15.20.0.106.jar\", \"version\": \"15.20.0.106\", \"date\": \"2026-05-02\", \"size\": 1456000, \"mc_versions\": [\"1.20.1\"], \"loaders\": [\"forge\"] } ], \"relaxed_mc\": false }"
+        },
+        {
+          "method": "POST",
+          "path": "/api/servers/{id}/content/install",
+          "auth": "token",
+          "title": {
+            "en": "Install a mod",
+            "it": "Installa una mod"
+          },
+          "desc": {
+            "en": "Downloads the file into the content folder and records where it came from, so updates work later. Returns the full mod list.",
+            "it": "Scarica il file nella cartella dei contenuti e registra da dove arriva, così dopo funzionano gli aggiornamenti. Ritorna la lista completa delle mod."
+          },
+          "use": {
+            "en": "\"Install this mod on all my servers\": loop over <code>/api/servers</code> and call this for each compatible one.",
+            "it": "\"Installa questa mod su tutti i miei server\": scorri <code>/api/servers</code> e chiamalo per ognuno compatibile."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\\n  -d '{\"provider\":\"modrinth\",\"project_id\":\"u6dRKJwZ\",\"file_id\":\"Yp8wLtY3\"}' \\\n  \"$HOST/api/servers/Cave%20Horror/content/install\"",
+          "response": "[ { \"name\": \"jei-1.20.1-forge-15.20.0.106.jar\", \"size\": 1456000, \"enabled\": true, \"source\": { \"provider\": \"modrinth\", \"project_name\": \"Just Enough Items (JEI)\", \"version\": \"15.20.0.106\" } }, \"…\" ]"
+        },
+        {
+          "method": "GET",
+          "path": "/api/servers/{id}/content/updates",
+          "auth": "token",
+          "title": {
+            "en": "Check mod updates",
+            "it": "Controlla gli aggiornamenti delle mod"
+          },
+          "desc": {
+            "en": "For every installed mod with a known source, whether a newer compatible build exists.",
+            "it": "Per ogni mod installata con una sorgente nota, se esiste una build più recente compatibile."
+          },
+          "use": {
+            "en": "A nightly job that posts \"3 mods can be updated\" on Discord and waits for a thumbs-up.",
+            "it": "Un job notturno che scrive \"3 mod aggiornabili\" su Discord e aspetta un pollice in su."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Cave%20Horror/content/updates\"",
+          "response": "[ { \"name\": \"jei-1.20.1-forge-15.20.0.106.jar\", \"available\": true, \"current_version\": \"15.20.0.106\", \"latest_version\": \"15.20.0.112\", \"latest_file_id\": \"Q2mNx0aB\", \"latest_name\": \"jei-1.20.1-forge-15.20.0.112.jar\", \"latest_date\": \"2026-08-19\", \"error\": null } ]"
+        },
+        {
+          "method": "POST",
+          "path": "/api/servers/{id}/content/update",
+          "auth": "token",
+          "title": {
+            "en": "Update a mod",
+            "it": "Aggiorna una mod"
+          },
+          "desc": {
+            "en": "Replaces the file with the latest compatible build from its source. Returns the mod list.",
+            "it": "Sostituisce il file con l'ultima build compatibile della sua sorgente. Ritorna la lista delle mod."
+          },
+          "use": {
+            "en": "The second half of the nightly job: update what got the thumbs-up.",
+            "it": "La seconda metà del job notturno: aggiorna quello che ha avuto il pollice in su."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\\n  -d '{\"name\":\"jei-1.20.1-forge-15.20.0.106.jar\"}' \\\n  \"$HOST/api/servers/Cave%20Horror/content/update\"",
+          "response": "[ { \"name\": \"jei-1.20.1-forge-15.20.0.112.jar\", \"enabled\": true, \"source\": { \"version\": \"15.20.0.112\" } }, \"…\" ]"
+        },
+        {
+          "method": "POST",
+          "path": "/api/servers/{id}/mods",
+          "auth": "token",
+          "title": {
+            "en": "Upload your own .jar files",
+            "it": "Carica i tuoi .jar"
+          },
+          "desc": {
+            "en": "Multipart upload of one or more <code>.jar</code> files (up to 1 GB per request). Files already present are skipped and listed in <code>skipped</code>.",
+            "it": "Upload multipart di uno o più <code>.jar</code> (fino a 1 GB per richiesta). I file già presenti vengono saltati ed elencati in <code>skipped</code>."
+          },
+          "use": {
+            "en": "A CI pipeline that pushes every build of your plugin to the test server.",
+            "it": "Una pipeline CI che manda ogni build del tuo plugin sul server di prova."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" -F \"files=@myplugin-1.2.jar\" \\\n  \"$HOST/api/servers/Server%20Test/mods\"",
+          "response": "{ \"mods\": [ { \"name\": \"myplugin-1.2.jar\", \"size\": 88210, \"enabled\": true, \"source\": null }, \"…\" ], \"added\": 1, \"skipped\": [] }"
+        },
+        {
+          "method": "POST",
+          "path": "/api/servers/{id}/mods/toggle",
+          "auth": "token",
+          "title": {
+            "en": "Enable or disable a file",
+            "it": "Attiva o disattiva un file"
+          },
+          "desc": {
+            "en": "Renames <code>.jar</code> to <code>.jar.disabled</code> and back, without deleting anything. Returns the mod list.",
+            "it": "Rinomina <code>.jar</code> in <code>.jar.disabled</code> e viceversa, senza cancellare niente. Ritorna la lista delle mod."
+          },
+          "use": {
+            "en": "Bisect a crash: disable half of the mods, restart, repeat.",
+            "it": "Bisezione di un crash: disattiva metà delle mod, riavvia, ripeti."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\\n  -d '{\"name\":\"suspicious-mod.jar\",\"enabled\":false}' \\\n  \"$HOST/api/servers/Cave%20Horror/mods/toggle\"",
+          "response": "[ { \"name\": \"suspicious-mod.jar\", \"enabled\": false }, \"…\" ]"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/servers/{id}/mods/{name}",
+          "auth": "token",
+          "title": {
+            "en": "Delete a file",
+            "it": "Elimina un file"
+          },
+          "desc": {
+            "en": "Removes the file from the content folder. Returns the mod list.",
+            "it": "Cancella il file dalla cartella dei contenuti. Ritorna la lista delle mod."
+          },
+          "use": {
+            "en": "Clean up after the bisection above.",
+            "it": "Fai pulizia dopo la bisezione di prima."
+          },
+          "request": "curl -X DELETE -H \"Authorization: Bearer $TOKEN\" \\\n  \"$HOST/api/servers/Cave%20Horror/mods/suspicious-mod.jar\"",
+          "response": "[ \"…\" ]"
+        }
+      ]
+    },
+    {
+      "id": "packs",
+      "title": {
+        "en": "Modpacks",
+        "it": "Modpack"
+      },
+      "intro": {
+        "en": "<p>Servers built from a CurseForge, Modrinth or FTB link, and their updates. Progress arrives on the WebSocket as <code>create-progress</code> and <code>update-progress</code>.</p>",
+        "it": "<p>Server costruiti da un link CurseForge, Modrinth o FTB, e i loro aggiornamenti. L'avanzamento arriva sul WebSocket come <code>create-progress</code> e <code>update-progress</code>.</p>"
+      },
+      "endpoints": [
+        {
+          "method": "POST",
+          "path": "/api/packs/resolve",
+          "auth": "token",
+          "title": {
+            "en": "Read a modpack link",
+            "it": "Leggi un link modpack"
+          },
+          "desc": {
+            "en": "Turns a CurseForge, Modrinth or FTB page URL into the pack's details and its installable files, with the suggested one and a warning when no server pack is published (Mineger will build one from the client pack).",
+            "it": "Trasforma l'URL di una pagina CurseForge, Modrinth o FTB nei dettagli del pack e nei file installabili, con quello suggerito e un avviso quando non esiste un server pack (Mineger lo costruirà dal pack client)."
+          },
+          "use": {
+            "en": "Someone pastes a modpack link in Discord; the bot answers with name, version and a ✅ reaction to install it.",
+            "it": "Qualcuno incolla un link modpack su Discord; il bot risponde con nome, versione e una reazione ✅ per installarlo."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\\n  -d '{\"url\":\"https://modrinth.com/modpack/cobblemon-modpack\"}' $HOST/api/packs/resolve",
+          "response": "{ \"pack\": { \"provider\": \"modrinth\", \"project_id\": \"5FFgwNNP\", \"slug\": \"cobblemon-modpack\", \"name\": \"Cobblemon\", \"author\": \"Cobblemon\", \"summary\": \"…\", \"page_url\": \"https://modrinth.com/modpack/cobblemon-modpack\", \"distribution_allowed\": true }, \"files\": [ { \"id\": \"xR3kQ1\", \"name\": \"Cobblemon 1.6.1\", \"version\": \"1.6.1\", \"date\": \"2026-07-14\", \"size\": 24800000, \"mc_version\": \"1.21.1\", \"loader\": \"fabric\", \"loader_version\": \"0.16.14\" } ], \"suggested_file_id\": \"xR3kQ1\", \"warning\": null }"
+        },
+        {
+          "method": "POST",
+          "path": "/api/packs/install",
+          "auth": "token",
+          "title": {
+            "en": "Install a modpack as a new server",
+            "it": "Installa un modpack come server nuovo"
+          },
+          "desc": {
+            "en": "Creates the server from the chosen file: loader, mods, configs, world settings. Client-only mods are left out when the server pack is built from the client one.",
+            "it": "Crea il server dal file scelto: loader, mod, config, impostazioni del mondo. Le mod solo-client vengono lasciate fuori quando il server pack viene costruito da quello client."
+          },
+          "use": {
+            "en": "The ✅ reaction from the previous step.",
+            "it": "La reazione ✅ del passo precedente."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\\n  -d '{\"name\":\"Cobblemon\",\"provider\":\"modrinth\",\"project_id\":\"5FFgwNNP\",\"file_id\":\"xR3kQ1\"}' \\\n  $HOST/api/packs/install",
+          "response": "{ \"id\": \"Cobblemon\" }"
+        },
+        {
+          "method": "GET",
+          "path": "/api/servers/{id}/updates",
+          "auth": "token",
+          "title": {
+            "en": "Modpack updates available?",
+            "it": "Aggiornamenti del modpack?"
+          },
+          "desc": {
+            "en": "For a server installed from a link: the current version and the latest published file.",
+            "it": "Per un server installato da link: la versione attuale e l'ultimo file pubblicato."
+          },
+          "use": {
+            "en": "A weekly check that announces the new version with its changelog link.",
+            "it": "Un controllo settimanale che annuncia la versione nuova con il link al changelog."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Cobblemon/updates\"",
+          "response": "[ { \"server_id\": \"Cobblemon\", \"available\": true, \"current_version\": \"1.6.1\", \"current_date\": \"2026-07-14\", \"latest\": { \"id\": \"zT9pW2\", \"name\": \"Cobblemon 1.6.2\", \"version\": \"1.6.2\", \"date\": \"2026-08-30\", \"mc_version\": \"1.21.1\", \"loader\": \"fabric\", \"loader_version\": \"0.16.14\" }, \"checked_at\": 1789000000, \"error\": null } ]"
+        },
+        {
+          "method": "POST",
+          "path": "/api/servers/{id}/update",
+          "auth": "token",
+          "title": {
+            "en": "Update the modpack",
+            "it": "Aggiorna il modpack"
+          },
+          "desc": {
+            "en": "Backs up the world, installs the new version, migrates world, configs and backups, rolls back on failure. The rollback folder is returned.",
+            "it": "Fa il backup del mondo, installa la versione nuova, migra mondo, config e backup, torna indietro se fallisce. Ritorna la cartella di rollback."
+          },
+          "use": {
+            "en": "Run it at 5 a.m. on Sunday when nobody is online, then post the result.",
+            "it": "Lancialo alle 5 di domenica quando non c'è nessuno, poi pubblica l'esito."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Cobblemon/update\"",
+          "response": "{ \"server_id\": \"Cobblemon\", \"new_version\": \"1.6.2\", \"extra_mods\": [], \"rollback_dir\": \"…/backups/rollback-2026-09-08\" }"
+        }
+      ]
+    },
+    {
+      "id": "backups",
+      "title": {
+        "en": "Backups",
+        "it": "Backup"
+      },
+      "intro": {
+        "en": "<p>Zip archives of the world, taken with <code>save-off</code>/<code>save-all</code> for a consistent copy when the server is running. They live in <code>backups/</code> next to the server.</p>",
+        "it": "<p>Archivi zip del mondo, fatti con <code>save-off</code>/<code>save-all</code> per una copia consistente a server acceso. Stanno in <code>backups/</code> accanto al server.</p>"
+      },
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/api/servers/{id}/backups",
+          "auth": "token",
+          "title": {
+            "en": "List backups",
+            "it": "Elenco dei backup"
+          },
+          "desc": {
+            "en": "File name, size and time of every backup.",
+            "it": "Nome file, dimensione e data di ogni backup."
+          },
+          "use": {
+            "en": "A script that keeps the last seven and deletes the rest from the folder.",
+            "it": "Uno script che tiene gli ultimi sette e cancella il resto dalla cartella."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Vanilla%20coi%20bro/backups\"",
+          "response": "[ { \"file\": \"world-2026-09-07_03-00.zip\", \"size\": 218000000, \"modified\": 1788872400 } ]"
+        },
+        {
+          "method": "POST",
+          "path": "/api/servers/{id}/backups",
+          "auth": "token",
+          "title": {
+            "en": "Create a backup now",
+            "it": "Crea un backup adesso"
+          },
+          "desc": {
+            "en": "Takes a backup and returns its entry. Progress arrives as <code>backup-progress</code>.",
+            "it": "Fa un backup e ne ritorna la voce. L'avanzamento arriva come <code>backup-progress</code>."
+          },
+          "use": {
+            "en": "Nightly from Task Scheduler, or right before a risky <code>/command</code>.",
+            "it": "Ogni notte dall'Utilità di pianificazione, o subito prima di un <code>/command</code> rischioso."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Vanilla%20coi%20bro/backups\"",
+          "response": "{ \"file\": \"world-2026-09-08_23-41.zip\", \"size\": 219500000, \"modified\": 1789000000 }"
+        }
+      ]
+    },
+    {
+      "id": "map",
+      "title": {
+        "en": "Map and players",
+        "it": "Mappa e giocatori"
+      },
+      "intro": {
+        "en": "<p>The same map the app shows: tiles rendered from the region files (so it works with the server off and for every server kind), spawn, players, and a search index. Tiles are cached under <code>&lt;server&gt;/.mineger/map/</code>. Dimension ids look like <code>minecraft:overworld</code> or <code>aether:the_aether</code>; URL-encode the colon.</p>",
+        "it": "<p>La stessa mappa che mostra l'app: tile rese dai file di regione (quindi funziona a server spento e con ogni tipo di server), spawn, giocatori e un indice di ricerca. Le tile stanno in cache sotto <code>&lt;server&gt;/.mineger/map/</code>. Gli id delle dimensioni sono tipo <code>minecraft:overworld</code> o <code>aether:the_aether</code>; codifica i due punti nell'URL.</p>"
+      },
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/api/servers/{id}/map",
+          "auth": "token",
+          "title": {
+            "en": "Map overview",
+            "it": "Panoramica della mappa"
+          },
+          "desc": {
+            "en": "Dimensions with the regions present, the spawn point, and every saved player with the last known position, dimension and whether they are online.",
+            "it": "Dimensioni con le regioni presenti, il punto di spawn e ogni giocatore salvato con l'ultima posizione nota, la dimensione e se è online."
+          },
+          "use": {
+            "en": "A \"where is everyone\" page for your group, with the map of the next endpoint behind it.",
+            "it": "Una pagina \"dove sono tutti\" per il tuo gruppo, con dietro la mappa dell'endpoint successivo."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Cave%20Horror/map\"",
+          "response": "{ \"world\": \"world\", \"version\": \"1.20.1\", \"spawn\": [0, 77, 0], \"dimensions\": [ { \"id\": \"minecraft:overworld\", \"regions\": [[-2,-2],[-1,-1],[0,0]] }, { \"id\": \"aether:the_aether\", \"regions\": [[0,0]] } ], \"players\": [ { \"name\": \"Zenidir\", \"uuid\": \"…\", \"x\": 78.3, \"y\": 60, \"z\": -2.9, \"dimension\": \"minecraft:overworld\", \"online\": false, \"last_seen\": 1748200000000 } ] }"
+        },
+        {
+          "method": "GET",
+          "path": "/api/servers/{id}/map/tile/{dim}/{rx}/{rz}",
+          "auth": "token",
+          "title": {
+            "en": "Map tile",
+            "it": "Tile della mappa"
+          },
+          "desc": {
+            "en": "The 512×512 PNG of one region (32×32 chunks) as base64, from the cache or rendered on the spot; <code>?force=true</code> re-renders it. Region <code>rx, rz</code> covers blocks <code>rx·512 … rx·512+511</code>.",
+            "it": "Il PNG 512×512 di una regione (32×32 chunk) in base64, dalla cache o reso al momento; <code>?force=true</code> lo rigenera. La regione <code>rx, rz</code> copre i blocchi <code>rx·512 … rx·512+511</code>."
+          },
+          "use": {
+            "en": "Build your own web map with Leaflet, or post the spawn tile on Discord after every session.",
+            "it": "Costruisci la tua mappa web con Leaflet, o pubblica la tile dello spawn su Discord dopo ogni sessione."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" \\\n  \"$HOST/api/servers/Cave%20Horror/map/tile/minecraft%3Aoverworld/0/0\" \\\n  | jq -r .png | base64 -d > r.0.0.png",
+          "response": "{ \"png\": \"iVBORw0KGgoAAAANSUhEUgAAAgAAAAIA…\" }"
+        },
+        {
+          "method": "POST",
+          "path": "/api/servers/{id}/map/render",
+          "auth": "token",
+          "title": {
+            "en": "Re-render a dimension",
+            "it": "Rigenera una dimensione"
+          },
+          "desc": {
+            "en": "Renders the stale tiles of a dimension in the background (all of them with <code>force</code>). Progress arrives as <code>map-progress</code>.",
+            "it": "Rende in background le tile cambiate di una dimensione (tutte con <code>force</code>). L'avanzamento arriva come <code>map-progress</code>."
+          },
+          "use": {
+            "en": "Pre-render after the nightly backup so the first visitor of the day does not wait.",
+            "it": "Pre-renderizza dopo il backup notturno così il primo che apre la mappa non aspetta."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\\n  -d '{\"dimension\":\"minecraft:overworld\",\"force\":false}' \\\n  \"$HOST/api/servers/Cave%20Horror/map/render\"",
+          "response": "{ \"ok\": true }"
+        },
+        {
+          "method": "POST",
+          "path": "/api/servers/{id}/map/search",
+          "auth": "token",
+          "title": {
+            "en": "Search the world",
+            "it": "Cerca nel mondo"
+          },
+          "desc": {
+            "en": "Players, coordinates (<code>120 -340</code>), structures, biomes, points of interest (Nether portals, beds, lodestones, job sites), named creatures and sign text, across every dimension. Results are sorted by the dimension you pass first, then by distance from <code>x, z</code>. The first call on a big world builds the index (progress as <code>map-progress</code>, phase <code>index</code>); later ones are instant.",
+            "it": "Giocatori, coordinate (<code>120 -340</code>), strutture, biomi, punti di interesse (portali del Nether, letti, lodestone, postazioni), creature con nome e cartelli, in tutte le dimensioni. I risultati sono ordinati prima per la dimensione che passi, poi per distanza da <code>x, z</code>. La prima chiamata su un mondo grande costruisce l'indice (avanzamento in <code>map-progress</code>, fase <code>index</code>); le successive sono immediate."
+          },
+          "use": {
+            "en": "<code>!find village</code> in Discord, answered with coordinates and a \"teleport me\" button that calls <code>/command</code>.",
+            "it": "<code>!find village</code> su Discord, con risposta le coordinate e un pulsante \"teletrasportami\" che chiama <code>/command</code>."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\\n  -d '{\"query\":\"village\",\"dimension\":\"minecraft:overworld\",\"x\":0,\"z\":0}' \\\n  \"$HOST/api/servers/Cave%20Horror/map/search\"",
+          "response": "[ { \"kind\": \"structure\", \"id\": \"minecraft:village_plains\", \"label\": \"Village (plains)\", \"dimension\": \"minecraft:overworld\", \"x\": 72, \"y\": 64, \"z\": 24, \"distance\": 76 }, { \"kind\": \"poi\", \"id\": \"minecraft:meeting\", \"label\": \"Village bell\", \"dimension\": \"minecraft:overworld\", \"x\": 52, \"y\": 73, \"z\": 13, \"distance\": 54 } ]"
+        },
+        {
+          "method": "GET",
+          "path": "/api/servers/{id}/players/live",
+          "auth": "token",
+          "title": {
+            "en": "Live player positions",
+            "it": "Posizioni vive dei giocatori"
+          },
+          "desc": {
+            "en": "Position and dimension of the online players, asked to the running server with <code>/data get entity</code> (a vanilla command, so it works on every loader). Empty when the server is off.",
+            "it": "Posizione e dimensione dei giocatori online, chieste al server acceso con <code>/data get entity</code> (comando vanilla, quindi funziona su ogni loader). Vuoto a server spento."
+          },
+          "use": {
+            "en": "An alert when someone enters a protected area, or a \"who's online and where\" Discord command.",
+            "it": "Un avviso quando qualcuno entra in un'area protetta, o un comando Discord \"chi c'è e dove\"."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Vanilla%20coi%20bro/players/live\"",
+          "response": "[ { \"name\": \"Steve\", \"uuid\": \"8667ba71-b85a-4004-af54-457a9734eed7\", \"x\": 123.5, \"y\": 64, \"z\": -20.25, \"dimension\": \"minecraft:overworld\" } ]"
+        },
+        {
+          "method": "GET",
+          "path": "/api/servers/{id}/players/{name}/inventory",
+          "auth": "token",
+          "title": {
+            "en": "A player's inventory",
+            "it": "Inventario di un giocatore"
+          },
+          "desc": {
+            "en": "Slot, item id and count for an online player, read-only. Slots 0–8 are the hotbar, 9–35 the main inventory, 100–103 armour, -106 the off hand.",
+            "it": "Slot, id dell'oggetto e quantità di un giocatore online, in sola lettura. Gli slot 0–8 sono la barra rapida, 9–35 l'inventario, 100–103 l'armatura, -106 la mano secondaria."
+          },
+          "use": {
+            "en": "Moderation: check whether the diamonds really did appear out of nowhere.",
+            "it": "Moderazione: controlla se i diamanti sono davvero spuntati dal nulla."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" \\\n  \"$HOST/api/servers/Vanilla%20coi%20bro/players/Steve/inventory\"",
+          "response": "[ { \"slot\": 0, \"id\": \"minecraft:diamond_sword\", \"count\": 1 }, { \"slot\": 1, \"id\": \"minecraft:cobblestone\", \"count\": 64 } ]"
+        }
+      ]
+    },
+    {
+      "id": "webhooks",
+      "title": {
+        "en": "Webhooks",
+        "it": "Webhook"
+      },
+      "intro": {
+        "en": "<p>Each server can have any number of webhooks (Webhook tab in the app), each with its own id, token and permissions: <strong>messages</strong>, <strong>commands</strong> (limited to an allow-list you write), <strong>power</strong>, <strong>status</strong>. They are meant for things that cannot hold the host token: Discord bots, Twitch extensions, IFTTT, a Stream Deck. Parameters travel in the query string, JSON or form, so even a service that can only send a GET works. The command <code>stop</code> is always refused through <code>command</code>: stopping needs the power permission. Every call is logged with time, outcome and address and shown in the app.</p>",
+        "it": "<p>Ogni server può avere quanti webhook vuoi (tab Webhook nell'app), ognuno con id, token e permessi propri: <strong>messaggi</strong>, <strong>comandi</strong> (limitati a una lista che scrivi tu), <strong>accensione</strong>, <strong>stato</strong>. Servono per le cose a cui non vuoi dare il token dell'host: bot Discord, estensioni Twitch, IFTTT, uno Stream Deck. I parametri viaggiano in query string, JSON o form, quindi funziona anche un servizio che sa mandare solo una GET. Il comando <code>stop</code> viene sempre rifiutato via <code>command</code>: fermare richiede il permesso di accensione. Ogni chiamata viene registrata con orario, esito e indirizzo e mostrata nell'app.</p>"
+      },
+      "endpoints": [
+        {
+          "method": "GET POST",
+          "path": "/hook/{id}?action=say",
+          "auth": "hook",
+          "title": {
+            "en": "Say something in chat",
+            "it": "Scrivi in chat"
+          },
+          "desc": {
+            "en": "Posts <code>message</code> in the server chat; <code>from</code> is prepended when given. Needs the messages permission.",
+            "it": "Scrive <code>message</code> nella chat del server; <code>from</code> viene messo davanti se presente. Richiede il permesso messaggi."
+          },
+          "use": {
+            "en": "Discord → Minecraft chat bridge: every message in <code>#minecraft</code> shows up in game with the author's name.",
+            "it": "Ponte Discord → chat di Minecraft: ogni messaggio in <code>#minecraft</code> compare in gioco col nome dell'autore."
+          },
+          "request": "curl -X POST -H \"Content-Type: application/json\" \\\n  -d '{\"token\":\"HOOK_TOKEN\",\"action\":\"say\",\"from\":\"Luca\",\"message\":\"arrivo tra 5 minuti\"}' \\\n  $HOST/hook/a1b2c3d4e5f6",
+          "response": "{ \"ok\": true, \"action\": \"say\", \"server\": \"Vanilla coi bro\" }"
+        },
+        {
+          "method": "GET POST",
+          "path": "/hook/{id}?action=command",
+          "auth": "hook",
+          "title": {
+            "en": "Run an allowed command",
+            "it": "Esegui un comando consentito"
+          },
+          "desc": {
+            "en": "Runs <code>command</code> if it matches the webhook's allow-list (empty list = everything except <code>stop</code>). Needs the commands permission.",
+            "it": "Esegue <code>command</code> se è nella lista consentita del webhook (lista vuota = tutto tranne <code>stop</code>). Richiede il permesso comandi."
+          },
+          "use": {
+            "en": "A Twitch extension where viewers spend channel points on <code>time set day</code> or <code>weather clear</code>.",
+            "it": "Un'estensione Twitch dove gli spettatori spendono punti canale per <code>time set day</code> o <code>weather clear</code>."
+          },
+          "request": "curl \"$HOST/hook/a1b2c3d4e5f6?token=HOOK_TOKEN&action=command&command=time%20set%20day\"",
+          "response": "{ \"ok\": true, \"action\": \"command\", \"server\": \"Vanilla coi bro\" }"
+        },
+        {
+          "method": "GET POST",
+          "path": "/hook/{id}?action=start",
+          "auth": "hook",
+          "title": {
+            "en": "Start or stop the server",
+            "it": "Accendi o spegni il server"
+          },
+          "desc": {
+            "en": "<code>start</code> and <code>stop</code> with the power permission. Ideal for a single-purpose button.",
+            "it": "<code>start</code> e <code>stop</code> con il permesso di accensione. Ideale per un pulsante che fa una cosa sola."
+          },
+          "use": {
+            "en": "A Stream Deck key, a Shortcut on the phone, or a smart-home button by the door: press to start the server before the friends arrive.",
+            "it": "Un tasto dello Stream Deck, un Comando rapido sul telefono, o un pulsante domotico vicino alla porta: premi e il server parte prima che arrivino gli amici."
+          },
+          "request": "curl \"$HOST/hook/a1b2c3d4e5f6?token=HOOK_TOKEN&action=start\"",
+          "response": "{ \"ok\": true, \"action\": \"start\", \"server\": \"Vanilla coi bro\" }"
+        },
+        {
+          "method": "GET POST",
+          "path": "/hook/{id}?action=status",
+          "auth": "hook",
+          "title": {
+            "en": "Server status",
+            "it": "Stato del server"
+          },
+          "desc": {
+            "en": "Online or offline and, when running, the start time. Needs the status permission. The safest thing to hand to a public integration.",
+            "it": "Online o offline e, se acceso, l'ora di avvio. Richiede il permesso stato. La cosa più sicura da dare a un'integrazione pubblica."
+          },
+          "use": {
+            "en": "A Discord bot that answers <code>!status</code>, or a widget on your website that says \"the server is up\".",
+            "it": "Un bot Discord che risponde a <code>!status</code>, o un widget sul tuo sito che dice \"il server è acceso\"."
+          },
+          "request": "curl \"$HOST/hook/a1b2c3d4e5f6?token=HOOK_TOKEN&action=status\"",
+          "response": "{ \"ok\": true, \"action\": \"status\", \"server\": \"Vanilla coi bro\", \"name\": \"Vanilla coi bro\", \"version\": \"1.21.9\", \"status\": \"online\", \"started_at\": 1789000000000 }"
+        }
+      ]
+    }
+  ]
+}

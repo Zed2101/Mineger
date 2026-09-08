@@ -166,3 +166,39 @@
 @utility fill-box {
   @apply [transform-box:fill-box] origin-center;
 }
+
+/* ---------------------------------------------------------------------------
+   API reference page
+   --------------------------------------------------------------------------- */
+@utility api-card {
+  @apply rounded-2xl border border-line bg-panel/70 p-5 transition-colors duration-300 hover:border-line-strong target:border-accent/50;
+}
+
+@utility codebox {
+  @apply min-w-0 overflow-hidden rounded-xl border border-line bg-ink;
+}
+
+@utility copy-btn {
+  @apply inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-mono text-[11px] text-fg-faint transition hover:bg-panel-2 hover:text-fg;
+}
+
+@utility badge-method {
+  @apply inline-flex h-6 items-center rounded-md border px-2 font-mono text-[11px] font-semibold tracking-wide;
+}
+
+@utility toc-link {
+  @apply flex items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-sm text-fg-muted transition hover:bg-panel-2 hover:text-fg max-lg:border max-lg:border-line;
+}
+
+@utility toc-active {
+  @apply bg-panel-2 text-accent;
+}
+
+/* Prose coming from endpoints.json: inline code, links, emphasis */
+@utility api-prose {
+  & p { @apply mt-3 text-sm leading-6 text-fg-muted; }
+  & p:first-child { @apply mt-0; }
+  & code { @apply rounded bg-ink-2 px-1.5 py-0.5 font-mono text-[0.85em] text-accent; }
+  & a { @apply text-accent underline-offset-4 hover:underline; }
+  & strong { @apply font-semibold text-fg; }
+}

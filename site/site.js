@@ -27,10 +27,15 @@
       else el.textContent = d[key];
     });
     $$('[data-i18n-title]').forEach((el) => { el.title = t(el.dataset.i18nTitle); });
+    $$('[data-i18n-placeholder]').forEach((el) => { el.placeholder = t(el.dataset.i18nPlaceholder); });
     const titleKey = document.body.dataset.titleKey;
     if (titleKey) document.title = t(titleKey);
     renderRelease();
+    document.dispatchEvent(new CustomEvent('mineger:lang', { detail: lang }));
   }
+
+  // Shared with the other page scripts (api.js): translation and current language.
+  window.MinegerSite = { t, get lang() { return lang; } };
 
   async function setLang(code) {
     await load(code);

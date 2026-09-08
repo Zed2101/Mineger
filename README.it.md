@@ -113,7 +113,7 @@ npm run tauri dev
 
 Servono [Rust](https://rustup.rs) e Node.js 18+.
 
-Documentazione tecnica: [architettura](docs/ARCHITECTURE.it.md) · [API host e webhook](docs/API-HOST.it.md).
+Documentazione tecnica: [architettura](docs/ARCHITECTURE.it.md) · [API host e webhook](docs/API-HOST.it.md) · [riferimento API sul sito](https://zed2101.github.io/Mineger/api.html), un esempio per ogni endpoint.
 
 ---
 

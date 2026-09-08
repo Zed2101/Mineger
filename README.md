@@ -113,7 +113,7 @@ npm run tauri dev
 
 You'll need [Rust](https://rustup.rs) and Node.js 18+.
 
-Technical documentation: [architecture](docs/ARCHITECTURE.md) · [host API and webhooks](docs/API-HOST.md).
+Technical documentation: [architecture](docs/ARCHITECTURE.md) · [host API and webhooks](docs/API-HOST.md) · [API reference on the website](https://zed2101.github.io/Mineger/api.html), one example per endpoint.
 
 ---
 

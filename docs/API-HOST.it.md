@@ -2,6 +2,8 @@
 
 *[Read this file in English](API-HOST.md)*
 
+> Preferisci una versione navigabile? Ogni endpoint, con un esempio e un caso d'uso, è sul sito: **[zed2101.github.io/Mineger/api.html](https://zed2101.github.io/Mineger/api.html)**.
+
 Un'installazione di Mineger può fare da **host**: espone i suoi server in rete, così altre copie dell'app (o qualsiasi client HTTP) li gestiscono a distanza. Si attiva in **Impostazioni → Host**.
 
 L'host serve due cose diverse:
