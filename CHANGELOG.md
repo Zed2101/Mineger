@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [1.2.0] — 2026-09-08
+
 ### Added
 - **World map tab.** A top-down map of the world rendered from the region files, so it works for every server kind and version (vanilla, Paper, Forge, NeoForge, Fabric; 1.2 to 1.21) and with the server off. One tile per region, cached next to the server and re-rendered only when the region changes; modded blocks take their colour from the textures inside the mod jars, modded dimensions are listed next to Overworld, Nether and End. Spawn and players are shown as markers (the skin face from Crafatar with the name above when the server runs in online mode, initials otherwise); with the server online the positions are refreshed every few seconds through `/data get entity`, whose answers are kept out of the console.
 - **Player commands from the map.** Clicking a player opens a menu: teleport to coordinates, bring another player here, teleport to another player, view the inventory (read-only), on-screen message, sounds, effects, lightning, game mode, op/de-op, kick. Right-clicking the map teleports a player to that spot (on the surface). "Refresh" saves the world first when the server runs.
