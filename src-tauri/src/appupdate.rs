@@ -44,7 +44,7 @@ lazy_static! {
 }
 
 fn builder(app: &AppHandle) -> Result<UpdaterBuilder, String> {
-    let mut b = app.updater_builder().timeout(TIMEOUT).on_before_exit(|| {
+    let b = app.updater_builder().timeout(TIMEOUT).on_before_exit(|| {
         // L'installer termina il processo senza passare dall'uscita normale
         // dell'app: i server accesi vanno salvati e fermati prima.
         crate::process::shutdown_all(crate::SHUTDOWN_TIMEOUT);
@@ -52,10 +52,13 @@ fn builder(app: &AppHandle) -> Result<UpdaterBuilder, String> {
     });
     // Solo in sviluppo: manifest alternativo per provare il flusso senza una release vera.
     #[cfg(debug_assertions)]
-    if let Ok(url) = std::env::var("MINEGER_UPDATE_URL") {
-        let parsed = tauri::Url::parse(&url).map_err(|e| e.to_string())?;
-        b = b.endpoints(vec![parsed]).map_err(|e| e.to_string())?;
-    }
+    let b = match std::env::var("MINEGER_UPDATE_URL") {
+        Ok(url) => {
+            let parsed = tauri::Url::parse(&url).map_err(|e| e.to_string())?;
+            b.endpoints(vec![parsed]).map_err(|e| e.to_string())?
+        }
+        Err(_) => b,
+    };
     Ok(b)
 }
 
