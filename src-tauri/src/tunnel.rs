@@ -20,7 +20,8 @@ use std::collections::HashMap;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -36,7 +37,7 @@ pub const CLAIM_URL: &str = "https://playit.gg/claim/";
 pub const MANAGE_URL: &str = "https://playit.gg/account/tunnels";
 const PIPE_PATH: &str = r"\\.\pipe\mineger-playitd";
 const CLAIM_POLL: Duration = Duration::from_secs(2);
-const CLAIM_TIMEOUT: Duration = Duration::from_secs(600);
+const CLAIM_TIMEOUT: Duration = Duration::from_secs(300);
 const READY_POLL: Duration = Duration::from_secs(3);
 const READY_TIMEOUT: Duration = Duration::from_secs(120);
 const HTTP_TIMEOUT: Duration = Duration::from_secs(25);
@@ -92,11 +93,26 @@ struct Daemon {
     child: Child,
 }
 
+struct ClaimState {
+    code: String,
+    state: String,
+    cancel: Arc<AtomicBool>,
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct ClaimStatus {
+    pub pending: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub state: Option<String>,
+}
+
 lazy_static! {
     static ref DAEMON: Mutex<Option<Daemon>> = Mutex::new(None);
     static ref STATES: Mutex<HashMap<String, TunnelState>> = Mutex::new(HashMap::new());
-    /// Codice di claim in corso, per non aprirne due.
-    static ref CLAIM: Mutex<Option<String>> = Mutex::new(None);
+    /// Claim in corso (uno solo alla volta): codice, ultimo stato, flag di annullamento.
+    static ref CLAIM: Mutex<Option<ClaimState>> = Mutex::new(None);
     /// Ultimo stato account letto da rundata (guest / verified…).
     static ref ACCOUNT: Mutex<Option<String>> = Mutex::new(None);
 }
@@ -216,28 +232,52 @@ fn emit_claim(app: &AppHandle, state: &str, message: Option<String>) {
 /// corso ritorna lo stesso URL.
 pub fn claim_start(app: &AppHandle) -> Result<String, String> {
     let mut claim = lock(&CLAIM);
-    if let Some(code) = claim.as_ref() {
-        return Ok(format!("{CLAIM_URL}{code}"));
+    if let Some(c) = claim.as_ref() {
+        return Ok(format!("{CLAIM_URL}{}", c.code));
     }
     let code = hex::encode(&uuid::Uuid::new_v4().as_bytes()[..5]);
-    *claim = Some(code.clone());
+    let cancel = Arc::new(AtomicBool::new(false));
+    *claim = Some(ClaimState { code: code.clone(), state: "WaitingForUserVisit".to_string(), cancel: cancel.clone() });
     drop(claim);
 
     let app = app.clone();
     let worker_code = code.clone();
-    thread::spawn(move || claim_worker(app, worker_code));
+    thread::spawn(move || claim_worker(app, worker_code, cancel));
     Ok(format!("{CLAIM_URL}{code}"))
 }
 
-fn claim_worker(app: AppHandle, code: String) {
+/// Claim in corso? URL da riaprire e ultimo stato riferito dall'API
+/// (`WaitingForUserVisit` = pagina mai aperta, `WaitingForUser` = aperta, in attesa dell'approvazione).
+pub fn claim_status() -> ClaimStatus {
+    match lock(&CLAIM).as_ref() {
+        Some(c) => ClaimStatus { pending: true, url: Some(format!("{CLAIM_URL}{}", c.code)), state: Some(c.state.clone()) },
+        None => ClaimStatus { pending: false, url: None, state: None },
+    }
+}
+
+/// Annulla il claim in corso: il thread si ferma alla prossima iterazione e non emette altro.
+pub fn claim_cancel(app: &AppHandle) {
+    if let Some(c) = lock(&CLAIM).take() {
+        c.cancel.store(true, Ordering::SeqCst);
+        emit_claim(app, "cancelled", None);
+    }
+}
+
+fn claim_worker(app: AppHandle, code: String, cancel: Arc<AtomicBool>) {
     let deadline = Instant::now() + CLAIM_TIMEOUT;
     let version = format!("playit {}", PLAYIT_AGENT_VERSION);
     let result = loop {
+        if cancel.load(Ordering::SeqCst) {
+            return;
+        }
         if Instant::now() > deadline {
             break Err(tr!("errors.tunnel.claim_timeout"));
         }
         match api_post::<String>(None, "/claim/setup", json!({ "code": code, "agent_type": "self-managed", "version": version })) {
             Ok(state) => {
+                if let Some(c) = lock(&CLAIM).as_mut().filter(|c| c.code == code) {
+                    c.state = state.clone();
+                }
                 emit_claim(&app, &state, None);
                 match state.as_str() {
                     "UserAccepted" => break claim_exchange(&code),
@@ -249,7 +289,15 @@ fn claim_worker(app: AppHandle, code: String) {
         }
         thread::sleep(CLAIM_POLL);
     };
-    *lock(&CLAIM) = None;
+    if cancel.load(Ordering::SeqCst) {
+        return;
+    }
+    {
+        let mut claim = lock(&CLAIM);
+        if claim.as_ref().map(|c| c.code == code).unwrap_or(false) {
+            *claim = None;
+        }
+    }
 
     match result {
         Ok(secret) => {

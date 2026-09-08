@@ -1015,7 +1015,10 @@
       "playit_linked": "",
       "playit_linked_account": "",
       "playit_not_linked": "",
-      "playit_hint": ""
+      "playit_hint": "",
+      "playit_login": "",
+      "playit_link": "",
+      "playit_steps": ""
     },
     "sidebar": {
       "add_server": "",
@@ -1228,7 +1231,11 @@
       "hint_error": "",
       "account_guest": "",
       "account_email_not_verified": "",
-      "account_verified": ""
+      "account_verified": "",
+      "claim_visit": "",
+      "claim_approve": "",
+      "claim_reopen": "",
+      "claim_cancel": ""
     },
     "network": {
       "title": "",

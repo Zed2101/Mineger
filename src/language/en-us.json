@@ -1015,7 +1015,10 @@
       "playit_linked": "playit.gg account linked.",
       "playit_linked_account": "playit.gg account linked ({account}).",
       "playit_not_linked": "No account linked.",
-      "playit_hint": "Server traffic goes through playit.gg servers (free plan: random but fixed address, up to 4 ports). Only the Minecraft port goes through the tunnel, never the Mineger API."
+      "playit_hint": "Server traffic goes through playit.gg servers (free plan: random but fixed address, up to 4 ports). Only the Minecraft port goes through the tunnel, never the Mineger API.",
+      "playit_login": "Sign in or create the account ↗",
+      "playit_link": "Link Mineger",
+      "playit_steps": "1. Sign in (or register) on playit.gg in the browser. 2. Press \"Link Mineger\": the approval page opens, approve and come back. Without signing in first, that page keeps loading."
     },
     "sidebar": {
       "add_server": "+ Add server",
@@ -1213,7 +1216,7 @@
     "tunnel": {
       "link": "Link playit.gg account",
       "terms": "playit.gg terms",
-      "waiting": "Approve Mineger on the playit.gg page opened in your browser (a playit.gg account is needed: it takes a minute to create there, free)…",
+      "waiting": "Approve Mineger on the playit.gg page opened in your browser (you must be signed in to your account already)…",
       "waiting_short": "Waiting for the browser…",
       "claim_failed": "Linking failed: {error}",
       "disclaimer": "Third-party service: the account and the terms are playit.gg's, the server traffic goes through their servers. Mineger only uses your own account and shares nothing.",
@@ -1228,7 +1231,11 @@
       "hint_error": "Tunnel not active: {error}",
       "account_guest": "guest account",
       "account_email_not_verified": "email not verified",
-      "account_verified": "verified account"
+      "account_verified": "verified account",
+      "claim_visit": "Approval page opened in the browser: if you do not see it, press \"Reopen the page\". You need to be signed in to playit.gg already.",
+      "claim_approve": "Page open: approve Mineger on playit.gg and come back…",
+      "claim_reopen": "Reopen the page ↗",
+      "claim_cancel": "Cancel"
     },
     "network": {
       "title": "How friends get in",

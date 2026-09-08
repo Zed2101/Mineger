@@ -413,6 +413,17 @@ pub fn playit_unlink(app: AppHandle) -> Result<(), String> {
     crate::tunnel::unlink(&app)
 }
 
+/// Claim in corso: URL da riaprire e stato (pagina mai aperta / in attesa dell'approvazione).
+#[tauri::command]
+pub fn playit_claim_status() -> crate::tunnel::ClaimStatus {
+    crate::tunnel::claim_status()
+}
+
+#[tauri::command]
+pub fn playit_claim_cancel(app: AppHandle) {
+    crate::tunnel::claim_cancel(&app)
+}
+
 /// Stato del tunnel playit di un server (account collegato, indirizzo pubblico, errori).
 #[tauri::command]
 pub fn get_tunnel_status(app: AppHandle, id: String) -> crate::tunnel::TunnelStatus {

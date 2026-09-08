@@ -1015,7 +1015,10 @@
       "playit_linked": "Account playit.gg collegato.",
       "playit_linked_account": "Account playit.gg collegato ({account}).",
       "playit_not_linked": "Nessun account collegato.",
-      "playit_hint": "Il traffico del server passa dai server di playit.gg (piano gratuito: indirizzo casuale ma fisso, fino a 4 porte). Dal tunnel passa solo la porta di Minecraft, mai l'API di Mineger."
+      "playit_hint": "Il traffico del server passa dai server di playit.gg (piano gratuito: indirizzo casuale ma fisso, fino a 4 porte). Dal tunnel passa solo la porta di Minecraft, mai l'API di Mineger.",
+      "playit_login": "Accedi o crea l'account ↗",
+      "playit_link": "Collega Mineger",
+      "playit_steps": "1. Accedi (o registrati) su playit.gg nel browser. 2. Premi \"Collega Mineger\": si apre la pagina di approvazione, approva e torna qui. Senza l'accesso fatto prima, la pagina resta in caricamento."
     },
     "sidebar": {
       "add_server": "+ Aggiungi Server",
@@ -1213,7 +1216,7 @@
     "tunnel": {
       "link": "Collega account playit.gg",
       "terms": "Termini di playit.gg",
-      "waiting": "Approva Mineger nella pagina di playit.gg aperta nel browser (serve un account playit.gg: si crea lì in un minuto, gratis)…",
+      "waiting": "Approva Mineger nella pagina di playit.gg aperta nel browser (devi essere già dentro il tuo account)…",
       "waiting_short": "In attesa del browser…",
       "claim_failed": "Collegamento non riuscito: {error}",
       "disclaimer": "Servizio di terzi: l'account e i termini sono di playit.gg, il traffico del server passa dai loro server. Mineger usa solo il tuo account e non condivide nulla.",
@@ -1228,7 +1231,11 @@
       "hint_error": "Tunnel non attivo: {error}",
       "account_guest": "account ospite",
       "account_email_not_verified": "email non verificata",
-      "account_verified": "account verificato"
+      "account_verified": "account verificato",
+      "claim_visit": "Pagina di approvazione aperta nel browser: se non la vedi, premi \"Riapri la pagina\". Serve essere già dentro l'account playit.gg.",
+      "claim_approve": "Pagina aperta: approva Mineger su playit.gg e torna qui…",
+      "claim_reopen": "Riapri la pagina ↗",
+      "claim_cancel": "Annulla"
     },
     "network": {
       "title": "Come entrano gli amici",

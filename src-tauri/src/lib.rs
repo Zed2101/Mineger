@@ -87,6 +87,8 @@ pub fn run() {
             commands::get_whats_new,
             commands::playit_claim_start,
             commands::playit_unlink,
+            commands::playit_claim_status,
+            commands::playit_claim_cancel,
             commands::get_tunnel_status,
             commands::get_network_status,
             commands::retry_tunnel,

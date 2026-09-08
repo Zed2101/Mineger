@@ -892,12 +892,16 @@
                     <p class="settings-desc" data-i18n="ui.settings.playit_desc">Account playit.gg usato per dare ai server un indirizzo pubblico senza port forwarding. Si attiva server per server in Proprietà.</p>
                   </div>
                 </div>
-                <div class="flex shrink-0 gap-2">
-                  <button id="btn-settings-playit-link" class="btn-outline-accent" data-i18n="ui.tunnel.link">Collega account playit.gg</button>
+                <div class="flex shrink-0 flex-wrap justify-end gap-2">
+                  <button id="btn-settings-playit-login" class="btn-small" data-i18n="ui.settings.playit_login">Accedi o crea l'account ↗</button>
+                  <button id="btn-settings-playit-link" class="btn-outline-accent" data-i18n="ui.settings.playit_link">Collega Mineger</button>
+                  <button id="btn-settings-playit-reopen" class="btn-small hidden" data-i18n="ui.tunnel.claim_reopen">Riapri la pagina ↗</button>
+                  <button id="btn-settings-playit-cancel" class="btn-small hidden" data-i18n="ui.tunnel.claim_cancel">Annulla</button>
                   <button id="btn-settings-playit-unlink" class="btn-small hidden" data-i18n="ui.settings.playit_unlink">Scollega</button>
                 </div>
               </div>
               <p id="settings-playit-status" class="text-[12px] text-text-soft"></p>
+              <p id="settings-playit-steps" class="note mt-1" data-i18n="ui.settings.playit_steps">1. Accedi (o registrati) su playit.gg nel browser. 2. Premi "Collega Mineger": si apre la pagina di approvazione, approva e torna qui.</p>
               <p class="note mt-1" data-i18n="ui.settings.playit_hint">Il traffico del server passa dai server di playit.gg (piano gratuito: indirizzo casuale ma fisso, fino a 4 porte). Dal tunnel passa solo la porta di Minecraft, mai l'API di Mineger.</p>
             </section>
 

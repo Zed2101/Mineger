@@ -15,6 +15,7 @@ const { listen } = window.__TAURI__.event;
 
 const MANAGE_URL = 'https://playit.gg/account/tunnels';
 const TERMS_URL = 'https://playit.gg/terms';
+const LOGIN_URL = 'https://playit.gg/login';
 
 const $ = (id) => document.getElementById(id);
 const openExternal = (url) => invoke('open_url', { url }).catch(() => {});
@@ -234,6 +235,31 @@ async function startClaim() {
   }
 }
 
+async function cancelClaim() {
+  try {
+    await invoke('playit_claim_cancel');
+  } catch {}
+  claim = null;
+  claimMessage = '';
+  render();
+  refreshSettings();
+}
+
+/** Lo stato "in attesa" è del backend: alla riapertura delle Impostazioni si riparte da lì, non da un ricordo locale. */
+async function syncClaim() {
+  try {
+    const s = await invoke('playit_claim_status');
+    if (s?.pending) {
+      claim = 'waiting';
+    } else if (claim === 'waiting') {
+      claim = null;
+    }
+    return s;
+  } catch {
+    return null;
+  }
+}
+
 export function setupNetwork(state, { isRemote = () => false, onSettingsChanged = () => {} } = {}) {
   refreshSettings = onSettingsChanged;
   serverOf = (id) => state.serverList.find((s) => s.id === id);
@@ -290,10 +316,24 @@ export function setupNetwork(state, { isRemote = () => false, onSettingsChanged 
       claimMessage = p.message || '';
       render();
       refreshSettings();
+    } else if (p.state === 'cancelled') {
+      claim = null;
+      render();
+      refreshSettings();
+    } else {
+      // WaitingForUserVisit / WaitingForUser: aggiorna il testo nelle Impostazioni
+      refreshSettings();
     }
   });
 
+  $('btn-settings-playit-login')?.addEventListener('click', () => openExternal(LOGIN_URL));
   $('btn-settings-playit-link')?.addEventListener('click', startClaim);
+  $('btn-settings-playit-reopen')?.addEventListener('click', async () => {
+    const s = await syncClaim();
+    if (s?.url) openExternal(s.url);
+    else startClaim();
+  });
+  $('btn-settings-playit-cancel')?.addEventListener('click', cancelClaim);
   $('btn-settings-playit-unlink')?.addEventListener('click', async () => {
     try {
       await invoke('playit_unlink');
@@ -305,7 +345,7 @@ export function setupNetwork(state, { isRemote = () => false, onSettingsChanged 
   });
 }
 
-/** Card delle Impostazioni: stato dell'account playit.gg, Collega / Scollega. */
+/** Card delle Impostazioni: stato dell'account playit.gg e del claim, con i pulsanti giusti per ogni fase. */
 export async function renderTunnelSettings() {
   const text = $('settings-playit-status');
   if (!text) return;
@@ -313,13 +353,29 @@ export async function renderTunnelSettings() {
   try {
     s = await invoke('get_tunnel_status', { id: current?.id || '' });
   } catch {}
+  const claimState = await syncClaim();
   const linked = !!s?.linked;
+  const pending = !linked && claim === 'waiting';
   const account = s?.account ? t(`ui.tunnel.account_${s.account.replace(/-/g, '_')}`) : '';
-  if (linked) text.textContent = account ? t('ui.settings.playit_linked_account', { account }) : t('ui.settings.playit_linked');
-  else if (claim === 'waiting') text.textContent = t('ui.tunnel.waiting');
-  else if (claim === 'error') text.textContent = t('ui.tunnel.claim_failed', { error: claimMessage });
-  else text.textContent = t('ui.settings.playit_not_linked');
-  text.className = claim === 'error' && !linked ? 'note-err' : 'text-[12px] text-text-soft';
-  $('btn-settings-playit-link').classList.toggle('hidden', linked || claim === 'waiting');
+
+  let cls = 'text-[12px] text-text-soft';
+  if (linked) {
+    text.textContent = account ? t('ui.settings.playit_linked_account', { account }) : t('ui.settings.playit_linked');
+  } else if (pending) {
+    text.textContent = claimState?.state === 'WaitingForUser' ? t('ui.tunnel.claim_approve') : t('ui.tunnel.claim_visit');
+    cls += ' motion-safe:animate-pulse';
+  } else if (claim === 'error') {
+    text.textContent = t('ui.tunnel.claim_failed', { error: claimMessage });
+    cls = 'note-err';
+  } else {
+    text.textContent = t('ui.settings.playit_not_linked');
+  }
+  text.className = cls;
+
+  $('btn-settings-playit-login').classList.toggle('hidden', linked || pending);
+  $('btn-settings-playit-link').classList.toggle('hidden', linked || pending);
+  $('btn-settings-playit-reopen').classList.toggle('hidden', !pending);
+  $('btn-settings-playit-cancel').classList.toggle('hidden', !pending);
   $('btn-settings-playit-unlink').classList.toggle('hidden', !linked);
+  $('settings-playit-steps').classList.toggle('hidden', linked);
 }
