@@ -236,6 +236,21 @@ pub fn live_players(app: &AppHandle, id: &str) -> Result<Vec<crate::worldmap::Li
     Ok(crate::worldmap::live_players(id, &dir))
 }
 
+/// Snapshot dei comandi per l'autocompletamento. Se manca e il server è acceso, lo
+/// avvia in background: la UI riceve `commands-ready` quando è pronto.
+pub fn command_snapshot(app: &AppHandle, id: &str) -> Result<Option<crate::cmdsnap::CommandSnapshot>, String> {
+    let dir = server_dir(app, id)?;
+    let snap = crate::cmdsnap::load(&dir);
+    if snap.is_none() && process::is_running(id) {
+        crate::cmdsnap::schedule(app.clone(), id.to_string());
+    }
+    Ok(snap)
+}
+
+pub fn command_usage(app: &AppHandle, id: &str, name: &str) -> Result<Vec<String>, String> {
+    crate::cmdsnap::usage(app, id, name)
+}
+
 pub fn search_world(app: &AppHandle, id: &str, query: &str, dimension: &str, x: f64, z: f64) -> Result<Vec<crate::worldindex::SearchHit>, String> {
     use tauri::Emitter;
     let dir = server_dir(app, id)?;

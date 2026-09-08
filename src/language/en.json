@@ -327,6 +327,10 @@
       "no_region": "Region not present.",
       "player_not_found": "The server did not answer for {name}: player not found or command unavailable.",
       "bad_player_name": "Invalid player name."
+    },
+    "console": {
+      "no_commands": "The server did not answer \"help\" with a list of commands",
+      "bad_command_name": "Invalid command name"
     }
   },
   "msg": {
@@ -551,7 +555,13 @@
     "console": {
       "lines": "{count} lines",
       "send_error": "Could not send command: {error}",
-      "stop_hint": "Use the \"Stop Server\" button to stop the server"
+      "stop_hint": "Use the \"Stop Server\" button to stop the server",
+      "wiki": "Commands {version}",
+      "ac_ready": "{count} commands · Tab completes",
+      "ac_none": "Autocompletion uses the list of the server commands, taken at the first start.",
+      "ac_taking": "Reading the commands from the server…",
+      "ac_players": "online player",
+      "ac_alias": "alias of /{target}"
     },
     "details": {
       "backup_count": {
@@ -792,7 +802,9 @@
       "enter_key": "enter",
       "input_placeholder": "Type a command…",
       "quick_commands": "Quick commands",
-      "title": "Console"
+      "title": "Console",
+      "wiki_title": "Command reference on the Minecraft Wiki",
+      "hint_wiki": "wiki"
     },
     "delete": {
       "cancel": "Cancel",

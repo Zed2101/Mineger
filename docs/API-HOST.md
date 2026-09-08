@@ -65,6 +65,8 @@ The token is accepted **only in the header**. The single exception is `/api/ws?t
 | `POST` | `/api/servers/{id}/command` | Send a command to the console: `{command}` |
 | `POST` | `/api/servers/{id}/eula` | Accept the Minecraft EULA |
 | `GET` | `/api/servers/{id}/logs` | Latest console lines |
+| `GET` | `/api/servers/{id}/commands` | Commands the server accepts, for autocompletion: `{version, taken_at, commands: [{name, usage, alias_of?}]}`; `null` until the first start (the snapshot is taken from `help` when the server comes online) |
+| `GET` | `/api/servers/{id}/commands/{name}` | Every form of one command (`help <name>`, server running): `["/tp <destination>", "/tp <targets> <location>", …]` |
 | `GET` | `/api/servers/{id}/metrics` | CPU and RAM of the Java process |
 | `GET` | `/api/servers/{id}/disk-usage` | Bytes and file count of the folder |
 
@@ -122,7 +124,7 @@ Tiles are rendered from the region files, so the map works with the server off a
 GET /api/ws?token=<token>
 ```
 
-WebSocket that forwards the app's events: `server-status`, `server-output`, `create-progress`, `update-progress`, `mod-progress`, `backup-progress`, `pack-updates`, `webhook-call`, `map-progress`.
+WebSocket that forwards the app's events: `server-status`, `server-output`, `create-progress`, `update-progress`, `mod-progress`, `backup-progress`, `pack-updates`, `webhook-call`, `map-progress`, `commands-ready`.
 
 ---
 

@@ -45,6 +45,8 @@ struct PendingQuery {
     server: String,
     matcher: Box<dyn Fn(&str) -> bool + Send>,
     tx: mpsc::Sender<String>,
+    /// `true`: raccoglie tutte le righe riconosciute finché chi aspetta non la rimuove (`query_lines`).
+    multi: bool,
 }
 
 static QUERY_SEQ: AtomicU64 = AtomicU64::new(1);
@@ -149,7 +151,7 @@ pub fn query(id: &str, command: &str, matcher: impl Fn(&str) -> bool + Send + 's
     PENDING_QUERIES
         .lock()
         .unwrap_or_else(|e| e.into_inner())
-        .push(PendingQuery { seq, server: id.to_string(), matcher: Box::new(matcher), tx });
+        .push(PendingQuery { seq, server: id.to_string(), matcher: Box::new(matcher), tx, multi: false });
     let forget = || PENDING_QUERIES.lock().unwrap_or_else(|e| e.into_inner()).retain(|q| q.seq != seq);
     if let Err(e) = write_stdin(id, command) {
         forget();
@@ -164,12 +166,67 @@ pub fn query(id: &str, command: &str, matcher: impl Fn(&str) -> bool + Send + 's
     }
 }
 
+/// Come `query`, per risposte su più righe (`help`): raccoglie ogni riga che
+/// soddisfa `matcher` finché non passano `quiet` senza righe nuove. Errore se
+/// la prima riga non arriva entro `first`.
+pub fn query_lines(id: &str, command: &str, matcher: impl Fn(&str) -> bool + Send + 'static, first: Duration, quiet: Duration) -> Result<Vec<String>, String> {
+    if !is_running(id) {
+        return Err(tr!("errors.server.not_running"));
+    }
+    // Una sola richiesta multi-riga per server alla volta: due `help` in
+    // parallelo si ruberebbero le righe a vicenda.
+    let deadline = Instant::now() + first;
+    while PENDING_QUERIES.lock().unwrap_or_else(|e| e.into_inner()).iter().any(|q| q.server == id && q.multi) {
+        if Instant::now() >= deadline {
+            return Err(tr!("errors.server.query_timeout"));
+        }
+        thread::sleep(Duration::from_millis(50));
+    }
+    let (tx, rx) = mpsc::channel();
+    let seq = QUERY_SEQ.fetch_add(1, Ordering::SeqCst);
+    PENDING_QUERIES
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .push(PendingQuery { seq, server: id.to_string(), matcher: Box::new(matcher), tx, multi: true });
+    let forget = || PENDING_QUERIES.lock().unwrap_or_else(|e| e.into_inner()).retain(|q| q.seq != seq);
+    if let Err(e) = write_stdin(id, command) {
+        forget();
+        return Err(e);
+    }
+    let mut lines = Vec::new();
+    match rx.recv_timeout(first) {
+        Ok(line) => lines.push(line),
+        Err(_) => {
+            forget();
+            return Err(tr!("errors.server.query_timeout"));
+        }
+    }
+    while let Ok(line) = rx.recv_timeout(quiet) {
+        lines.push(line);
+    }
+    forget();
+    Ok(lines)
+}
+
+/// Messaggio di una riga di console, senza orario e tag:
+/// `[12:00:00] [Server thread/INFO]: msg` e la variante Forge → `msg`.
+pub fn console_message(line: &str) -> &str {
+    match line.find("]: ") {
+        Some(i) => &line[i + 3..],
+        None => line,
+    }
+}
+
 /// Consegna la riga alla prima richiesta in attesa che la riconosce. `true` se consumata.
 fn take_query_line(id: &str, line: &str) -> bool {
     let mut pending = PENDING_QUERIES.lock().unwrap_or_else(|e| e.into_inner());
     let Some(pos) = pending.iter().position(|q| q.server == id && (q.matcher)(line)) else { return false };
-    let q = pending.remove(pos);
-    let _ = q.tx.send(line.to_string());
+    if pending[pos].multi {
+        let _ = pending[pos].tx.send(line.to_string());
+    } else {
+        let q = pending.remove(pos);
+        let _ = q.tx.send(line.to_string());
+    }
     true
 }
 
@@ -264,6 +321,7 @@ pub fn spawn_server(app: &AppHandle, id: &str, spec: LaunchSpec) -> Result<(), S
                             let started = rs.started_at;
                             drop(map);
                             emit_status(&app, &id, ServerStatus::Online, None, Some(started));
+                            crate::cmdsnap::schedule(app.clone(), id.clone());
                         }
                     }
                 }
@@ -524,11 +582,30 @@ mod tests {
     #[test]
     fn query_lines_are_consumed_only_by_matching_server() {
         let (tx, rx) = mpsc::channel();
-        PENDING_QUERIES.lock().unwrap().push(PendingQuery { seq: u64::MAX, server: "srv".into(), matcher: Box::new(|l| l.contains("entity data")), tx });
+        PENDING_QUERIES.lock().unwrap().push(PendingQuery { seq: u64::MAX, server: "srv".into(), matcher: Box::new(|l| l.contains("entity data")), tx, multi: false });
         assert!(!take_query_line("other", "Steve has the following entity data: [1d]"));
         assert!(!take_query_line("srv", "Steve joined the game"));
         assert!(take_query_line("srv", "Steve has the following entity data: [1d]"));
         assert_eq!(rx.try_recv().unwrap(), "Steve has the following entity data: [1d]");
         assert!(!take_query_line("srv", "Steve has the following entity data: [2d]"), "consumata una volta sola");
+    }
+
+    #[test]
+    fn multi_line_queries_keep_collecting_until_forgotten() {
+        let (tx, rx) = mpsc::channel();
+        PENDING_QUERIES.lock().unwrap().push(PendingQuery { seq: u64::MAX - 1, server: "srv2".into(), matcher: Box::new(|l| console_message(l).starts_with('/')), tx, multi: true });
+        assert!(take_query_line("srv2", "[12:00:00] [Server thread/INFO]: /list [uuids]"));
+        assert!(take_query_line("srv2", "[12:00:00] [Server thread/INFO]: /stop"));
+        assert!(!take_query_line("srv2", "[12:00:00] [Server thread/INFO]: Steve joined the game"));
+        assert_eq!(rx.try_iter().count(), 2);
+        PENDING_QUERIES.lock().unwrap().retain(|q| q.seq != u64::MAX - 1);
+        assert!(!take_query_line("srv2", "[12:00:00] [Server thread/INFO]: /stop"));
+    }
+
+    #[test]
+    fn console_message_strips_prefixes() {
+        assert_eq!(console_message("[12:00:00] [Server thread/INFO]: /tp <x>"), "/tp <x>");
+        assert_eq!(console_message("[22nov2025 16:41:52.661] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Done (1s)!"), "Done (1s)!");
+        assert_eq!(console_message("plain text"), "plain text");
     }
 }

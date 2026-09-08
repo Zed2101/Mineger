@@ -7,7 +7,7 @@ import { populatePropertiesPanel, readPropertiesForm, setPropsNote, setupServerI
 import { setupMods, renderModsList } from './modules/ui-mods.js';
 import { setupModBrowser } from './modules/ui-modbrowser.js';
 import { setupModals, showEulaModal } from './modules/ui-modals.js';
-import { setupConsole, showConsoleFor, handleOutputEvent, pushLog } from './modules/ui-console.js';
+import { setupConsole, showConsoleFor, handleOutputEvent, handleCommandsReady, pushLog } from './modules/ui-console.js';
 import { setupStatusListener, handleStatusEvent, getRuntime, applyStatus, statusSlotHtml, itemSubText, updateActiveCount } from './modules/ui-status.js';
 import { setupDetails, renderDetails, renderStats, renderPlayers, setLaunchInfo, handleBackupProgress } from './modules/ui-details.js';
 import { makeSortable } from './modules/sortable.js';
@@ -232,6 +232,7 @@ function handleRemoteEvent(hostId, type, payload) {
   if (type === 'server-output') handleOutputEvent(state, normalized);
   else if (type === 'server-status') handleStatusEvent(state, normalized, onStatusChange);
   else if (type === 'backup-progress') handleBackupProgress(state, normalized);
+  else if (type === 'commands-ready') handleCommandsReady(state, normalized);
 }
 
 async function refreshRemoteServers(hostId) {

@@ -327,6 +327,10 @@
       "no_region": "",
       "player_not_found": "",
       "bad_player_name": ""
+    },
+    "console": {
+      "no_commands": "",
+      "bad_command_name": ""
     }
   },
   "msg": {
@@ -551,7 +555,13 @@
     "console": {
       "lines": "",
       "send_error": "",
-      "stop_hint": ""
+      "stop_hint": "",
+      "wiki": "",
+      "ac_ready": "",
+      "ac_none": "",
+      "ac_taking": "",
+      "ac_players": "",
+      "ac_alias": ""
     },
     "details": {
       "backup_count": {
@@ -792,7 +802,9 @@
       "enter_key": "",
       "input_placeholder": "",
       "quick_commands": "",
-      "title": ""
+      "title": "",
+      "wiki_title": "",
+      "hint_wiki": ""
     },
     "delete": {
       "cancel": "",

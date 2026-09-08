@@ -426,6 +426,8 @@ fn build_router(state: HostState) -> Router {
         .route("/api/servers/{id}/map/render", post(map_render))
         .route("/api/servers/{id}/map/search", post(map_search))
         .route("/api/servers/{id}/players/live", get(players_live))
+        .route("/api/servers/{id}/commands", get(command_snapshot))
+        .route("/api/servers/{id}/commands/{name}", get(command_usage))
         .route("/api/servers/{id}/players/{name}/inventory", get(player_inventory))
         .route("/api/servers/{id}/start", post(start_server))
         .route("/api/servers/{id}/stop", post(stop_server))
@@ -643,6 +645,16 @@ async fn map_search(State(state): State<HostState>, Path(id): Path<String>, Json
 async fn players_live(State(state): State<HostState>, Path(id): Path<String>) -> ApiResult<Vec<crate::worldmap::LivePlayer>> {
     let app = state.app.clone();
     Ok(Json(blocking(move || service::live_players(&app, &id)).await?))
+}
+
+async fn command_snapshot(State(state): State<HostState>, Path(id): Path<String>) -> ApiResult<Option<crate::cmdsnap::CommandSnapshot>> {
+    let app = state.app.clone();
+    Ok(Json(blocking(move || service::command_snapshot(&app, &id)).await?))
+}
+
+async fn command_usage(State(state): State<HostState>, Path((id, name)): Path<(String, String)>) -> ApiResult<Vec<String>> {
+    let app = state.app.clone();
+    Ok(Json(blocking(move || service::command_usage(&app, &id, &name)).await?))
 }
 
 async fn player_inventory(Path((id, name)): Path<(String, String)>) -> ApiResult<Vec<crate::worldmap::InventoryItem>> {

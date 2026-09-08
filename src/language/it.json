@@ -327,6 +327,10 @@
       "no_region": "Regione non presente.",
       "player_not_found": "Il server non ha risposto per {name}: giocatore non trovato o comando non disponibile.",
       "bad_player_name": "Nome giocatore non valido."
+    },
+    "console": {
+      "no_commands": "Il server non ha risposto a \"help\" con un elenco di comandi",
+      "bad_command_name": "Nome di comando non valido"
     }
   },
   "msg": {
@@ -551,7 +555,13 @@
     "console": {
       "lines": "{count} righe",
       "send_error": "Errore invio comando: {error}",
-      "stop_hint": "Usa il bottone \"Arresta Server\" per fermare il server"
+      "stop_hint": "Usa il bottone \"Arresta Server\" per fermare il server",
+      "wiki": "Comandi {version}",
+      "ac_ready": "{count} comandi · Tab completa",
+      "ac_none": "L'autocompletamento usa l'elenco dei comandi del server, preso al primo avvio.",
+      "ac_taking": "Sto leggendo i comandi dal server…",
+      "ac_players": "giocatore online",
+      "ac_alias": "alias di /{target}"
     },
     "details": {
       "backup_count": {
@@ -792,7 +802,9 @@
       "enter_key": "invio",
       "input_placeholder": "Scrivi un comando…",
       "quick_commands": "Comandi rapidi",
-      "title": "Console"
+      "title": "Console",
+      "wiki_title": "Riferimento dei comandi sul Minecraft Wiki",
+      "hint_wiki": "wiki"
     },
     "delete": {
       "cancel": "Annulla",

@@ -86,6 +86,18 @@ pub async fn get_live_players(app: AppHandle, id: String) -> Result<Vec<crate::w
     tauri::async_runtime::spawn_blocking(move || service::live_players(&app, &id)).await.map_err(|e| e.to_string())?
 }
 
+/// Comandi del server per l'autocompletamento in console (`null` finché non c'è uno snapshot).
+#[tauri::command]
+pub async fn get_command_snapshot(app: AppHandle, id: String) -> Result<Option<crate::cmdsnap::CommandSnapshot>, String> {
+    tauri::async_runtime::spawn_blocking(move || service::command_snapshot(&app, &id)).await.map_err(|e| e.to_string())?
+}
+
+/// Tutte le forme di un comando, chieste al server acceso.
+#[tauri::command]
+pub async fn get_command_usage(app: AppHandle, id: String, name: String) -> Result<Vec<String>, String> {
+    tauri::async_runtime::spawn_blocking(move || service::command_usage(&app, &id, &name)).await.map_err(|e| e.to_string())?
+}
+
 /// Cerca sulla mappa in tutte le dimensioni (giocatori, coordinate, strutture, biomi, POI, creature, cartelli).
 #[tauri::command]
 pub async fn search_world(app: AppHandle, id: String, query: String, dimension: String, x: f64, z: f64) -> Result<Vec<crate::worldindex::SearchHit>, String> {

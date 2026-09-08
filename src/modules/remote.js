@@ -106,6 +106,10 @@ export class RemoteHost {
         return this.request('POST', s('/map/search'), { json: { query: args.query, dimension: args.dimension, x: args.x, z: args.z } });
       case 'get_live_players':
         return this.request('GET', s('/players/live'));
+      case 'get_command_snapshot':
+        return this.request('GET', s('/commands'));
+      case 'get_command_usage':
+        return this.request('GET', s(`/commands/${enc(args.name)}`));
       case 'get_player_inventory':
         return this.request('GET', s(`/players/${enc(args.name)}/inventory`));
       case 'get_server_metrics':

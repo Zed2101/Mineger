@@ -1,6 +1,7 @@
 // src-tauri/src/lib.rs
 
 pub mod backup;
+pub mod cmdsnap;
 pub mod commands;
 pub mod create;
 pub mod events;
@@ -77,6 +78,8 @@ pub fn run() {
             commands::get_map_tile,
             commands::render_world_map,
             commands::get_live_players,
+            commands::get_command_snapshot,
+            commands::get_command_usage,
             commands::get_player_inventory,
             commands::search_world,
             commands::update_server_info,

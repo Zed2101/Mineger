@@ -329,6 +329,14 @@
 @utility map-kind {
   @apply w-[88px] shrink-0 truncate rounded-full bg-bg-inset px-2 py-0.5 text-center font-mono text-[9px] uppercase tracking-wide text-text-faint;
 }
+/* Autocompletamento della console: righe del popup sopra l'input */
+@utility console-ac-item {
+  @apply flex w-full items-baseline gap-3 rounded-md px-2.5 py-1.5 text-left font-mono text-[12px] text-text-soft transition-colors hover:bg-bg-item;
+}
+@utility console-ac-active {
+  @apply bg-bg-item text-text-main;
+}
+
 @utility map-menu-item {
   @apply flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[12px] text-text-soft transition-colors hover:bg-bg-item hover:text-text-main disabled:cursor-default disabled:opacity-50 disabled:hover:bg-transparent;
 }

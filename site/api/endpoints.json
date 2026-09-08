@@ -362,6 +362,44 @@
         },
         {
           "method": "GET",
+          "path": "/api/servers/{id}/commands",
+          "auth": "token",
+          "title": {
+            "en": "Commands the server accepts",
+            "it": "Comandi accettati dal server"
+          },
+          "desc": {
+            "en": "The list Mineger takes from <code>help</code> the moment the server comes online: vanilla, mod and plugin commands with their first-level syntax, saved next to the server. <code>null</code> until the first start. The app uses it for console autocompletion; the WebSocket sends <code>commands-ready</code> when a new snapshot is saved.",
+            "it": "L'elenco che Mineger prende da <code>help</code> appena il server va online: comandi vanilla, delle mod e dei plugin con la sintassi di primo livello, salvato accanto al server. <code>null</code> fino al primo avvio. L'app lo usa per l'autocompletamento in console; il WebSocket manda <code>commands-ready</code> quando viene salvato uno snapshot nuovo."
+          },
+          "use": {
+            "en": "Validate a Discord bot's <code>!cmd</code> against what the server really accepts, or build a slash-command menu from it.",
+            "it": "Validare il <code>!cmd</code> di un bot Discord contro quello che il server accetta davvero, o costruirci un menu di comandi slash."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Vanilla%20coi%20bro/commands\"",
+          "response": "{ \"version\": \"1.21.9\", \"taken_at\": 1789000000, \"commands\": [ { \"name\": \"gamemode\", \"usage\": \"(survival|creative|adventure|spectator) [<target>]\" }, { \"name\": \"tp\", \"usage\": \"-> teleport\", \"alias_of\": \"teleport\" }, \"…\" ] }"
+        },
+        {
+          "method": "GET",
+          "path": "/api/servers/{id}/commands/{name}",
+          "auth": "token",
+          "title": {
+            "en": "Every form of one command",
+            "it": "Tutte le forme di un comando"
+          },
+          "desc": {
+            "en": "Asks the running server <code>help &lt;name&gt;</code> and returns each accepted form. Cached for the session; the answer never reaches the console.",
+            "it": "Chiede al server acceso <code>help &lt;nome&gt;</code> e ritorna ogni forma accettata. In cache per la sessione; la risposta non finisce in console."
+          },
+          "use": {
+            "en": "Show the syntax next to a command box in your own dashboard, exactly as this server (mods included) understands it.",
+            "it": "Mostrare la sintassi accanto a una casella comandi nel tuo pannello, esattamente come la capisce questo server (mod comprese)."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Vanilla%20coi%20bro/commands/tp\"",
+          "response": "[ \"/tp <destination>\", \"/tp <location>\", \"/tp <targets> <destination>\", \"/tp <targets> <location>\", \"/tp <targets> <location> <rotation>\", \"/tp <targets> <location> facing <facingLocation>\" ]"
+        },
+        {
+          "method": "GET",
           "path": "/api/servers/{id}/metrics",
           "auth": "token",
           "title": {
@@ -388,8 +426,8 @@
             "it": "Eventi in tempo reale"
           },
           "desc": {
-            "en": "A WebSocket that forwards every app event as <code>{ \"type\", \"payload\" }</code>: <code>server-status</code>, <code>server-output</code>, <code>create-progress</code>, <code>update-progress</code>, <code>mod-progress</code>, <code>backup-progress</code>, <code>pack-updates</code>, <code>webhook-call</code>, <code>map-progress</code>. This is the only route that accepts the token in the query string, because browsers cannot set headers on a WebSocket.",
-            "it": "Un WebSocket che inoltra ogni evento dell'app come <code>{ \"type\", \"payload\" }</code>: <code>server-status</code>, <code>server-output</code>, <code>create-progress</code>, <code>update-progress</code>, <code>mod-progress</code>, <code>backup-progress</code>, <code>pack-updates</code>, <code>webhook-call</code>, <code>map-progress</code>. È l'unica rotta che accetta il token nella query string, perché un browser non può impostare header su un WebSocket."
+            "en": "A WebSocket that forwards every app event as <code>{ \"type\", \"payload\" }</code>: <code>server-status</code>, <code>server-output</code>, <code>create-progress</code>, <code>update-progress</code>, <code>mod-progress</code>, <code>backup-progress</code>, <code>pack-updates</code>, <code>webhook-call</code>, <code>map-progress</code>, <code>commands-ready</code>. This is the only route that accepts the token in the query string, because browsers cannot set headers on a WebSocket.",
+            "it": "Un WebSocket che inoltra ogni evento dell'app come <code>{ \"type\", \"payload\" }</code>: <code>server-status</code>, <code>server-output</code>, <code>create-progress</code>, <code>update-progress</code>, <code>mod-progress</code>, <code>backup-progress</code>, <code>pack-updates</code>, <code>webhook-call</code>, <code>map-progress</code>, <code>commands-ready</code>. È l'unica rotta che accetta il token nella query string, perché un browser non può impostare header su un WebSocket."
           },
           "use": {
             "en": "A chat bridge: forward <code>joined the game</code> lines to Discord, and Discord messages back with <code>/command</code>.",

@@ -402,6 +402,11 @@
                     <span id="console-count" class="note">0 righe</span>
                   </div>
                   <div class="flex items-center gap-3">
+                    <a id="console-wiki" href="#" class="note hidden items-center gap-1 transition hover:text-accent" title="">
+                      <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                      <span id="console-wiki-label"></span>
+                      <span aria-hidden="true">↗</span>
+                    </a>
                     <label class="flex cursor-pointer items-center gap-2">
                       <span class="micro" data-i18n="ui.console.autoscroll">Auto-scroll</span>
                       <span class="toggle"><input type="checkbox" id="console-autoscroll" checked /><span class="toggle-track"></span></span>
@@ -419,10 +424,19 @@
                 <div id="quick-commands" class="flex flex-wrap gap-1.5"></div>
               </div>
 
-              <div class="mt-3 flex items-center gap-3 rounded-[10px] border border-line bg-bg-card px-4 py-3">
-                <span class="font-mono text-[14px] font-bold text-accent">&gt;</span>
-                <input id="console-input" type="text" class="min-w-0 flex-1 bg-transparent font-mono text-[12px] text-text-main outline-none placeholder:font-sans placeholder:text-text-faint" data-i18n-placeholder="ui.console.input_placeholder" placeholder="Scrivi un comando…" autocomplete="off" spellcheck="false" />
-                <span class="micro rounded border border-line px-1.5 py-0.5" data-i18n="ui.console.enter_key">invio</span>
+              <div id="console-hint" class="mt-2 flex min-h-[18px] items-start justify-between gap-3 px-1 font-mono text-[11px] leading-[18px] text-text-faint">
+                <div id="console-hint-text" class="min-w-0 whitespace-pre-wrap break-words"></div>
+                <a id="console-hint-wiki" href="#" class="hidden shrink-0 transition hover:text-accent"></a>
+              </div>
+
+              <div class="relative mt-1">
+                <div id="console-ac" class="absolute inset-x-0 bottom-full z-20 mb-1 hidden max-h-64 overflow-y-auto rounded-[10px] border border-line bg-bg-card p-1 shadow-xl"></div>
+                <div class="flex items-center gap-3 rounded-[10px] border border-line bg-bg-card px-4 py-3">
+                  <span class="font-mono text-[14px] font-bold text-accent">&gt;</span>
+                  <input id="console-input" type="text" class="min-w-0 flex-1 bg-transparent font-mono text-[12px] text-text-main outline-none placeholder:font-sans placeholder:text-text-faint" data-i18n-placeholder="ui.console.input_placeholder" placeholder="Scrivi un comando…" autocomplete="off" spellcheck="false" />
+                  <span id="console-tab-key" class="micro hidden rounded border border-line px-1.5 py-0.5">tab</span>
+                  <span class="micro rounded border border-line px-1.5 py-0.5" data-i18n="ui.console.enter_key">invio</span>
+                </div>
               </div>
             </section>
 
