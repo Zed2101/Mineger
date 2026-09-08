@@ -76,9 +76,10 @@ const find = (dir, test) => {
   const hit = fs.existsSync(dir) ? fs.readdirSync(dir).find(test) : null;
   return hit ? path.join(dir, hit) : null;
 };
-const setup = find(path.join(bundle, 'nsis'), (f) => f.endsWith('-setup.exe'));
-const msi = find(path.join(bundle, 'msi'), (f) => f.endsWith('.msi'));
-if (!setup) fail('NSIS installer not found under bundle/nsis');
+// Older builds stay in the bundle folder: pick the files of this version only.
+const setup = find(path.join(bundle, 'nsis'), (f) => f.includes(`_${version}_`) && f.endsWith('-setup.exe'));
+const msi = find(path.join(bundle, 'msi'), (f) => f.includes(`_${version}_`) && f.endsWith('.msi'));
+if (!setup) fail(`NSIS installer for ${version} not found under bundle/nsis`);
 if (!fs.existsSync(`${setup}.sig`)) fail(`${setup}.sig missing: is bundle.createUpdaterArtifacts true in tauri.conf.json?`);
 
 const manifest = {
