@@ -25,7 +25,7 @@ use crate::tr;
 
 /// Application ID registrato sul Discord Developer Portal. Non è un segreto:
 /// identifica solo "Mineger" agli occhi di Discord (nome e immagini mostrate).
-pub const DISCORD_APP_ID: &str = "0";
+pub const DISCORD_APP_ID: &str = "1546843435716190269";
 const SITE_URL: &str = "https://zed2101.github.io/Mineger/";
 const REPO_URL: &str = "https://github.com/Zed2101/Mineger";
 /// Chiavi degli asset caricati nell'applicazione Discord.
