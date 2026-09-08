@@ -708,7 +708,8 @@
       "online": "Online",
       "offline": "Offline",
       "last_seen": "Visto il {when}",
-      "kick_confirm": "Espellere {name} dal server?"
+      "kick_confirm": "Espellere {name} dal server?",
+      "indexing": "Indicizzazione {done}/{total}…"
     }
   },
   "progress": {
@@ -1116,6 +1117,18 @@
         "chestplate": "Corazza",
         "helmet": "Elmo",
         "offhand": "Mano secondaria"
+      },
+      "search_placeholder": "Cerca: giocatore, villaggio, portale, bioma, coordinate…",
+      "search_none": "Nessun risultato",
+      "search_hint": "Cerca in tutte le dimensioni",
+      "kind": {
+        "player": "giocatore",
+        "coords": "coordinate",
+        "structure": "struttura",
+        "biome": "bioma",
+        "poi": "punto",
+        "entity": "creatura",
+        "sign": "cartello"
       }
     }
   },
@@ -1136,5 +1149,53 @@
     "large_text": "Mineger — server Minecraft senza riga di comando · zed2101.github.io/Mineger",
     "button_site": "Sito di Mineger",
     "button_repo": "Codice su GitHub"
+  },
+  "map": {
+    "structure": {
+      "ancient_city": "Città antica",
+      "trial_chambers": "Camere di prova",
+      "trail_ruins": "Rovine del sentiero",
+      "village": "Villaggio",
+      "stronghold": "Fortezza (portale End)",
+      "mineshaft": "Miniera abbandonata",
+      "fortress": "Fortezza del Nether",
+      "bastion": "Bastione",
+      "monument": "Monumento oceanico",
+      "mansion": "Magione",
+      "outpost": "Avamposto dei predoni",
+      "ruined_portal": "Portale in rovina",
+      "desert_pyramid": "Tempio del deserto",
+      "jungle_pyramid": "Tempio della giungla",
+      "jungle_temple": "Tempio della giungla",
+      "swamp_hut": "Capanna della strega",
+      "igloo": "Igloo",
+      "shipwreck": "Relitto",
+      "buried_treasure": "Tesoro sepolto",
+      "ocean_ruin": "Rovine oceaniche",
+      "end_city": "Città dell'End",
+      "nether_fossil": "Fossile del Nether"
+    },
+    "poi": {
+      "nether_portal": "Portale del Nether",
+      "home": "Letto",
+      "lodestone": "Lodestone",
+      "beehive": "Alveare",
+      "bee_nest": "Nido di api",
+      "lightning_rod": "Parafulmine",
+      "meeting": "Campana del villaggio",
+      "armorer": "Postazione: armaiolo",
+      "butcher": "Postazione: macellaio",
+      "cartographer": "Postazione: cartografo",
+      "cleric": "Postazione: chierico",
+      "farmer": "Postazione: contadino",
+      "fisherman": "Postazione: pescatore",
+      "fletcher": "Postazione: frecciaio",
+      "leatherworker": "Postazione: conciatore",
+      "librarian": "Postazione: bibliotecario",
+      "mason": "Postazione: scalpellino",
+      "shepherd": "Postazione: pastore",
+      "toolsmith": "Postazione: fabbro di utensili",
+      "weaponsmith": "Postazione: fabbro d'armi"
+    }
   }
 }

@@ -236,6 +236,19 @@ pub fn live_players(app: &AppHandle, id: &str) -> Result<Vec<crate::worldmap::Li
     Ok(crate::worldmap::live_players(id, &dir))
 }
 
+pub fn search_world(app: &AppHandle, id: &str, query: &str, dimension: &str, x: f64, z: f64) -> Result<Vec<crate::worldindex::SearchHit>, String> {
+    use tauri::Emitter;
+    let dir = server_dir(app, id)?;
+    let origin = crate::worldindex::SearchOrigin { dimension: dimension.to_string(), x, z };
+    let (app2, id2) = (app.clone(), id.to_string());
+    Ok(crate::worldindex::search(&dir, id, query, &origin, |done, total| {
+        // avanzamento solo mentre si costruiscono indici mancanti (la ricerca su cache è immediata)
+        let payload = serde_json::json!({ "id": id2, "phase": "index", "done": done, "total": total });
+        let _ = app2.emit("map-progress", payload.clone());
+        crate::events::publish("map-progress", payload);
+    }))
+}
+
 pub fn render_world_map(app: &AppHandle, id: &str, dimension: &str, force: bool) -> Result<(), String> {
     let dir = server_dir(app, id)?;
     if crate::worldmap::region_dir(&crate::worldmap::world_dir(&dir), dimension).is_none() {

@@ -102,6 +102,8 @@ export class RemoteHost {
         return this.request('GET', s(`/map/tile/${enc(args.dimension)}/${args.rx}/${args.rz}${args.force ? '?force=true' : ''}`));
       case 'render_world_map':
         return this.request('POST', s('/map/render'), { json: { dimension: args.dimension, force: !!args.force } });
+      case 'search_world':
+        return this.request('POST', s('/map/search'), { json: { query: args.query, dimension: args.dimension, x: args.x, z: args.z } });
       case 'get_live_players':
         return this.request('GET', s('/players/live'));
       case 'get_player_inventory':

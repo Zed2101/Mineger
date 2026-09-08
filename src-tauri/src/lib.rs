@@ -24,6 +24,7 @@ pub mod settings;
 pub mod snbt;
 pub mod upnp;
 pub mod utils;
+pub mod worldindex;
 pub mod worldmap;
 
 use std::time::Duration;
@@ -77,6 +78,7 @@ pub fn run() {
             commands::render_world_map,
             commands::get_live_players,
             commands::get_player_inventory,
+            commands::search_world,
             commands::update_server_info,
             commands::delete_server,
             commands::get_server_disk_usage,

@@ -122,7 +122,7 @@ fn is_safe_segment(s: &str) -> bool {
     !s.is_empty() && s.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '.')) && s != "." && s != ".."
 }
 
-fn list_regions(dir: &Path) -> Vec<[i32; 2]> {
+pub(crate) fn list_regions(dir: &Path) -> Vec<[i32; 2]> {
     let mut out = Vec::new();
     if let Ok(rd) = fs::read_dir(dir) {
         for e in rd.flatten() {
@@ -177,21 +177,21 @@ pub fn dimensions(world: &Path) -> Vec<DimensionInfo> {
 // level.dat, giocatori salvati
 // ---------------------------------------------------------------------------
 
-fn read_gzip_nbt(path: &Path) -> Option<fastnbt::Value> {
+pub(crate) fn read_gzip_nbt(path: &Path) -> Option<fastnbt::Value> {
     let raw = fs::read(path).ok()?;
     let mut out = Vec::new();
     flate2::read::GzDecoder::new(Cursor::new(&raw)).read_to_end(&mut out).ok()?;
     fastnbt::from_bytes::<fastnbt::Value>(&out).ok()
 }
 
-fn nbt_get<'a>(v: &'a fastnbt::Value, key: &str) -> Option<&'a fastnbt::Value> {
+pub(crate) fn nbt_get<'a>(v: &'a fastnbt::Value, key: &str) -> Option<&'a fastnbt::Value> {
     match v {
         fastnbt::Value::Compound(m) => m.get(key),
         _ => None,
     }
 }
 
-fn nbt_i32(v: Option<&fastnbt::Value>) -> Option<i32> {
+pub(crate) fn nbt_i32(v: Option<&fastnbt::Value>) -> Option<i32> {
     match v? {
         fastnbt::Value::Int(n) => Some(*n),
         fastnbt::Value::Short(n) => Some(*n as i32),
@@ -201,7 +201,7 @@ fn nbt_i32(v: Option<&fastnbt::Value>) -> Option<i32> {
     }
 }
 
-fn nbt_f64(v: &fastnbt::Value) -> Option<f64> {
+pub(crate) fn nbt_f64(v: &fastnbt::Value) -> Option<f64> {
     match v {
         fastnbt::Value::Double(n) => Some(*n),
         fastnbt::Value::Float(n) => Some(*n as f64),
@@ -210,7 +210,7 @@ fn nbt_f64(v: &fastnbt::Value) -> Option<f64> {
     }
 }
 
-fn nbt_string(v: Option<&fastnbt::Value>) -> Option<String> {
+pub(crate) fn nbt_string(v: Option<&fastnbt::Value>) -> Option<String> {
     match v? {
         fastnbt::Value::String(s) => Some(s.clone()),
         _ => None,
@@ -249,7 +249,7 @@ fn user_names(world: &Path, server_dir: &Path) -> HashMap<String, String> {
     map
 }
 
-fn saved_players(world: &Path, server_dir: &Path, online: &[String]) -> Vec<PlayerMarker> {
+pub(crate) fn saved_players(world: &Path, server_dir: &Path, online: &[String]) -> Vec<PlayerMarker> {
     let names = user_names(world, server_dir);
     let mut out = Vec::new();
     let Ok(rd) = fs::read_dir(world.join("playerdata")) else { return out };
@@ -638,7 +638,7 @@ fn encode_png(img: &RgbaImage) -> Result<Vec<u8>, String> {
     Ok(out)
 }
 
-fn dim_folder(dim: &str) -> String {
+pub(crate) fn dim_folder(dim: &str) -> String {
     dim.chars().map(|c| if c.is_ascii_alphanumeric() || c == '_' || c == '-' { c } else { '_' }).collect()
 }
 
@@ -646,7 +646,7 @@ pub fn tile_path(server_dir: &Path, dim: &str, rx: i32, rz: i32) -> PathBuf {
     server_dir.join(".mineger").join("map").join(dim_folder(dim)).join(format!("r.{}.{}.png", rx, rz))
 }
 
-fn mtime(path: &Path) -> Option<SystemTime> {
+pub(crate) fn mtime(path: &Path) -> Option<SystemTime> {
     fs::metadata(path).and_then(|m| m.modified()).ok()
 }
 
@@ -742,7 +742,7 @@ pub fn render_all(app: AppHandle, server_id: String, server_dir: PathBuf, dim: S
 // Interrogazioni al server acceso (comando vanilla `/data get entity`)
 // ---------------------------------------------------------------------------
 
-fn is_player_name(s: &str) -> bool {
+pub(crate) fn is_player_name(s: &str) -> bool {
     !s.is_empty() && s.len() <= 16 && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
 }
 

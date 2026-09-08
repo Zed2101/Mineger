@@ -154,9 +154,16 @@ export function setupMap(appState, options = {}) {
   el('btn-close-inventory').addEventListener('click', () => el('modal-inventory').classList.add('hidden'));
   el('modal-inventory').addEventListener('click', (e) => { if (e.target === el('modal-inventory')) el('modal-inventory').classList.add('hidden'); });
 
+  setupSearch();
+
   listen('map-progress', (ev) => {
     const p = ev.payload;
-    if (!isMine(p.id) || p.dimension !== view.dim) return;
+    if (!isMine(p.id)) return;
+    if (p.phase === 'index') {
+      if (p.done < p.total) setStatus(t('msg2.map.indexing', { done: p.done, total: p.total }));
+      return;
+    }
+    if (p.dimension !== view.dim) return;
     if (p.done < p.total) {
       setStatus(t('msg2.map.rendering', { done: p.done, total: p.total }));
     } else {
@@ -188,6 +195,9 @@ export async function renderMapTab(id) {
     tiles.clear();
     live.clear();
     queue = [];
+    pulse = null;
+    el('map-search').value = '';
+    el('map-results').classList.add('hidden');
     closeMenu();
   }
   await loadInfo();
@@ -474,7 +484,8 @@ function renderMarkers() {
     }
     m.style.transform = `translate(${Math.round(sx)}px, ${Math.round(sy)}px)`;
   }
-  for (const m of [...box.children]) if (!keep.has(m.dataset.player)) m.remove();
+  for (const m of [...box.children]) if (m.dataset.player && !keep.has(m.dataset.player)) m.remove();
+  renderPulse();
 }
 
 function startPolling() {
@@ -502,6 +513,104 @@ function startPolling() {
 function stopPolling() {
   if (pollTimer) clearInterval(pollTimer);
   pollTimer = null;
+}
+
+// ---------------------------------------------------------------------------
+// Ricerca (giocatori, coordinate, strutture, biomi, POI, creature, cartelli; tutte le dimensioni)
+// ---------------------------------------------------------------------------
+
+let pulse = null; // { x, z, dim, until } evidenzia il risultato scelto per qualche secondo
+let searchSeq = 0;
+
+function setupSearch() {
+  const input = el('map-search');
+  const box = el('map-results');
+  let timer = null;
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(runSearch, 300);
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { clearTimeout(timer); runSearch(); }
+    if (e.key === 'Escape') { input.blur(); box.classList.add('hidden'); }
+  });
+  input.addEventListener('focus', () => { if (box.children.length) box.classList.remove('hidden'); });
+  document.addEventListener('click', (e) => {
+    if (!box.contains(e.target) && e.target !== input) box.classList.add('hidden');
+  });
+}
+
+async function runSearch() {
+  const input = el('map-search');
+  const box = el('map-results');
+  const query = input.value.trim();
+  if (!query || !view.id) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+  const seq = ++searchSeq;
+  const id = view.id;
+  try {
+    const hits = await call('search_world', { id, query, dimension: view.dim, x: view.cx, z: view.cz });
+    if (seq !== searchSeq || view.id !== id) return;
+    const indexingWord = t('msg2.map.indexing', { done: '', total: '' }).split(' ')[0];
+    if (el('map-status').textContent.startsWith(indexingWord)) setStatus('');
+    renderResults(hits);
+  } catch (err) {
+    box.innerHTML = `<p class="note-err px-2.5 py-1.5">${escapeHtml(String(err))}</p>`;
+    box.classList.remove('hidden');
+  }
+}
+
+function renderResults(hits) {
+  const box = el('map-results');
+  if (!hits.length) {
+    box.innerHTML = `<p class="note px-2.5 py-1.5">${escapeHtml(t('ui.map.search_none'))}</p>`;
+    box.classList.remove('hidden');
+    return;
+  }
+  box.innerHTML = hits
+    .map((h, i) => {
+      const where = `${dimLabel(h.dimension)} · ${Math.round(h.x)}, ${h.y != null ? Math.round(h.y) + ', ' : ''}${Math.round(h.z)}`;
+      const dist = h.dimension === view.dim && h.kind !== 'coords' ? `<span class="shrink-0 font-mono text-[10px] text-text-faint">${Math.round(h.distance)} m</span>` : '';
+      return `<button type="button" class="map-result" data-i="${i}">` +
+        `<span class="map-kind">${escapeHtml(t(`ui.map.kind.${h.kind}`))}</span>` +
+        `<span class="min-w-0 flex-1"><span class="block truncate text-[12px] font-semibold text-text-main">${escapeHtml(h.label)}</span>` +
+        `<span class="block truncate font-mono text-[10px] text-text-faint">${escapeHtml(where)}</span></span>${dist}</button>`;
+    })
+    .join('');
+  box.querySelectorAll('[data-i]').forEach((b) => b.addEventListener('click', () => { goTo(hits[Number(b.dataset.i)]); box.classList.add('hidden'); }));
+  box.classList.remove('hidden');
+}
+
+/** Centra la mappa sul risultato, cambiando dimensione se serve, e lo evidenzia per qualche secondo. */
+function goTo(hit) {
+  if (hit.dimension !== view.dim && info?.dimensions.some((d) => d.id === hit.dimension)) {
+    view.dim = hit.dimension;
+    renderDimPills();
+  }
+  view.cx = hit.x;
+  view.cz = hit.z;
+  view.scale = Math.max(view.scale, 1);
+  view.centered = true;
+  pulse = { x: hit.x, z: hit.z, dim: hit.dimension, until: Date.now() + 5000 };
+  draw();
+  setTimeout(draw, 5100);
+}
+
+function renderPulse() {
+  const box = el('map-markers');
+  let p = box.querySelector('#map-pulse');
+  if (!pulse || pulse.dim !== view.dim || Date.now() > pulse.until) {
+    if (p) p.remove();
+    return;
+  }
+  if (!p) {
+    p = document.createElement('span');
+    p.id = 'map-pulse';
+    p.className = 'pointer-events-none absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2';
+    p.innerHTML = '<span class="absolute inline-flex size-8 -translate-x-1/2 -translate-y-1/2 animate-ping rounded-full bg-warning/60"></span><span class="relative block size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-warning ring-2 ring-bg-dark"></span>';
+    box.appendChild(p);
+  }
+  const { sx, sy } = blockToScreen(pulse.x + 0.5, pulse.z + 0.5);
+  p.style.transform = `translate(${Math.round(sx)}px, ${Math.round(sy)}px)`;
 }
 
 // ---------------------------------------------------------------------------

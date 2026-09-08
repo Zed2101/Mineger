@@ -708,7 +708,8 @@
       "online": "",
       "offline": "",
       "last_seen": "",
-      "kick_confirm": ""
+      "kick_confirm": "",
+      "indexing": ""
     }
   },
   "progress": {
@@ -1116,6 +1117,18 @@
         "chestplate": "",
         "helmet": "",
         "offhand": ""
+      },
+      "search_placeholder": "",
+      "search_none": "",
+      "search_hint": "",
+      "kind": {
+        "player": "",
+        "coords": "",
+        "structure": "",
+        "biome": "",
+        "poi": "",
+        "entity": "",
+        "sign": ""
       }
     }
   },
@@ -1136,5 +1149,53 @@
     "large_text": "",
     "button_site": "",
     "button_repo": ""
+  },
+  "map": {
+    "structure": {
+      "ancient_city": "",
+      "trial_chambers": "",
+      "trail_ruins": "",
+      "village": "",
+      "stronghold": "",
+      "mineshaft": "",
+      "fortress": "",
+      "bastion": "",
+      "monument": "",
+      "mansion": "",
+      "outpost": "",
+      "ruined_portal": "",
+      "desert_pyramid": "",
+      "jungle_pyramid": "",
+      "jungle_temple": "",
+      "swamp_hut": "",
+      "igloo": "",
+      "shipwreck": "",
+      "buried_treasure": "",
+      "ocean_ruin": "",
+      "end_city": "",
+      "nether_fossil": ""
+    },
+    "poi": {
+      "nether_portal": "",
+      "home": "",
+      "lodestone": "",
+      "beehive": "",
+      "bee_nest": "",
+      "lightning_rod": "",
+      "meeting": "",
+      "armorer": "",
+      "butcher": "",
+      "cartographer": "",
+      "cleric": "",
+      "farmer": "",
+      "fisherman": "",
+      "fletcher": "",
+      "leatherworker": "",
+      "librarian": "",
+      "mason": "",
+      "shepherd": "",
+      "toolsmith": "",
+      "weaponsmith": ""
+    }
   }
 }

@@ -424,6 +424,7 @@ fn build_router(state: HostState) -> Router {
         .route("/api/servers/{id}/map", get(map_info))
         .route("/api/servers/{id}/map/tile/{dim}/{rx}/{rz}", get(map_tile))
         .route("/api/servers/{id}/map/render", post(map_render))
+        .route("/api/servers/{id}/map/search", post(map_search))
         .route("/api/servers/{id}/players/live", get(players_live))
         .route("/api/servers/{id}/players/{name}/inventory", get(player_inventory))
         .route("/api/servers/{id}/start", post(start_server))
@@ -617,6 +618,26 @@ async fn map_render(State(state): State<HostState>, Path(id): Path<String>, Json
     let force = body.get("force").and_then(|v| v.as_bool()).unwrap_or(false);
     service::render_world_map(&state.app, &id, &dimension, force)?;
     Ok(Json(serde_json::json!({ "ok": true })))
+}
+
+#[derive(Deserialize)]
+struct SearchBody {
+    query: String,
+    #[serde(default = "default_dimension")]
+    dimension: String,
+    #[serde(default)]
+    x: f64,
+    #[serde(default)]
+    z: f64,
+}
+
+fn default_dimension() -> String {
+    "minecraft:overworld".into()
+}
+
+async fn map_search(State(state): State<HostState>, Path(id): Path<String>, Json(body): Json<SearchBody>) -> ApiResult<Vec<crate::worldindex::SearchHit>> {
+    let app = state.app.clone();
+    Ok(Json(blocking(move || service::search_world(&app, &id, &body.query, &body.dimension, body.x, body.z)).await?))
 }
 
 async fn players_live(State(state): State<HostState>, Path(id): Path<String>) -> ApiResult<Vec<crate::worldmap::LivePlayer>> {

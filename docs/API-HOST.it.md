@@ -73,6 +73,7 @@ Il token è accettato **solo nell'header**. L'unica eccezione è `/api/ws?token=
 | `GET` | `/api/servers/{id}/map` | Dimensioni con le regioni presenti, spawn, giocatori salvati (posizione, dimensione, online) |
 | `GET` | `/api/servers/{id}/map/tile/{dim}/{rx}/{rz}` | Tile PNG di una regione, `{ "png": "<base64>" }`; `?force=true` la rigenera |
 | `POST` | `/api/servers/{id}/map/render` | Rigenera le tile cambiate di una dimensione: `{dimension, force}`; avanzamento nell'evento `map-progress` |
+| `POST` | `/api/servers/{id}/map/search` | Ricerca in tutte le dimensioni: `{query, dimension, x, z}` → `[{kind, id, label, dimension, x, y, z, distance}]` (kind: `player`, `coords`, `structure`, `biome`, `poi`, `entity`, `sign`) |
 | `GET` | `/api/servers/{id}/players/live` | Posizione e dimensione dei giocatori online (chieste al server con `/data get entity`) |
 | `GET` | `/api/servers/{id}/players/{name}/inventory` | Inventario di un giocatore online: `[{slot, id, count}]` |
 

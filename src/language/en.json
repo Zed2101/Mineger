@@ -708,7 +708,8 @@
       "online": "Online",
       "offline": "Offline",
       "last_seen": "Last seen {when}",
-      "kick_confirm": "Kick {name} from the server?"
+      "kick_confirm": "Kick {name} from the server?",
+      "indexing": "Indexing {done}/{total}…"
     }
   },
   "progress": {
@@ -1116,6 +1117,18 @@
         "chestplate": "Chestplate",
         "helmet": "Helmet",
         "offhand": "Off hand"
+      },
+      "search_placeholder": "Search: player, village, portal, biome, coordinates…",
+      "search_none": "No results",
+      "search_hint": "Searches every dimension",
+      "kind": {
+        "player": "player",
+        "coords": "coordinates",
+        "structure": "structure",
+        "biome": "biome",
+        "poi": "point",
+        "entity": "creature",
+        "sign": "sign"
       }
     }
   },
@@ -1136,5 +1149,53 @@
     "large_text": "Mineger — Minecraft servers without the command line · zed2101.github.io/Mineger",
     "button_site": "Mineger website",
     "button_repo": "Source on GitHub"
+  },
+  "map": {
+    "structure": {
+      "ancient_city": "Ancient city",
+      "trial_chambers": "Trial chambers",
+      "trail_ruins": "Trail ruins",
+      "village": "Village",
+      "stronghold": "Stronghold (End portal)",
+      "mineshaft": "Mineshaft",
+      "fortress": "Nether fortress",
+      "bastion": "Bastion remnant",
+      "monument": "Ocean monument",
+      "mansion": "Woodland mansion",
+      "outpost": "Pillager outpost",
+      "ruined_portal": "Ruined portal",
+      "desert_pyramid": "Desert temple",
+      "jungle_pyramid": "Jungle temple",
+      "jungle_temple": "Jungle temple",
+      "swamp_hut": "Witch hut",
+      "igloo": "Igloo",
+      "shipwreck": "Shipwreck",
+      "buried_treasure": "Buried treasure",
+      "ocean_ruin": "Ocean ruins",
+      "end_city": "End city",
+      "nether_fossil": "Nether fossil"
+    },
+    "poi": {
+      "nether_portal": "Nether portal",
+      "home": "Bed",
+      "lodestone": "Lodestone",
+      "beehive": "Beehive",
+      "bee_nest": "Bee nest",
+      "lightning_rod": "Lightning rod",
+      "meeting": "Village bell",
+      "armorer": "Job site: armorer",
+      "butcher": "Job site: butcher",
+      "cartographer": "Job site: cartographer",
+      "cleric": "Job site: cleric",
+      "farmer": "Job site: farmer",
+      "fisherman": "Job site: fisherman",
+      "fletcher": "Job site: fletcher",
+      "leatherworker": "Job site: leatherworker",
+      "librarian": "Job site: librarian",
+      "mason": "Job site: mason",
+      "shepherd": "Job site: shepherd",
+      "toolsmith": "Job site: toolsmith",
+      "weaponsmith": "Job site: weaponsmith"
+    }
   }
 }

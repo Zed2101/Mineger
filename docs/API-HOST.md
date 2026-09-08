@@ -73,6 +73,7 @@ The token is accepted **only in the header**. The single exception is `/api/ws?t
 | `GET` | `/api/servers/{id}/map` | Dimensions with their regions, spawn, saved players (position, dimension, online flag) |
 | `GET` | `/api/servers/{id}/map/tile/{dim}/{rx}/{rz}` | PNG tile of one region as `{ "png": "<base64>" }`; `?force=true` re-renders it |
 | `POST` | `/api/servers/{id}/map/render` | Re-render the stale tiles of a dimension: `{dimension, force}`; progress in the `map-progress` event |
+| `POST` | `/api/servers/{id}/map/search` | Search every dimension: `{query, dimension, x, z}` → `[{kind, id, label, dimension, x, y, z, distance}]` (kinds: `player`, `coords`, `structure`, `biome`, `poi`, `entity`, `sign`) |
 | `GET` | `/api/servers/{id}/players/live` | Position and dimension of the online players (asked to the server with `/data get entity`) |
 | `GET` | `/api/servers/{id}/players/{name}/inventory` | Inventory of an online player: `[{slot, id, count}]` |
 

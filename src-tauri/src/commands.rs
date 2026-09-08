@@ -86,6 +86,12 @@ pub async fn get_live_players(app: AppHandle, id: String) -> Result<Vec<crate::w
     tauri::async_runtime::spawn_blocking(move || service::live_players(&app, &id)).await.map_err(|e| e.to_string())?
 }
 
+/// Cerca sulla mappa in tutte le dimensioni (giocatori, coordinate, strutture, biomi, POI, creature, cartelli).
+#[tauri::command]
+pub async fn search_world(app: AppHandle, id: String, query: String, dimension: String, x: f64, z: f64) -> Result<Vec<crate::worldindex::SearchHit>, String> {
+    tauri::async_runtime::spawn_blocking(move || service::search_world(&app, &id, &query, &dimension, x, z)).await.map_err(|e| e.to_string())?
+}
+
 #[tauri::command]
 pub async fn get_player_inventory(id: String, name: String) -> Result<Vec<crate::worldmap::InventoryItem>, String> {
     tauri::async_runtime::spawn_blocking(move || crate::worldmap::player_inventory(&id, &name)).await.map_err(|e| e.to_string())?

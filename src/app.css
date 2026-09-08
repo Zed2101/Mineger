@@ -323,6 +323,12 @@
 @utility map-marker-label {
   @apply max-w-[140px] truncate rounded-full bg-bg-card/90 px-2 py-0.5 text-[11px] font-semibold text-text-main shadow-md ring-1 ring-line;
 }
+@utility map-result {
+  @apply flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left transition-colors hover:bg-bg-item;
+}
+@utility map-kind {
+  @apply w-[88px] shrink-0 truncate rounded-full bg-bg-inset px-2 py-0.5 text-center font-mono text-[9px] uppercase tracking-wide text-text-faint;
+}
 @utility map-menu-item {
   @apply flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[12px] text-text-soft transition-colors hover:bg-bg-item hover:text-text-main disabled:cursor-default disabled:opacity-50 disabled:hover:bg-transparent;
 }
