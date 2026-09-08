@@ -82,8 +82,8 @@ pub async fn render_world_map(app: AppHandle, id: String, dimension: String, for
 
 /// Posizioni vive dei giocatori online (chieste al server con `/data get`).
 #[tauri::command]
-pub async fn get_live_players(id: String) -> Result<Vec<crate::worldmap::LivePlayer>, String> {
-    tauri::async_runtime::spawn_blocking(move || crate::worldmap::live_players(&id)).await.map_err(|e| e.to_string())
+pub async fn get_live_players(app: AppHandle, id: String) -> Result<Vec<crate::worldmap::LivePlayer>, String> {
+    tauri::async_runtime::spawn_blocking(move || service::live_players(&app, &id)).await.map_err(|e| e.to_string())?
 }
 
 #[tauri::command]

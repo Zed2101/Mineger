@@ -231,6 +231,11 @@ pub fn world_map_tile(app: &AppHandle, id: &str, dimension: &str, rx: i32, rz: i
     Ok(base64::engine::general_purpose::STANDARD.encode(png))
 }
 
+pub fn live_players(app: &AppHandle, id: &str) -> Result<Vec<crate::worldmap::LivePlayer>, String> {
+    let dir = server_dir(app, id)?;
+    Ok(crate::worldmap::live_players(id, &dir))
+}
+
 pub fn render_world_map(app: &AppHandle, id: &str, dimension: &str, force: bool) -> Result<(), String> {
     let dir = server_dir(app, id)?;
     if crate::worldmap::region_dir(&crate::worldmap::world_dir(&dir), dimension).is_none() {

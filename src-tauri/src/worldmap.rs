@@ -71,6 +71,8 @@ pub struct MapInfo {
 #[derive(Serialize, Clone, Debug)]
 pub struct LivePlayer {
     pub name: String,
+    /// Da `usercache.json` (scritto al login): con `online-mode` è l'UUID Mojang, quello della skin
+    pub uuid: Option<String>,
     pub x: f64,
     pub y: f64,
     pub z: f64,
@@ -762,9 +764,15 @@ fn query_entity(id: &str, name: &str, path: &str) -> Result<snbt::Value, String>
 }
 
 /// Posizione e dimensione dei giocatori online, chieste al server una alla volta.
-pub fn live_players(id: &str) -> Vec<LivePlayer> {
+pub fn live_players(id: &str, server_dir: &Path) -> Vec<LivePlayer> {
+    let names = process::players_of(id);
+    if names.is_empty() {
+        return Vec::new();
+    }
+    let world = world_dir(server_dir);
+    let uuids: HashMap<String, String> = user_names(&world, server_dir).into_iter().map(|(uuid, name)| (name.to_lowercase(), uuid)).collect();
     let mut out = Vec::new();
-    for name in process::players_of(id) {
+    for name in names {
         let Ok(pos) = query_entity(id, &name, "Pos") else { continue };
         let Some(list) = pos.as_list() else { continue };
         let c: Vec<f64> = list.iter().filter_map(|v| v.as_f64()).collect();
@@ -772,7 +780,8 @@ pub fn live_players(id: &str) -> Vec<LivePlayer> {
             continue;
         }
         let dimension = query_entity(id, &name, "Dimension").ok().and_then(|d| d.as_str().map(|s| s.to_string())).unwrap_or_else(|| "minecraft:overworld".into());
-        out.push(LivePlayer { name, x: c[0], y: c[1], z: c[2], dimension });
+        let uuid = uuids.get(&name.to_lowercase()).cloned();
+        out.push(LivePlayer { name, uuid, x: c[0], y: c[1], z: c[2], dimension });
     }
     out
 }

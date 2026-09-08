@@ -414,14 +414,37 @@ function currentPlayers() {
   const list = info.players.map((p) => {
     const l = live.get(p.name);
     return l
-      ? { ...p, x: l.x, y: l.y, z: l.z, dimension: l.dimension, online: true }
+      ? { ...p, x: l.x, y: l.y, z: l.z, dimension: l.dimension, uuid: p.uuid || l.uuid || '', online: true }
       : { ...p, online: online.has(p.name) };
   });
   // giocatori entrati ora, non ancora salvati su disco
   for (const [name, l] of live) {
-    if (!list.some((p) => p.name === name)) list.push({ name, uuid: '', ...l, online: true, last_seen: null });
+    if (!list.some((p) => p.name === name)) list.push({ name, ...l, uuid: l.uuid || '', online: true, last_seen: null });
   }
   return list.sort((a, b) => Number(b.online) - Number(a.online) || a.name.localeCompare(b.name));
+}
+
+/** Con `online-mode` gli UUID sono quelli Mojang: la faccia della skin viene da Crafatar. */
+function onlineMode() {
+  const server = state?.serverList.find((s) => s.id === view.id);
+  const v = server?.properties?.['online-mode'];
+  return v === undefined || String(v).toLowerCase() !== 'false';
+}
+
+const brokenFaces = new Set(); // uuid senza skin (Bedrock via Geyser, account offline): iniziali
+
+function faceUrl(p) {
+  if (!p.uuid || !onlineMode() || brokenFaces.has(p.uuid)) return null;
+  return `https://crafatar.com/avatars/${encodeURIComponent(p.uuid.replace(/-/g, ''))}?size=48&overlay`;
+}
+
+/** Faccia della skin o, in mancanza, le iniziali. */
+function faceHtml(p, sizeClass = 'map-marker-face') {
+  const url = faceUrl(p);
+  if (url) {
+    return `<img src="${url}" alt="" width="24" height="24" class="${sizeClass}${p.online ? ' map-marker-face-online' : ' opacity-70'}" data-uuid="${escapeHtml(p.uuid)}" draggable="false">`;
+  }
+  return `<span class="${sizeClass} flex items-center justify-center font-mono text-[9px] font-bold ${avatarClass(p.name)}${p.online ? ' map-marker-face-online' : ' opacity-70'}">${initials(p.name)}</span>`;
 }
 
 function renderMarkers() {
@@ -431,7 +454,7 @@ function renderMarkers() {
   const keep = new Set();
   for (const p of players) {
     const { sx, sy } = blockToScreen(p.x, p.z);
-    if (sx < -60 || sy < -60 || sx > W + 60 || sy > H + 60) continue;
+    if (sx < -80 || sy < -80 || sx > W + 80 || sy > H + 80) continue;
     keep.add(p.name);
     let m = box.querySelector(`[data-player="${CSS.escape(p.name)}"]`);
     if (!m) {
@@ -441,10 +464,14 @@ function renderMarkers() {
       m.className = 'map-marker';
       box.appendChild(m);
     }
-    m.classList.toggle('map-marker-online', p.online);
-    m.innerHTML =
-      `<span class="flex h-6 w-6 items-center justify-center rounded-full border-2 font-mono text-[9px] font-bold ${avatarClass(p.name)} ${p.online ? 'border-accent' : 'border-line-strong opacity-70'}">${initials(p.name)}</span>` +
-      `<span class="map-marker-label">${escapeHtml(p.name)}</span>`;
+    // il contenuto si rifà solo se cambia qualcosa: niente ricarichi dell'immagine a ogni pan
+    const key = `${p.name}|${p.online ? 1 : 0}|${faceUrl(p) || ''}`;
+    if (m.dataset.key !== key) {
+      m.dataset.key = key;
+      m.innerHTML = `<span class="map-marker-label">${escapeHtml(p.name)}</span>` + faceHtml(p);
+      const img = m.querySelector('img[data-uuid]');
+      if (img) img.addEventListener('error', () => { brokenFaces.add(img.dataset.uuid); m.dataset.key = ''; draw(); }, { once: true });
+    }
     m.style.transform = `translate(${Math.round(sx)}px, ${Math.round(sy)}px)`;
   }
   for (const m of [...box.children]) if (!keep.has(m.dataset.player)) m.remove();
@@ -571,7 +598,7 @@ function openPlayerMenu(p, x, y) {
   const items = playerMenuItems(p);
   const header =
     `<div class="flex items-center gap-2 px-2.5 py-2">` +
-    `<span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md font-mono text-[10px] font-bold ${avatarClass(p.name)}">${initials(p.name)}</span>` +
+    faceHtml(p, 'map-marker-face h-7 w-7') +
     `<div class="min-w-0 flex-1"><div class="truncate text-[13px] font-semibold">${escapeHtml(p.name)}</div>` +
     `<div class="font-mono text-[10px] text-text-faint">${p.online ? `<span class="text-accent">${escapeHtml(t('msg2.map.online'))}</span>` : escapeHtml(p.last_seen ? t('msg2.map.last_seen', { when: formatRelativeDay(new Date(p.last_seen)) }) : t('msg2.map.offline'))}` +
     ` · ${fmt(p.x)}, ${fmt(p.y)}, ${fmt(p.z)}</div></div></div>`;

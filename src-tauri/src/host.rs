@@ -619,8 +619,9 @@ async fn map_render(State(state): State<HostState>, Path(id): Path<String>, Json
     Ok(Json(serde_json::json!({ "ok": true })))
 }
 
-async fn players_live(Path(id): Path<String>) -> ApiResult<Vec<crate::worldmap::LivePlayer>> {
-    Ok(Json(blocking(move || Ok::<_, String>(crate::worldmap::live_players(&id))).await?))
+async fn players_live(State(state): State<HostState>, Path(id): Path<String>) -> ApiResult<Vec<crate::worldmap::LivePlayer>> {
+    let app = state.app.clone();
+    Ok(Json(blocking(move || service::live_players(&app, &id)).await?))
 }
 
 async fn player_inventory(Path((id, name)): Path<(String, String)>) -> ApiResult<Vec<crate::worldmap::InventoryItem>> {

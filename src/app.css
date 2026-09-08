@@ -308,14 +308,20 @@
 /* ---------------------------------------------------------------------------
    Mappa del mondo (tab Mappa)
    --------------------------------------------------------------------------- */
+/* Il marker è ancorato al centro della faccia (24 px sotto l'etichetta): niente transizioni
+   sulla posizione, altrimenti durante il pan resterebbe indietro rispetto alla mappa. */
 @utility map-marker {
-  @apply pointer-events-auto absolute left-0 top-0 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 rounded-full bg-bg-card/90 p-0.5 pr-2 shadow-md ring-1 ring-line transition-transform hover:z-10 hover:ring-accent;
+  @apply pointer-events-auto absolute left-0 top-0 flex flex-col items-center gap-0.5 hover:z-10;
+  translate: -50% calc(-100% + 12px);
 }
-@utility map-marker-online {
-  @apply ring-accent/60;
+@utility map-marker-face {
+  @apply h-6 w-6 shrink-0 rounded-[4px] bg-bg-card object-cover shadow-md ring-2 ring-line-strong [image-rendering:pixelated];
+}
+@utility map-marker-face-online {
+  @apply ring-accent;
 }
 @utility map-marker-label {
-  @apply max-w-[120px] truncate text-[11px] font-semibold text-text-main;
+  @apply max-w-[140px] truncate rounded-full bg-bg-card/90 px-2 py-0.5 text-[11px] font-semibold text-text-main shadow-md ring-1 ring-line;
 }
 @utility map-menu-item {
   @apply flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[12px] text-text-soft transition-colors hover:bg-bg-item hover:text-text-main disabled:cursor-default disabled:opacity-50 disabled:hover:bg-transparent;
