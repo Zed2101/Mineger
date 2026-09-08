@@ -68,7 +68,7 @@ if (process.argv.includes('--check')) {
 }
 
 console.log(`Building Mineger ${version} (signed)…`);
-const build = spawnSync('npm', ['run', 'tauri', '--', 'build'], { stdio: 'inherit', env, shell: true, cwd: root });
+const build = spawnSync('npm run tauri -- build', { stdio: 'inherit', env, shell: true, cwd: root });
 if (build.status !== 0) process.exit(build.status ?? 1);
 
 const bundle = path.join(root, 'src-tauri/target/release/bundle');
