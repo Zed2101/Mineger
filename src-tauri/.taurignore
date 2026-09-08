@@ -1,0 +1,6 @@
+# Files the app itself writes while running in debug (they live next to the
+# sources only in dev builds; release builds use AppData). Without this the
+# `tauri dev` watcher rebuilds and restarts the app every time settings change.
+src/data/settings.json
+src/data/config.json
+src/data/java_launch_version.json

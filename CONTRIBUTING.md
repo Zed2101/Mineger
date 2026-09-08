@@ -19,7 +19,7 @@ npm install
 npm run tauri dev
 ```
 
-`tauri dev` compiles the backend, builds the CSS and opens the app with hot reload for the frontend. In debug builds servers and settings live inside the repository (`servers/`, `src-tauri/src/data/`); release builds use the user's AppData.
+`tauri dev` compiles the backend, builds the CSS and opens the app with hot reload for the frontend. In debug builds servers and settings live inside the repository (`servers/`, `src-tauri/src/data/`); release builds use the user's AppData. The files the app writes there at runtime are listed in `src-tauri/.taurignore`, so the dev watcher does not restart the app every time settings change; add new ones there.
 
 How the code is organised: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The host API and webhooks: [docs/API-HOST.md](docs/API-HOST.md).
 
