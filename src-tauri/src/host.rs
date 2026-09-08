@@ -421,6 +421,11 @@ fn build_router(state: HostState) -> Router {
         .route("/api/servers/{id}", axum::routing::delete(delete_server))
         .route("/api/servers/{id}/disk-usage", get(disk_usage))
         .route("/api/servers/{id}/logs", get(logs))
+        .route("/api/servers/{id}/map", get(map_info))
+        .route("/api/servers/{id}/map/tile/{dim}/{rx}/{rz}", get(map_tile))
+        .route("/api/servers/{id}/map/render", post(map_render))
+        .route("/api/servers/{id}/players/live", get(players_live))
+        .route("/api/servers/{id}/players/{name}/inventory", get(player_inventory))
         .route("/api/servers/{id}/start", post(start_server))
         .route("/api/servers/{id}/stop", post(stop_server))
         .route("/api/servers/{id}/kill", post(kill_server))
@@ -582,6 +587,44 @@ async fn list_servers(State(state): State<HostState>) -> ApiResult<Vec<crate::mo
 
 async fn logs(Path(id): Path<String>) -> ApiResult<Vec<String>> {
     Ok(Json(service::recent_logs(&id)))
+}
+
+// --- Mappa del mondo ---
+
+#[derive(Deserialize)]
+struct ForceQuery {
+    force: Option<bool>,
+}
+
+async fn map_info(State(state): State<HostState>, Path(id): Path<String>) -> ApiResult<crate::worldmap::MapInfo> {
+    let app = state.app.clone();
+    Ok(Json(blocking(move || service::world_map_info(&app, &id)).await?))
+}
+
+/// Tile come JSON `{ "png": "<base64>" }`, lo stesso formato del comando locale.
+async fn map_tile(
+    State(state): State<HostState>,
+    Path((id, dim, rx, rz)): Path<(String, String, i32, i32)>,
+    Query(q): Query<ForceQuery>,
+) -> ApiResult<Value> {
+    let app = state.app.clone();
+    let png = blocking(move || service::world_map_tile(&app, &id, &dim, rx, rz, q.force.unwrap_or(false))).await?;
+    Ok(Json(serde_json::json!({ "png": png })))
+}
+
+async fn map_render(State(state): State<HostState>, Path(id): Path<String>, Json(body): Json<Value>) -> ApiResult<Value> {
+    let dimension = body.get("dimension").and_then(|v| v.as_str()).unwrap_or("minecraft:overworld").to_string();
+    let force = body.get("force").and_then(|v| v.as_bool()).unwrap_or(false);
+    service::render_world_map(&state.app, &id, &dimension, force)?;
+    Ok(Json(serde_json::json!({ "ok": true })))
+}
+
+async fn players_live(Path(id): Path<String>) -> ApiResult<Vec<crate::worldmap::LivePlayer>> {
+    Ok(Json(blocking(move || Ok::<_, String>(crate::worldmap::live_players(&id))).await?))
+}
+
+async fn player_inventory(Path((id, name)): Path<(String, String)>) -> ApiResult<Vec<crate::worldmap::InventoryItem>> {
+    Ok(Json(blocking(move || crate::worldmap::player_inventory(&id, &name)).await?))
 }
 
 async fn start_server(State(state): State<HostState>, Path(id): Path<String>) -> ApiResult<String> {

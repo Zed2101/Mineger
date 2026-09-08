@@ -59,6 +59,38 @@ pub async fn get_recent_logs(id: String) -> Result<Vec<String>, String> {
     Ok(service::recent_logs(&id))
 }
 
+// --- Mappa del mondo ---
+
+#[tauri::command]
+pub async fn get_world_map(app: AppHandle, id: String) -> Result<crate::worldmap::MapInfo, String> {
+    tauri::async_runtime::spawn_blocking(move || service::world_map_info(&app, &id)).await.map_err(|e| e.to_string())?
+}
+
+/// PNG della tile (base64), dalla cache o renderizzata al volo.
+#[tauri::command]
+pub async fn get_map_tile(app: AppHandle, id: String, dimension: String, rx: i32, rz: i32, force: Option<bool>) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || service::world_map_tile(&app, &id, &dimension, rx, rz, force.unwrap_or(false)))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+/// Rigenera tutte le tile di una dimensione in background (eventi `map-progress`).
+#[tauri::command]
+pub async fn render_world_map(app: AppHandle, id: String, dimension: String, force: Option<bool>) -> Result<(), String> {
+    service::render_world_map(&app, &id, &dimension, force.unwrap_or(false))
+}
+
+/// Posizioni vive dei giocatori online (chieste al server con `/data get`).
+#[tauri::command]
+pub async fn get_live_players(id: String) -> Result<Vec<crate::worldmap::LivePlayer>, String> {
+    tauri::async_runtime::spawn_blocking(move || crate::worldmap::live_players(&id)).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn get_player_inventory(id: String, name: String) -> Result<Vec<crate::worldmap::InventoryItem>, String> {
+    tauri::async_runtime::spawn_blocking(move || crate::worldmap::player_inventory(&id, &name)).await.map_err(|e| e.to_string())?
+}
+
 #[tauri::command]
 pub async fn update_server_info(app: AppHandle, id: String, name: String, icon: Option<String>) -> Result<(), String> {
     service::update_server_info(&app, &id, &name, icon.as_deref())

@@ -277,7 +277,8 @@
       "reserved_name": "",
       "running_stop_first": "",
       "stdin_unavailable": "",
-      "unknown_kind": ""
+      "unknown_kind": "",
+      "query_timeout": ""
     },
     "server_icon": {
       "empty_image": "",
@@ -319,6 +320,13 @@
       "not_found": "",
       "open_failed": "",
       "unsafe_path": ""
+    },
+    "map": {
+      "no_world": "",
+      "bad_dimension": "",
+      "no_region": "",
+      "player_not_found": "",
+      "bad_player_name": ""
     }
   },
   "msg": {
@@ -687,6 +695,20 @@
       "toggle_disable": "",
       "toggle_enable": "",
       "token": ""
+    },
+    "map": {
+      "loading": "",
+      "tiles_loading": "",
+      "rendering": "",
+      "rendered": "",
+      "up_to_date": "",
+      "saving": "",
+      "sent": "",
+      "error": "",
+      "online": "",
+      "offline": "",
+      "last_seen": "",
+      "kick_confirm": ""
     }
   },
   "progress": {
@@ -945,7 +967,8 @@
       "details": "",
       "mods": "",
       "properties": "",
-      "webhooks": ""
+      "webhooks": "",
+      "map": ""
     },
     "topbar": {
       "edit_title": "",
@@ -1019,6 +1042,81 @@
       "remote_token_placeholder": "",
       "search": "",
       "show_all_versions": ""
+    },
+    "map": {
+      "refresh": "",
+      "spawn": "",
+      "hint": "",
+      "empty_dim": "",
+      "dim": {
+        "overworld": "",
+        "nether": "",
+        "end": ""
+      },
+      "menu": {
+        "tp_coords": "",
+        "tp_from": "",
+        "tp_to": "",
+        "inventory": "",
+        "title": "",
+        "title_placeholder": "",
+        "sound": "",
+        "effect": "",
+        "lightning": "",
+        "gamemode": "",
+        "kick": "",
+        "op": "",
+        "deop": "",
+        "back": "",
+        "go": "",
+        "send": "",
+        "no_others": "",
+        "tp_here": "",
+        "only_online": ""
+      },
+      "sound": {
+        "dragon": "",
+        "ghast": "",
+        "creeper": "",
+        "thunder": "",
+        "totem": "",
+        "wither": "",
+        "guardian": "",
+        "warden": "",
+        "villager": "",
+        "pig": "",
+        "anvil": "",
+        "cave": ""
+      },
+      "effect": {
+        "levitation": "",
+        "glowing": "",
+        "jump": "",
+        "speed": "",
+        "slowness": "",
+        "blindness": "",
+        "invisibility": "",
+        "night_vision": "",
+        "clear": ""
+      },
+      "gamemode": {
+        "survival": "",
+        "creative": "",
+        "adventure": "",
+        "spectator": ""
+      },
+      "inventory": {
+        "title": "",
+        "loading": "",
+        "empty": "",
+        "hotbar": "",
+        "slot": "",
+        "boots": "",
+        "leggings": "",
+        "chestplate": "",
+        "helmet": "",
+        "offhand": ""
+      }
     }
   },
   "presence": {

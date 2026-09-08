@@ -277,7 +277,8 @@
       "reserved_name": "Nome riservato dal sistema operativo",
       "running_stop_first": "Il server è in esecuzione: fermalo prima di eliminarlo",
       "stdin_unavailable": "stdin del server non disponibile",
-      "unknown_kind": "Tipo di server sconosciuto"
+      "unknown_kind": "Tipo di server sconosciuto",
+      "query_timeout": "Il server non ha risposto in tempo."
     },
     "server_icon": {
       "empty_image": "Immagine vuota",
@@ -319,6 +320,13 @@
       "not_found": "File zip non trovato",
       "open_failed": "Impossibile aprire lo zip: {error}",
       "unsafe_path": "Percorso non sicuro nello zip: {path}"
+    },
+    "map": {
+      "no_world": "Questo server non ha ancora un mondo: avvialo una volta per generarlo.",
+      "bad_dimension": "Dimensione non valida.",
+      "no_region": "Regione non presente.",
+      "player_not_found": "Il server non ha risposto per {name}: giocatore non trovato o comando non disponibile.",
+      "bad_player_name": "Nome giocatore non valido."
     }
   },
   "msg": {
@@ -687,6 +695,20 @@
       "toggle_disable": "Disabilita",
       "toggle_enable": "Abilita",
       "token": "Token"
+    },
+    "map": {
+      "loading": "Lettura del mondo…",
+      "tiles_loading": "Caricamento delle tile…",
+      "rendering": "Render {done}/{total}…",
+      "rendered": "Mappa aggiornata ({n} tile)",
+      "up_to_date": "Mappa già aggiornata",
+      "saving": "Salvataggio del mondo in corso…",
+      "sent": "Inviato: {command}",
+      "error": "Errore: {error}",
+      "online": "Online",
+      "offline": "Offline",
+      "last_seen": "Visto il {when}",
+      "kick_confirm": "Espellere {name} dal server?"
     }
   },
   "progress": {
@@ -945,7 +967,8 @@
       "details": "Dettagli",
       "mods": "Mods",
       "properties": "Proprietà",
-      "webhooks": "Webhook"
+      "webhooks": "Webhook",
+      "map": "Mappa"
     },
     "topbar": {
       "edit_title": "Modifica nome e icona",
@@ -1019,12 +1042,87 @@
       "remote_token_placeholder": "opzionale",
       "search": "Cerca",
       "show_all_versions": "Mostra tutte le versioni"
+    },
+    "map": {
+      "refresh": "Aggiorna",
+      "spawn": "Vai allo spawn",
+      "hint": "Trascina per spostarti, rotella per lo zoom, clic su un giocatore per i comandi, tasto destro per teletrasportare qui.",
+      "empty_dim": "Nessun chunk generato in questa dimensione.",
+      "dim": {
+        "overworld": "Mondo",
+        "nether": "Nether",
+        "end": "End"
+      },
+      "menu": {
+        "tp_coords": "Teletrasporta a coordinate…",
+        "tp_from": "Porta qui un giocatore",
+        "tp_to": "Teletrasporta verso un giocatore",
+        "inventory": "Vedi inventario",
+        "title": "Messaggio a schermo…",
+        "title_placeholder": "Testo che comparirà al centro dello schermo",
+        "sound": "Fai sentire un suono",
+        "effect": "Applica un effetto",
+        "lightning": "Fulmine (fa danno)",
+        "gamemode": "Modalità di gioco",
+        "kick": "Espelli",
+        "op": "Rendi operatore",
+        "deop": "Togli operatore",
+        "back": "← Indietro",
+        "go": "Vai",
+        "send": "Invia",
+        "no_others": "Nessun altro giocatore online",
+        "tp_here": "Teletrasporta qui",
+        "only_online": "I comandi sono disponibili con il server acceso e il giocatore online."
+      },
+      "sound": {
+        "dragon": "Ruggito del drago",
+        "ghast": "Urlo del ghast",
+        "creeper": "Creeper innescato",
+        "thunder": "Tuono",
+        "totem": "Totem",
+        "wither": "Evocazione del wither",
+        "guardian": "Maledizione del guardiano",
+        "warden": "Ruggito del warden",
+        "villager": "Villico",
+        "pig": "Maiale",
+        "anvil": "Incudine che cade",
+        "cave": "Rumore di caverna"
+      },
+      "effect": {
+        "levitation": "Levitazione (5 s)",
+        "glowing": "Luminoso (30 s)",
+        "jump": "Salto alto (30 s)",
+        "speed": "Velocità (30 s)",
+        "slowness": "Lentezza (20 s)",
+        "blindness": "Cecità (5 s)",
+        "invisibility": "Invisibilità (30 s)",
+        "night_vision": "Visione notturna (60 s)",
+        "clear": "Togli tutti gli effetti"
+      },
+      "gamemode": {
+        "survival": "Sopravvivenza",
+        "creative": "Creativa",
+        "adventure": "Avventura",
+        "spectator": "Spettatore"
+      },
+      "inventory": {
+        "title": "Inventario di {name}",
+        "loading": "Lettura dell'inventario…",
+        "empty": "Inventario vuoto",
+        "hotbar": "Barra {n}",
+        "slot": "Slot {n}",
+        "boots": "Stivali",
+        "leggings": "Gambali",
+        "chestplate": "Corazza",
+        "helmet": "Elmo",
+        "offhand": "Mano secondaria"
+      }
     }
   },
   "presence": {
     "idle": "In attesa",
-    "no_servers": "Nessun server ancora",
-    "managing": "Gestisce {n} server",
+    "no_servers": "zed2101.github.io/Mineger",
+    "managing": "Gestisce {n} server · zed2101.github.io/Mineger",
     "hosting": "Hosting {name}",
     "hosting_generic": "Sta ospitando un server",
     "hosting_many": "Hosting {n} server",

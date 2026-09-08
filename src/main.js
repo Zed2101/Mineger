@@ -2,6 +2,7 @@
 import { getServers, call, isRemoteId, splitRemoteId, makeRemoteId, registerRemoteHost, unregisterRemoteHost } from './modules/api.js';
 import { RemoteHost } from './modules/remote.js';
 import { setupTabs } from './modules/ui-tabs.js';
+import { setupMap, renderMapTab, setMapVisible } from './modules/ui-map.js';
 import { populatePropertiesPanel, readPropertiesForm, setPropsNote, setupServerIcon } from './modules/ui-properties.js';
 import { setupMods, renderModsList } from './modules/ui-mods.js';
 import { setupModBrowser } from './modules/ui-modbrowser.js';
@@ -189,6 +190,7 @@ function selectServer(id) {
   applyStatus(state, id);
   renderWebhooksTab(state, server);
   renderPackCard(state, server);
+  if (document.querySelector('.tab.active')?.dataset.target === 'view-map') renderMapTab(id);
 
   if (isRemoteId(id)) seedRemoteConsole(id);
 }
@@ -460,7 +462,12 @@ async function initApp() {
   onLanguageChange(redrawForLanguage);
   setupLanguage(redrawForLanguage);
 
-  setupTabs();
+  setupTabs((target) => {
+    const isMap = target === 'view-map';
+    setMapVisible(isMap);
+    if (isMap && state.activeServerId) renderMapTab(state.activeServerId);
+  });
+  setupMap(state, { isRemote: isRemoteId });
   setupModals(state, renderSidebar, updateBannerUI, {
     onServerCreated: async (newId) => {
       await loadServers();

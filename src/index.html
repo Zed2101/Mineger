@@ -100,6 +100,7 @@
             <button class="tab active" data-target="view-details" data-i18n="ui.tabs.details">Dettagli</button>
             <button class="tab" data-target="view-mods"><span data-i18n="ui.tabs.mods">Mods</span> <span id="tab-mods-count" class="tab-badge">0</span></button>
             <button class="tab" data-target="view-properties" data-i18n="ui.tabs.properties">Proprietà</button>
+            <button class="tab" data-target="view-map" data-i18n="ui.tabs.map">Mappa</button>
             <button class="tab" data-target="view-console" data-i18n="ui.tabs.console">Console</button>
             <button class="tab" data-target="view-webhooks"><span data-i18n="ui.tabs.webhooks">Webhook</span> <span id="tab-wh-count" class="tab-badge">0</span></button>
           </nav>
@@ -369,6 +370,25 @@
             </section>
 
             <!-- ===== Console ===== -->
+            <!-- ===== Mappa ===== -->
+            <section id="view-map" class="tab-content absolute inset-0 hidden flex flex-col">
+              <div class="flex items-center gap-3 border-b border-line px-6 py-3">
+                <div id="map-dims" class="flex flex-wrap gap-2"></div>
+                <span id="map-status" class="note min-w-0 flex-1 truncate"></span>
+                <button id="btn-map-spawn" class="btn-small hidden" data-i18n="ui.map.spawn">Vai allo spawn</button>
+                <button id="btn-map-refresh" class="btn-outline-accent shrink-0" data-i18n="ui.map.refresh">Aggiorna</button>
+              </div>
+              <div id="map-viewport" class="relative min-h-0 flex-1 cursor-grab overflow-hidden bg-bg-console">
+                <canvas id="map-canvas" class="absolute inset-0 block h-full w-full"></canvas>
+                <div id="map-markers" class="pointer-events-none absolute inset-0 overflow-hidden"></div>
+                <div id="map-empty" class="absolute inset-0 hidden items-center justify-center p-8 text-center text-[13px] text-text-muted flex"></div>
+                <div class="pointer-events-none absolute bottom-2 left-3 flex items-center gap-3 font-mono text-[10px] text-text-faint">
+                  <span id="map-coords">x 0  z 0</span>
+                  <span data-i18n="ui.map.hint">Trascina per spostarti, rotella per lo zoom, clic su un giocatore per i comandi, tasto destro per teletrasportare qui.</span>
+                </div>
+              </div>
+            </section>
+
             <section id="view-console" class="tab-content absolute inset-0 hidden flex flex-col p-6">
               <div class="card flex min-h-0 flex-1 flex-col overflow-hidden">
                 <div class="flex items-center justify-between border-b border-line px-4 py-2.5">
@@ -481,6 +501,22 @@
         <div class="modal-footer">
           <button id="btn-eula-cancel" class="btn-ghost" data-i18n="ui.eula.cancel">Annulla</button>
           <button id="btn-eula-accept" class="btn-primary" data-i18n="ui.eula.accept">Accetto e avvia</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Menu contestuale della mappa (giocatore o punto del mondo) -->
+    <div id="map-menu" class="fixed z-50 hidden w-64 rounded-lg border border-line bg-bg-card p-1 shadow-2xl"></div>
+
+    <!-- Inventario di un giocatore (sola lettura) -->
+    <div id="modal-inventory" class="modal-overlay hidden">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 id="inventory-title" class="text-[15px] font-bold">Inventario</h3>
+          <button id="btn-close-inventory" class="text-[22px] leading-none text-text-muted hover:text-danger">&times;</button>
+        </div>
+        <div class="modal-body">
+          <ul id="inventory-list" class="max-h-[420px] space-y-1.5 overflow-y-auto"></ul>
         </div>
       </div>
     </div>

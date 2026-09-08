@@ -21,8 +21,10 @@ pub mod process;
 pub mod service;
 pub mod servericon;
 pub mod settings;
+pub mod snbt;
 pub mod upnp;
 pub mod utils;
+pub mod worldmap;
 
 use std::time::Duration;
 use tauri::RunEvent;
@@ -36,6 +38,9 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
+            // I panic della libreria delle regioni sono gestiti nel render della mappa.
+            worldmap::install_panic_filter();
+
             // Scalda la cache delle Java in background: il primo avvio sarà immediato.
             std::thread::spawn(|| {
                 java::detect_runtimes();
@@ -67,6 +72,11 @@ pub fn run() {
             commands::kill_server,
             commands::send_command,
             commands::get_recent_logs,
+            commands::get_world_map,
+            commands::get_map_tile,
+            commands::render_world_map,
+            commands::get_live_players,
+            commands::get_player_inventory,
             commands::update_server_info,
             commands::delete_server,
             commands::get_server_disk_usage,

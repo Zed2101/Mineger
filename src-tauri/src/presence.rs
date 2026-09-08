@@ -125,14 +125,10 @@ pub fn server_renamed(id: &str, name: &str) {
     }
 }
 
-/// Riga di console del server: aggiorna la lista dei giocatori se è un join o un leave.
-pub fn observe_line(id: &str, line: &str) {
-    let Some((player, joined)) = parse_player_event(line) else { return };
-    let mut st = state();
-    let Some(rs) = st.running.get_mut(id) else { return };
-    let changed = if joined { rs.players.insert(player) } else { rs.players.remove(&player) };
-    drop(st);
-    if changed {
+/// Giocatori online del server (dal tracciamento in `process`): aggiorna la presenza.
+pub fn set_players(id: &str, players: &BTreeSet<String>) {
+    if let Some(rs) = state().running.get_mut(id) {
+        rs.players = players.clone();
         poke();
     }
 }
@@ -158,32 +154,6 @@ pub fn max_players_from(dir: &Path) -> u32 {
                 .and_then(|v| v.trim().parse().ok())
         })
         .unwrap_or(20)
-}
-
-// ---------------------------------------------------------------------------
-// Parsing delle righe di console
-// ---------------------------------------------------------------------------
-
-/// `Some((nome, true))` per un join, `Some((nome, false))` per leave o disconnessione.
-fn parse_player_event(line: &str) -> Option<(String, bool)> {
-    // "[12:00:00] [Server thread/INFO]: Steve joined the game" (Forge aggiunge un tag in più)
-    let msg = line.rsplit("]: ").next().unwrap_or(line).trim();
-    if let Some(name) = msg.strip_suffix(" joined the game") {
-        return is_player_name(name).then(|| (name.to_string(), true));
-    }
-    if let Some(name) = msg.strip_suffix(" left the game") {
-        return is_player_name(name).then(|| (name.to_string(), false));
-    }
-    if let Some((name, rest)) = msg.split_once(' ') {
-        if rest.starts_with("lost connection") && is_player_name(name) {
-            return Some((name.to_string(), false));
-        }
-    }
-    None
-}
-
-fn is_player_name(s: &str) -> bool {
-    !s.is_empty() && s.len() <= 16 && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
 }
 
 // ---------------------------------------------------------------------------
@@ -396,16 +366,6 @@ mod tests {
             max_players: max,
             started_at,
         }
-    }
-
-    #[test]
-    fn parses_join_leave_and_disconnect_lines() {
-        assert_eq!(parse_player_event("[12:00:00] [Server thread/INFO]: Steve joined the game"), Some(("Steve".into(), true)));
-        assert_eq!(parse_player_event("[12:00:00] [Server thread/INFO] [minecraft/PlayerList]: Al_ex left the game"), Some(("Al_ex".into(), false)));
-        assert_eq!(parse_player_event("[12:00:00] [Server thread/INFO]: Steve lost connection: Disconnected"), Some(("Steve".into(), false)));
-        assert_eq!(parse_player_event("[12:00:00] [Server thread/INFO]: <Steve> has anyone joined the game"), None);
-        assert_eq!(parse_player_event("[12:00:00] [Server thread/INFO]: Done (1.2s)! For help, type \"help\""), None);
-        assert_eq!(parse_player_event("[12:00:00] [Server thread/INFO]: a name with spaces joined the game"), None);
     }
 
     #[test]

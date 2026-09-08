@@ -96,6 +96,16 @@ export class RemoteHost {
         return this.request('POST', s('/command'), { json: { command: args.command } });
       case 'accept_eula_cmd':
         return this.request('POST', s('/eula'));
+      case 'get_world_map':
+        return this.request('GET', s('/map'));
+      case 'get_map_tile':
+        return this.request('GET', s(`/map/tile/${enc(args.dimension)}/${args.rx}/${args.rz}${args.force ? '?force=true' : ''}`));
+      case 'render_world_map':
+        return this.request('POST', s('/map/render'), { json: { dimension: args.dimension, force: !!args.force } });
+      case 'get_live_players':
+        return this.request('GET', s('/players/live'));
+      case 'get_player_inventory':
+        return this.request('GET', s(`/players/${enc(args.name)}/inventory`));
       case 'get_server_metrics':
         return this.request('GET', s('/metrics'));
       case 'list_backups':

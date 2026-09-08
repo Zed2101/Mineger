@@ -38,6 +38,7 @@ Quando esce una nuova versione del modpack l'app te lo segnala e la installa con
 - Backup del mondo in zip (con `save-off`/`save-all` per una copia consistente).
 - Icona del server (`server-icon.png`) ridimensionata automaticamente a 64×64.
 - Riordino dei server con drag & drop, icone personalizzabili.
+- **Mappa del mondo** letta dai file di regione: funziona con ogni tipo di server e versione, anche a server spento. Dimensioni e colori dei blocchi delle mod compresi. I giocatori sono marker sulla mappa: clic su uno per teletrasportarlo, vedere l'inventario, mandargli un messaggio a schermo, un suono, un effetto e altro.
 - **Apertura porta via UPnP** all'avvio, attivabile per singolo server.
 - Rilevamento automatico delle installazioni Java (incluse quelle del launcher Minecraft).
 
@@ -51,7 +52,7 @@ Quando esce una nuova versione del modpack l'app te lo segnala e la installa con
 ## Installazione
 
 1. Scarica l'installer dalla pagina [Releases](https://github.com/Zed2101/Mineger/releases).
-2. Esegui `Mineger_1.0.1_x64-setup.exe` (oppure il `.msi`).
+2. Esegui l'ultimo `Mineger_<versione>_x64-setup.exe` (oppure il `.msi`).
 3. Avvia Mineger.
 
 **Requisiti**

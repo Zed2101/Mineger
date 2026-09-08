@@ -277,7 +277,8 @@
       "reserved_name": "Name reserved by the operating system",
       "running_stop_first": "The server is running — stop it before deleting it",
       "stdin_unavailable": "server stdin not available",
-      "unknown_kind": "Unknown server type"
+      "unknown_kind": "Unknown server type",
+      "query_timeout": "The server did not answer in time."
     },
     "server_icon": {
       "empty_image": "Empty image",
@@ -319,6 +320,13 @@
       "not_found": "Zip file not found",
       "open_failed": "Could not open the zip: {error}",
       "unsafe_path": "Unsafe path in the zip: {path}"
+    },
+    "map": {
+      "no_world": "This server has no world yet: start it once to generate it.",
+      "bad_dimension": "Invalid dimension.",
+      "no_region": "Region not present.",
+      "player_not_found": "The server did not answer for {name}: player not found or command unavailable.",
+      "bad_player_name": "Invalid player name."
     }
   },
   "msg": {
@@ -687,6 +695,20 @@
       "toggle_disable": "Disable",
       "toggle_enable": "Enable",
       "token": "Token"
+    },
+    "map": {
+      "loading": "Reading the world…",
+      "tiles_loading": "Loading tiles…",
+      "rendering": "Rendering {done}/{total}…",
+      "rendered": "Map updated ({n} tiles)",
+      "up_to_date": "Map already up to date",
+      "saving": "Saving the world…",
+      "sent": "Sent: {command}",
+      "error": "Error: {error}",
+      "online": "Online",
+      "offline": "Offline",
+      "last_seen": "Last seen {when}",
+      "kick_confirm": "Kick {name} from the server?"
     }
   },
   "progress": {
@@ -945,7 +967,8 @@
       "details": "Details",
       "mods": "Mods",
       "properties": "Properties",
-      "webhooks": "Webhook"
+      "webhooks": "Webhook",
+      "map": "Map"
     },
     "topbar": {
       "edit_title": "Edit name and icon",
@@ -1019,12 +1042,87 @@
       "remote_token_placeholder": "optional",
       "search": "Search",
       "show_all_versions": "Show all versions"
+    },
+    "map": {
+      "refresh": "Refresh",
+      "spawn": "Go to spawn",
+      "hint": "Drag to move, wheel to zoom, click a player for commands, right-click to teleport here.",
+      "empty_dim": "No chunks generated in this dimension.",
+      "dim": {
+        "overworld": "Overworld",
+        "nether": "Nether",
+        "end": "End"
+      },
+      "menu": {
+        "tp_coords": "Teleport to coordinates…",
+        "tp_from": "Bring a player here",
+        "tp_to": "Teleport to a player",
+        "inventory": "View inventory",
+        "title": "On-screen message…",
+        "title_placeholder": "Text shown in the middle of the screen",
+        "sound": "Play a sound",
+        "effect": "Apply an effect",
+        "lightning": "Lightning (does damage)",
+        "gamemode": "Game mode",
+        "kick": "Kick",
+        "op": "Make operator",
+        "deop": "Remove operator",
+        "back": "← Back",
+        "go": "Go",
+        "send": "Send",
+        "no_others": "No other player online",
+        "tp_here": "Teleport here",
+        "only_online": "Commands are available while the server runs and the player is online."
+      },
+      "sound": {
+        "dragon": "Dragon growl",
+        "ghast": "Ghast scream",
+        "creeper": "Creeper hiss",
+        "thunder": "Thunder",
+        "totem": "Totem",
+        "wither": "Wither spawn",
+        "guardian": "Guardian curse",
+        "warden": "Warden roar",
+        "villager": "Villager",
+        "pig": "Pig",
+        "anvil": "Falling anvil",
+        "cave": "Cave noise"
+      },
+      "effect": {
+        "levitation": "Levitation (5 s)",
+        "glowing": "Glowing (30 s)",
+        "jump": "Jump boost (30 s)",
+        "speed": "Speed (30 s)",
+        "slowness": "Slowness (20 s)",
+        "blindness": "Blindness (5 s)",
+        "invisibility": "Invisibility (30 s)",
+        "night_vision": "Night vision (60 s)",
+        "clear": "Clear all effects"
+      },
+      "gamemode": {
+        "survival": "Survival",
+        "creative": "Creative",
+        "adventure": "Adventure",
+        "spectator": "Spectator"
+      },
+      "inventory": {
+        "title": "{name}'s inventory",
+        "loading": "Reading the inventory…",
+        "empty": "Empty inventory",
+        "hotbar": "Hotbar {n}",
+        "slot": "Slot {n}",
+        "boots": "Boots",
+        "leggings": "Leggings",
+        "chestplate": "Chestplate",
+        "helmet": "Helmet",
+        "offhand": "Off hand"
+      }
     }
   },
   "presence": {
     "idle": "Idle",
-    "no_servers": "No servers yet",
-    "managing": "Managing {n} servers",
+    "no_servers": "zed2101.github.io/Mineger",
+    "managing": "Managing {n} servers · zed2101.github.io/Mineger",
     "hosting": "Hosting {name}",
     "hosting_generic": "Hosting a server",
     "hosting_many": "Hosting {n} servers",

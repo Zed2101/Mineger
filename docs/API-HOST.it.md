@@ -66,6 +66,18 @@ Il token è accettato **solo nell'header**. L'unica eccezione è `/api/ws?token=
 | `GET` | `/api/servers/{id}/metrics` | CPU e RAM del processo Java |
 | `GET` | `/api/servers/{id}/disk-usage` | Byte e numero di file della cartella |
 
+### Mappa e giocatori
+
+| Metodo | Percorso | Descrizione |
+|---|---|---|
+| `GET` | `/api/servers/{id}/map` | Dimensioni con le regioni presenti, spawn, giocatori salvati (posizione, dimensione, online) |
+| `GET` | `/api/servers/{id}/map/tile/{dim}/{rx}/{rz}` | Tile PNG di una regione, `{ "png": "<base64>" }`; `?force=true` la rigenera |
+| `POST` | `/api/servers/{id}/map/render` | Rigenera le tile cambiate di una dimensione: `{dimension, force}`; avanzamento nell'evento `map-progress` |
+| `GET` | `/api/servers/{id}/players/live` | Posizione e dimensione dei giocatori online (chieste al server con `/data get entity`) |
+| `GET` | `/api/servers/{id}/players/{name}/inventory` | Inventario di un giocatore online: `[{slot, id, count}]` |
+
+Le tile vengono rese dai file di regione: la mappa funziona anche a server spento e con ogni tipo di server; la cache sta in `<server>/.mineger/map/`.
+
 ### Configurazione
 
 | Metodo | Percorso | Descrizione |
@@ -107,7 +119,7 @@ Il token è accettato **solo nell'header**. L'unica eccezione è `/api/ws?token=
 GET /api/ws?token=<token>
 ```
 
-WebSocket che inoltra gli eventi dell'app: `server-status`, `server-output`, `create-progress`, `update-progress`, `mod-progress`, `backup-progress`, `pack-updates`, `webhook-call`.
+WebSocket che inoltra gli eventi dell'app: `server-status`, `server-output`, `create-progress`, `update-progress`, `mod-progress`, `backup-progress`, `pack-updates`, `webhook-call`, `map-progress`.
 
 ---
 

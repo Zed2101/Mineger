@@ -215,6 +215,36 @@ pub fn recent_logs(id: &str) -> Vec<String> {
 }
 
 // ---------------------------------------------------------------------------
+// Mappa del mondo
+// ---------------------------------------------------------------------------
+
+pub fn world_map_info(app: &AppHandle, id: &str) -> Result<crate::worldmap::MapInfo, String> {
+    let dir = server_dir(app, id)?;
+    crate::worldmap::map_info(&dir, &process::players_of(id))
+}
+
+pub fn world_map_tile(app: &AppHandle, id: &str, dimension: &str, rx: i32, rz: i32, force: bool) -> Result<String, String> {
+    use base64::Engine;
+    let dir = server_dir(app, id)?;
+    let colors = crate::worldmap::Colors::for_server(&dir);
+    let png = crate::worldmap::tile_png(&dir, dimension, rx, rz, force, &colors)?;
+    Ok(base64::engine::general_purpose::STANDARD.encode(png))
+}
+
+pub fn render_world_map(app: &AppHandle, id: &str, dimension: &str, force: bool) -> Result<(), String> {
+    let dir = server_dir(app, id)?;
+    if crate::worldmap::region_dir(&crate::worldmap::world_dir(&dir), dimension).is_none() {
+        return Err(tr!("errors.map.bad_dimension"));
+    }
+    let (app, id, dim) = (app.clone(), id.to_string(), dimension.to_string());
+    std::thread::Builder::new()
+        .name("worldmap-render".into())
+        .spawn(move || crate::worldmap::render_all(app, id, dir, dim, force))
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+// ---------------------------------------------------------------------------
 // Modifica dati server
 // ---------------------------------------------------------------------------
 

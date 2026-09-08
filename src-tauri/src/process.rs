@@ -11,12 +11,12 @@ use crate::models::ServerStatus;
 use crate::tr;
 use crate::upnp;
 use lazy_static::lazy_static;
-use std::collections::{HashMap, VecDeque};
+use std::collections::{BTreeSet, HashMap, VecDeque};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Mutex, MutexGuard};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{mpsc, Mutex, MutexGuard};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter};
@@ -31,14 +31,29 @@ pub struct RunningServer {
     pub upnp_mapped: bool,
     /// Epoch ms dello spawn
     pub started_at: u64,
+    /// Giocatori online, dedotti dalle righe "joined the game" / "left the game"
+    pub players: BTreeSet<String>,
 }
 
 const LOG_BUFFER_LINES: usize = 500;
+
+/// Una richiesta interna al server (es. `data get entity Steve Pos`): la prima
+/// riga di stdout che soddisfa `matcher` viene consegnata a chi aspetta e non
+/// finisce in console.
+struct PendingQuery {
+    seq: u64,
+    server: String,
+    matcher: Box<dyn Fn(&str) -> bool + Send>,
+    tx: mpsc::Sender<String>,
+}
+
+static QUERY_SEQ: AtomicU64 = AtomicU64::new(1);
 
 lazy_static! {
     pub static ref RUNNING_SERVERS: Mutex<HashMap<String, RunningServer>> = Mutex::new(HashMap::new());
     /// Ultime righe di console per server: servono ai client remoti che si collegano a server già avviati.
     static ref LOG_BUFFERS: Mutex<HashMap<String, VecDeque<String>>> = Mutex::new(HashMap::new());
+    static ref PENDING_QUERIES: Mutex<Vec<PendingQuery>> = Mutex::new(Vec::new());
 }
 
 /// Impostato durante lo shutdown dell'app: i thread monitor smettono di fare
@@ -93,6 +108,69 @@ pub fn started_at_of(id: &str) -> Option<u64> {
 
 pub fn pid_of(id: &str) -> Option<u32> {
     lock().get(id).map(|s| s.child.id())
+}
+
+/// Giocatori online del server (vuoto se spento).
+pub fn players_of(id: &str) -> Vec<String> {
+    lock().get(id).map(|s| s.players.iter().cloned().collect()).unwrap_or_default()
+}
+
+/// `Some((nome, true))` per un join, `Some((nome, false))` per leave o disconnessione.
+/// Formato: "[12:00:00] [Server thread/INFO]: Steve joined the game" (Forge aggiunge un tag).
+pub fn parse_player_event(line: &str) -> Option<(String, bool)> {
+    let msg = line.rsplit("]: ").next().unwrap_or(line).trim();
+    if let Some(name) = msg.strip_suffix(" joined the game") {
+        return is_player_name(name).then(|| (name.to_string(), true));
+    }
+    if let Some(name) = msg.strip_suffix(" left the game") {
+        return is_player_name(name).then(|| (name.to_string(), false));
+    }
+    if let Some((name, rest)) = msg.split_once(' ') {
+        if rest.starts_with("lost connection") && is_player_name(name) {
+            return Some((name.to_string(), false));
+        }
+    }
+    None
+}
+
+pub fn is_player_name(s: &str) -> bool {
+    !s.is_empty() && s.len() <= 16 && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+}
+
+/// Manda un comando al server e aspetta la prima riga di stdout che soddisfa
+/// `matcher`, tenendola fuori dalla console. Errore se il server non risponde
+/// entro `timeout` (comando sconosciuto, server occupato).
+pub fn query(id: &str, command: &str, matcher: impl Fn(&str) -> bool + Send + 'static, timeout: Duration) -> Result<String, String> {
+    if !is_running(id) {
+        return Err(tr!("errors.server.not_running"));
+    }
+    let (tx, rx) = mpsc::channel();
+    let seq = QUERY_SEQ.fetch_add(1, Ordering::SeqCst);
+    PENDING_QUERIES
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .push(PendingQuery { seq, server: id.to_string(), matcher: Box::new(matcher), tx });
+    let forget = || PENDING_QUERIES.lock().unwrap_or_else(|e| e.into_inner()).retain(|q| q.seq != seq);
+    if let Err(e) = write_stdin(id, command) {
+        forget();
+        return Err(e);
+    }
+    match rx.recv_timeout(timeout) {
+        Ok(line) => Ok(line),
+        Err(_) => {
+            forget();
+            Err(tr!("errors.server.query_timeout"))
+        }
+    }
+}
+
+/// Consegna la riga alla prima richiesta in attesa che la riconosce. `true` se consumata.
+fn take_query_line(id: &str, line: &str) -> bool {
+    let mut pending = PENDING_QUERIES.lock().unwrap_or_else(|e| e.into_inner());
+    let Some(pos) = pending.iter().position(|q| q.server == id && (q.matcher)(line)) else { return false };
+    let q = pending.remove(pos);
+    let _ = q.tx.send(line.to_string());
+    true
 }
 
 pub fn emit_status(app: &AppHandle, id: &str, status: ServerStatus, code: Option<i32>, started_at: Option<u64>) {
@@ -167,7 +245,7 @@ pub fn spawn_server(app: &AppHandle, id: &str, spec: LaunchSpec) -> Result<(), S
 
     lock().insert(
         id.to_string(),
-        RunningServer { child, port: spec.port, status: ServerStatus::Starting, upnp_mapped: false, started_at },
+        RunningServer { child, port: spec.port, status: ServerStatus::Starting, upnp_mapped: false, started_at, players: BTreeSet::new() },
     );
     emit_status(app, id, ServerStatus::Starting, None, Some(started_at));
     emit_line(app, id, &tr!("console.launch", "java" => spec.java, "args" => spec.args.join(" ")));
@@ -189,7 +267,20 @@ pub fn spawn_server(app: &AppHandle, id: &str, spec: LaunchSpec) -> Result<(), S
                         }
                     }
                 }
-                crate::presence::observe_line(&id, &line);
+                if let Some((name, joined)) = parse_player_event(&line) {
+                    let mut map = lock();
+                    if let Some(rs) = map.get_mut(&id) {
+                        let changed = if joined { rs.players.insert(name) } else { rs.players.remove(&name) };
+                        if changed {
+                            let players = rs.players.clone();
+                            drop(map);
+                            crate::presence::set_players(&id, &players);
+                        }
+                    }
+                }
+                if take_query_line(&id, &line) {
+                    return; // risposta a una richiesta interna: non va in console
+                }
                 emit_line(&app, &id, &line);
             });
         });
@@ -413,5 +504,31 @@ mod lossy_tests {
         assert_eq!(lines[0], "ok");
         assert_eq!(lines[1], "Copyright \u{FFFD} 2014 Dhyan Blum.");
         assert!(is_done_line(&lines[2]));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_join_leave_and_disconnect_lines() {
+        assert_eq!(parse_player_event("[12:00:00] [Server thread/INFO]: Steve joined the game"), Some(("Steve".into(), true)));
+        assert_eq!(parse_player_event("[12:00:00] [Server thread/INFO] [minecraft/PlayerList]: Al_ex left the game"), Some(("Al_ex".into(), false)));
+        assert_eq!(parse_player_event("[12:00:00] [Server thread/INFO]: Steve lost connection: Disconnected"), Some(("Steve".into(), false)));
+        assert_eq!(parse_player_event("[12:00:00] [Server thread/INFO]: <Steve> has anyone joined the game"), None);
+        assert_eq!(parse_player_event("[12:00:00] [Server thread/INFO]: Done (1.2s)! For help, type \"help\""), None);
+        assert_eq!(parse_player_event("[12:00:00] [Server thread/INFO]: a name with spaces joined the game"), None);
+    }
+
+    #[test]
+    fn query_lines_are_consumed_only_by_matching_server() {
+        let (tx, rx) = mpsc::channel();
+        PENDING_QUERIES.lock().unwrap().push(PendingQuery { seq: u64::MAX, server: "srv".into(), matcher: Box::new(|l| l.contains("entity data")), tx });
+        assert!(!take_query_line("other", "Steve has the following entity data: [1d]"));
+        assert!(!take_query_line("srv", "Steve joined the game"));
+        assert!(take_query_line("srv", "Steve has the following entity data: [1d]"));
+        assert_eq!(rx.try_recv().unwrap(), "Steve has the following entity data: [1d]");
+        assert!(!take_query_line("srv", "Steve has the following entity data: [2d]"), "consumata una volta sola");
     }
 }

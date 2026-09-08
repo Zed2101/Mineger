@@ -38,6 +38,7 @@ When a new version of the modpack is released the app tells you and installs it 
 - World backups as zip archives (using `save-off`/`save-all` for a consistent copy).
 - Server icon (`server-icon.png`) resized to 64×64 automatically.
 - Drag & drop reordering, customisable icons.
+- **World map** rendered from the region files: works for every server kind and version, with the server off too. Modded dimensions and modded block colours included. Players are markers on the map; click one to teleport, view the inventory, send an on-screen message, play a sound, apply an effect and more.
 - **UPnP port mapping** on startup, switchable per server.
 - Automatic detection of installed Java runtimes, including those shipped with the Minecraft launcher.
 
@@ -51,7 +52,7 @@ When a new version of the modpack is released the app tells you and installs it 
 ## Installation
 
 1. Download the installer from the [Releases](https://github.com/Zed2101/Mineger/releases) page.
-2. Run `Mineger_1.0.1_x64-setup.exe` (or the `.msi`).
+2. Run the latest `Mineger_<version>_x64-setup.exe` (or the `.msi`).
 3. Launch Mineger.
 
 **Requirements**

@@ -304,3 +304,19 @@
   background-size: 10px 10px;
   background-position: 0 0, 0 5px, 5px -5px, -5px 0;
 }
+
+/* ---------------------------------------------------------------------------
+   Mappa del mondo (tab Mappa)
+   --------------------------------------------------------------------------- */
+@utility map-marker {
+  @apply pointer-events-auto absolute left-0 top-0 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 rounded-full bg-bg-card/90 p-0.5 pr-2 shadow-md ring-1 ring-line transition-transform hover:z-10 hover:ring-accent;
+}
+@utility map-marker-online {
+  @apply ring-accent/60;
+}
+@utility map-marker-label {
+  @apply max-w-[120px] truncate text-[11px] font-semibold text-text-main;
+}
+@utility map-menu-item {
+  @apply flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[12px] text-text-soft transition-colors hover:bg-bg-item hover:text-text-main disabled:cursor-default disabled:opacity-50 disabled:hover:bg-transparent;
+}
