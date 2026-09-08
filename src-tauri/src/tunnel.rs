@@ -184,6 +184,8 @@ struct RunData {
 struct RunTunnel {
     id: String,
     #[serde(default)]
+    name: String,
+    #[serde(default)]
     display_address: String,
     #[serde(default)]
     agent_config: Option<Value>,
@@ -467,34 +469,45 @@ fn with_agent_registered<T>(mut call: impl FnMut() -> Result<T, String>) -> Resu
     }
 }
 
+/// Il tunnel di questo server fra quelli dell'account: per id salvato, altrimenti
+/// per nome (server reimportato o cartella copiata: l'id non c'è più, il tunnel sì).
+fn find_tunnel<'a>(run: &'a RunData, known: Option<&str>, name: &str) -> Option<&'a RunTunnel> {
+    known
+        .and_then(|tid| run.tunnels.iter().find(|t| t.id == tid))
+        .or_else(|| run.tunnels.iter().find(|t| t.name == name))
+}
+
 /// Crea il tunnel del server o riallinea quello esistente alla porta attuale. Ritorna l'id.
 fn ensure_tunnel(app: &AppHandle, id: &str, secret: &str, agent_id: &str, port: u16) -> Result<String, String> {
     let dir = service::server_dir(app, id)?;
     let mut data = service::read_server_data(&dir)?;
     let known = data.launch.tunnel_id.clone();
+    let name = tunnel_name(id);
     let run = rundata(secret)?;
 
-    if let Some(tid) = known.as_ref() {
-        let listed = run.tunnels.iter().find(|t| &t.id == tid);
-        let pending = run.pending.iter().any(|p| &p.id == tid);
-        if let Some(t) = listed {
-            let needs_update = local_port_of(t) != Some(port) || t.disabled_reason.is_some();
-            if needs_update {
-                let _: Value = with_agent_registered(|| {
-                    api_post(
-                        Some(secret),
-                        "/tunnels/update",
-                        json!({ "tunnel_id": tid, "local_ip": LOCAL_IP, "local_port": port, "agent_id": agent_id, "enabled": true }),
-                    )
-                })?;
-            }
-            return Ok(tid.clone());
+    if let Some(t) = find_tunnel(&run, known.as_deref(), &name) {
+        let tid = t.id.clone();
+        let needs_update = local_port_of(t) != Some(port) || t.disabled_reason.is_some();
+        if needs_update {
+            let _: Value = with_agent_registered(|| {
+                api_post(
+                    Some(secret),
+                    "/tunnels/update",
+                    json!({ "tunnel_id": tid, "local_ip": LOCAL_IP, "local_port": port, "agent_id": agent_id, "enabled": true }),
+                )
+            })?;
         }
-        if pending {
-            return Ok(tid.clone());
+        if known.as_deref() != Some(tid.as_str()) {
+            // Ritrovato per nome: da qui in poi lo si riconosce per id.
+            data.launch.tunnel_id = Some(tid.clone());
+            service::write_server_data(&dir, &data)?;
         }
-        // Cancellato dal sito: se ne crea uno nuovo.
+        return Ok(tid);
     }
+    if let Some(tid) = known.as_ref().filter(|tid| run.pending.iter().any(|p| &p.id == *tid)) {
+        return Ok(tid.clone());
+    }
+    // Mai creato, o cancellato dal sito: se ne crea uno nuovo.
 
     let created: Value = with_agent_registered(|| {
         api_post(
@@ -638,6 +651,23 @@ pub fn set_enabled(app: &AppHandle, id: &str, enabled: bool) {
     server_stopped(app, id);
 }
 
+/// Il server è stato eliminato: il suo tunnel non serve più e libererebbe una
+/// delle porte del piano gratuito. Cancellazione in background, best effort.
+pub fn server_deleted(app: &AppHandle, id: &str, tunnel_id: Option<String>) {
+    lock(&STATES).remove(id);
+    let cfg = settings::load(app).playit;
+    let Some(tid) = tunnel_id.filter(|t| !t.is_empty()) else { return };
+    if cfg.secret.trim().is_empty() {
+        return;
+    }
+    let id = id.to_string();
+    thread::spawn(move || match api_post::<Value>(Some(&cfg.secret), "/tunnels/delete", json!({ "tunnel_id": tid })) {
+        Ok(_) => println!("[Mineger] playit: tunnel di \"{}\" rimosso dall'account", id),
+        Err(e) => println!("[Mineger] playit: tunnel di \"{}\" non rimosso: {}", id, e),
+    });
+    maybe_stop_daemon();
+}
+
 pub fn status(app: &AppHandle, id: &str) -> TunnelStatus {
     let cfg = settings::load(app).playit;
     let st = lock(&STATES).get(id).cloned();
@@ -666,15 +696,26 @@ mod tests {
     }
 
     #[test]
+    fn tunnel_is_found_by_id_then_by_name() {
+        let t = |id: &str, name: &str| RunTunnel { id: id.into(), name: name.into(), display_address: String::new(), agent_config: None, disabled_reason: None };
+        let run = RunData { agent_id: "a".into(), tunnels: vec![t("t1", "Mineger Vanilla coi bro"), t("t2", "Mineger Cave Horror")], pending: vec![], permissions: None };
+        assert_eq!(find_tunnel(&run, Some("t2"), "Mineger Vanilla coi bro").map(|t| t.id.as_str()), Some("t2"), "l'id salvato vince sul nome");
+        assert_eq!(find_tunnel(&run, None, &tunnel_name("Cave Horror")).map(|t| t.id.as_str()), Some("t2"), "senza id si riconosce dal nome");
+        assert_eq!(find_tunnel(&run, Some("gone"), &tunnel_name("Vanilla coi bro")).map(|t| t.id.as_str()), Some("t1"), "id cancellato dal sito: ricade sul nome");
+        assert!(find_tunnel(&run, None, "Mineger altro").is_none());
+    }
+
+    #[test]
     fn local_port_is_read_from_agent_config() {
         let t = RunTunnel {
             id: "x".into(),
+            name: "Mineger x".into(),
             display_address: "a.ply.gg:1234".into(),
             agent_config: Some(json!({ "fields": [ { "name": "local_ip", "value": "127.0.0.1" }, { "name": "local_port", "value": "25565" } ] })),
             disabled_reason: None,
         };
         assert_eq!(local_port_of(&t), Some(25565));
-        let none = RunTunnel { id: "y".into(), display_address: String::new(), agent_config: None, disabled_reason: None };
+        let none = RunTunnel { id: "y".into(), name: String::new(), display_address: String::new(), agent_config: None, disabled_reason: None };
         assert_eq!(local_port_of(&none), None);
     }
 

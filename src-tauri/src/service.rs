@@ -615,6 +615,8 @@ pub fn delete_server(app: &AppHandle, id: &str) -> Result<(), String> {
     if !is_inside(&root, &dir) {
         return Err(tr!("errors.server.folder_outside_root"));
     }
+    // Il tunnel playit del server va tolto dall'account: l'id sta nel file che sta per sparire.
+    let tunnel_id = read_server_data(&dir).ok().and_then(|d| d.launch.tunnel_id);
 
     // Su Windows un file appena chiuso può risultare ancora bloccato: qualche tentativo.
     let mut last_err = None;
@@ -638,6 +640,7 @@ pub fn delete_server(app: &AppHandle, id: &str) -> Result<(), String> {
 
     crate::process::forget(id);
     crate::packs::forget_server(id);
+    crate::tunnel::server_deleted(app, id, tunnel_id);
     let mut settings = crate::settings::load(app);
     if settings.server_order.iter().any(|x| x == id) {
         settings.server_order.retain(|x| x != id);
