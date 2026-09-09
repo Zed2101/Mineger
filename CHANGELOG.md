@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/).
 
+## [1.3.1] — 2026-09-09
+
+### Fixed
+- Saving the CurseForge API key in Settings showed "refreshCurseforgeWarning is not defined" and left the key unsaved in the UI: the helper that hides the "key missing" notice in the "Add from link" wizard was only visible to the wizard. The key was actually stored; the error dialog and the missing refresh are gone.
+
 ## [1.3.0] — 2026-09-09
 
 ### Added

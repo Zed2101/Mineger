@@ -490,6 +490,18 @@ function setupSettingsNav() {
   }, { passive: true });
 }
 
+/// Mostra l'avviso sotto il campo link del wizard finché manca la chiave CurseForge.
+/// A livello di modulo perché lo usano sia il wizard sia il salvataggio della chiave nelle Impostazioni.
+async function refreshCurseforgeWarning() {
+  const box = document.getElementById('link-cf-warning');
+  if (!box) return;
+  try {
+    box.classList.toggle('hidden', await invoke('curseforge_configured'));
+  } catch {
+    box.classList.add('hidden');
+  }
+}
+
 function setupSettings(state, hooks) {
   // I testi generati in JS (conteggi, elenchi) non hanno data-i18n: al cambio
   // lingua il pannello aperto va ridisegnato.
@@ -582,10 +594,11 @@ function setupSettings(state, hooks) {
 
   // --- Chiave CurseForge ---
   document.getElementById('btn-cf-key-save').addEventListener('click', async (e) => {
+    const btn = e.currentTarget; // dopo l'await `currentTarget` è già null
     try {
       await invoke('set_curseforge_key', { key: document.getElementById('cf-api-key').value });
       refreshCurseforgeWarning();
-      flashButton(e.currentTarget, t('msg.settings.key_saved'));
+      flashButton(btn, t('msg.settings.key_saved'));
     } catch (err) {
       alert(t('msg.settings.error', { error: err }));
     }
@@ -821,17 +834,6 @@ function setupWizard(hooks) {
   };
   const confirmLabel = () => (LABEL_KEYS[creationType] ? t(LABEL_KEYS[creationType]) : t('msg.wizard.btn_confirm'));
   const linkState = { resolution: null, fileId: null, showAll: false };
-
-  /// Mostra l'avviso sotto il campo link finché manca la chiave CurseForge.
-  async function refreshCurseforgeWarning() {
-    const box = document.getElementById('link-cf-warning');
-    if (!box) return;
-    try {
-      box.classList.toggle('hidden', await invoke('curseforge_configured'));
-    } catch {
-      box.classList.add('hidden');
-    }
-  }
   const VERSIONS_PREVIEW = 8;
   const linkEl = (id) => document.getElementById(id);
 
