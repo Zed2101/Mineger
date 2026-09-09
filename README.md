@@ -42,6 +42,7 @@ When a new version of the modpack is released the app tells you and installs it 
 - **World map** rendered from the region files: works for every server kind and version, with the server off too. Modded dimensions and modded block colours included. Players are markers on the map; click one to teleport, view the inventory, send an on-screen message, play a sound, apply an effect and more.
 - **UPnP port mapping** on startup, switchable per server.
 - Automatic detection of installed Java runtimes, including those shipped with the Minecraft launcher.
+- **"Can your friends get in?"** — one button tests from outside your network whether the server port answers on your public IP and tells you, in plain language, what is in the way (server not listening, port not forwarded, CGNAT / double NAT, Windows Firewall, wrong target) and how to fix it, with the address to share ready to copy and one-click fixes such as allowing Java in the firewall.
 
 ### Remote control and integrations
 - **Host mode**: one Mineger installation can expose its servers over the network, so friends start and manage them from their own copy of the app through an invite link.

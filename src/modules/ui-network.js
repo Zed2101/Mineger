@@ -5,6 +5,12 @@
 // interruttore, stato e indirizzo. Le vie non si escludono. Il collegamento
 // dell'account playit.gg si fa dalle Impostazioni: senza account, il toggle
 // del tunnel rimanda lì. Nelle Impostazioni: stato account, Collega, Scollega.
+//
+// In fondo alla card, "I tuoi amici riescono a entrare?": chiede al backend
+// (`check_reachability`, sull'host per i server remoti) di provare la porta da
+// fuori casa e mostra verdetto, causa, rimedio, indirizzo da copiare, fatti
+// raccolti (dietro "Dettagli") e le azioni suggerite. Il risultato resta finché
+// il server selezionato non cambia; un nuovo test è possibile ogni 10 s.
 
 import { call } from './api.js';
 import { t } from './i18n.js';
@@ -27,6 +33,15 @@ let claim = null; // 'waiting' | 'error' | null
 let claimMessage = '';
 let needsAccount = false; // l'utente ha provato ad accendere il tunnel senza account
 let refreshSettings = () => {};
+
+const REACH_INTERVAL_MS = 10000; // stesso limite del backend: un test ogni 10 s per server
+const REACH_RESTORE_MAX_AGE_MS = 10 * 60 * 1000; // un report più vecchio non si ripesca al cambio server
+let reach = null; // ultimo ReachReport del server attivo
+let reachBusy = false; // test in corso
+let reachError = ''; // errore dell'ultima chiamata
+let reachDetails = false; // riga dei fatti aperta
+let reachTimer = null; // countdown "nuovo test tra N s"
+let firewallState = null; // 'working' | 'done' | null
 
 const pill = (kind, key) => {
   const cls = { on: 'pill-online', off: 'pill-offline', wait: 'pill-busy', err: 'pill-busy' }[kind] || 'pill-offline';
@@ -146,11 +161,201 @@ function tunnelRow(n) {
   });
 }
 
+// ---------------------------------------------------------------------------
+// "I tuoi amici riescono a entrare?"
+// ---------------------------------------------------------------------------
+
+/** Pill del verdetto: verde quando si entra, gialla quando non si è potuto provare, rossa altrimenti. */
+function reachPill(category) {
+  if (category === 'ok' || category === 'tunnel_ok') return `<span class="pill-online">${escapeHtml(t('ui.reach.pill_ok'))}</span>`;
+  if (category === 'unknown' || category === 'server_off') return `<span class="pill-busy">${escapeHtml(t('ui.reach.pill_unknown'))}</span>`;
+  return `<span class="pill-offline">${escapeHtml(t('ui.reach.pill_no'))}</span>`;
+}
+
+/** I fatti raccolti in una riga sola (dietro "Dettagli"). */
+function reachFacts(r) {
+  const yn = (b) => (b === true ? t('ui.reach.yes') : b === false ? t('ui.reach.no') : t('ui.reach.untested'));
+  const probe = (p) => {
+    if (!p) return t('ui.reach.untested');
+    if (!p.tested) return `${t('ui.reach.untested')}${p.error ? ` (${p.error})` : ''}`;
+    return `${yn(p.reachable)} (${p.via || '?'}${p.latency_ms != null ? `, ${p.latency_ms} ms` : ''})`;
+  };
+  const parts = [
+    `${t('ui.reach.f_public')} ${r.public_ip || '?'}`,
+    `${t('ui.reach.f_wan')} ${r.router_wan_ip || '?'}${r.cgnat_kind ? ` (${r.cgnat_kind})` : ''}`,
+    `${t('ui.reach.f_upnp')} ${r.upnp_state || '?'}`,
+    `${t('ui.reach.f_local')} ${yn(r.listening_local)}${r.local_slp?.version ? ` (${r.local_slp.version})` : ''}`,
+    `${t('ui.reach.f_external')} ${probe(r.external)}`,
+    `${t('ui.reach.f_firewall')} ${r.firewall?.status || '?'}${r.firewall?.profile ? ` (${r.firewall.profile})` : ''}`,
+  ];
+  if (r.tunnel_address) parts.push(`${t('ui.reach.f_tunnel')} ${r.tunnel_address} ${probe(r.tunnel_external)}`);
+  if (r.vpn) parts.push(`${t('ui.reach.f_vpn')} ${t('ui.reach.yes')}`);
+  if (r.duration_ms != null) parts.push(`${t('ui.reach.f_duration')} ${(r.duration_ms / 1000).toFixed(1)} s`);
+  return parts.join(' · ');
+}
+
+const REACH_ACTION_LABELS = {
+  enable_upnp: 'ui.reach.action_enable_upnp',
+  enable_tunnel: 'ui.reach.action_enable_tunnel',
+  open_settings_tunnel: 'ui.reach.action_open_settings_tunnel',
+  open_firewall: 'ui.reach.action_open_firewall',
+  retry: 'ui.reach.retry',
+};
+
+function reachActions(r, secondsLeft) {
+  const buttons = [];
+  for (const a of r.verdict?.actions || []) {
+    const kind = a?.kind;
+    if (kind === 'copy_address' || !REACH_ACTION_LABELS[kind]) continue; // l'indirizzo ha già il suo Copia
+    if (kind === 'open_firewall' && (current?.remote || firewallState === 'working')) continue;
+    if (kind === 'retry' && (secondsLeft > 0 || !net?.running)) continue;
+    const cls = kind === 'retry' ? 'btn-small' : 'btn-outline-accent px-3! py-1.5! text-[12px]';
+    buttons.push(`<button type="button" class="${cls}" data-reach-action="${kind}">${escapeHtml(t(REACH_ACTION_LABELS[kind]))}</button>`);
+  }
+  buttons.push(`<button type="button" class="btn-small" data-reach-details>${escapeHtml(t(reachDetails ? 'ui.reach.hide_details' : 'ui.reach.details'))}</button>`);
+  return buttons.join('');
+}
+
+function reachResult(r) {
+  const v = r.verdict || {};
+  const secondsLeft = Math.max(0, Math.ceil((r.at + REACH_INTERVAL_MS - Date.now()) / 1000));
+  const time = new Date(r.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  let footer = t('ui.reach.tested_at', { time });
+  if (secondsLeft > 0 && net?.running) footer += ` · ${t('ui.reach.retry_in', { seconds: secondsLeft })}`;
+  let firewallNote = '';
+  if (firewallState === 'working') firewallNote = `<p class="note mt-2 motion-safe:animate-pulse">${escapeHtml(t('ui.reach.firewall_working'))}</p>`;
+  else if (firewallState === 'done') firewallNote = `<p class="note-ok mt-2">${escapeHtml(t('ui.reach.firewall_done'))}</p>`;
+  return `
+  <div class="mt-3 rounded-[10px] border border-line bg-bg-inset p-3" data-reach-result="${escapeHtml(v.category || '')}">
+    <div class="flex flex-wrap items-center gap-2">
+      ${reachPill(v.category)}
+      <span class="text-[13px] font-semibold text-text-main">${escapeHtml(v.title || '')}</span>
+    </div>
+    <p class="note mt-1">${escapeHtml(v.detail || '')}</p>
+    <p class="mt-2 text-[12px] leading-relaxed text-text-main"><span class="font-semibold text-accent">${escapeHtml(t('ui.reach.fix_label'))}:</span> ${escapeHtml(v.fix || '')}</p>
+    ${v.address ? addressRow(v.address, true, 'reach') : ''}
+    ${firewallNote}
+    <div class="mt-3 flex flex-wrap gap-2">${reachActions(r, secondsLeft)}</div>
+    ${reachDetails ? `<code class="mt-2 block whitespace-pre-wrap break-words rounded-[7px] border border-line-soft bg-bg-card px-2 py-1.5 font-mono text-[11px] text-text-soft">${escapeHtml(reachFacts(r))}</code>` : ''}
+    <p class="micro mt-2">${escapeHtml(footer)}</p>
+  </div>`;
+}
+
+function renderReach() {
+  const box = $('network-reach');
+  if (!box || !current) return;
+  if (!net) {
+    box.innerHTML = '';
+    return;
+  }
+  const running = !!net.running;
+  const title = running ? '' : ` title="${escapeHtml(t('ui.reach.offline_tooltip'))}"`;
+  const parts = [`
+  <div class="flex flex-wrap items-center gap-3">
+    <span${title}><button type="button" class="btn-outline-accent px-3! py-1.5! text-[12px]" data-reach-check ${running && !reachBusy ? '' : 'disabled'}>${escapeHtml(t('ui.reach.button'))}</button></span>
+    ${reachBusy ? `<span class="note motion-safe:animate-pulse">${escapeHtml(t('ui.reach.testing'))}</span>` : ''}
+    ${!reachBusy && current.remote ? `<span class="micro">${escapeHtml(t('ui.reach.remote_hint'))}</span>` : ''}
+    ${!reachBusy && !running ? `<span class="micro">${escapeHtml(t('ui.reach.offline_tooltip'))}</span>` : ''}
+  </div>`];
+  if (reachError) parts.push(`<p class="note-err mt-2">${escapeHtml(t('msg2.reach.error', { error: reachError }))}</p>`);
+  if (reach) parts.push(reachResult(reach));
+  box.innerHTML = parts.join('');
+  scheduleReachCountdown();
+}
+
+/** Ridisegna ogni secondo finché il limite dei 10 s non è passato, poi riabilita "Riprova". */
+function scheduleReachCountdown() {
+  if (reachTimer) {
+    clearTimeout(reachTimer);
+    reachTimer = null;
+  }
+  if (!reach || reachBusy) return;
+  const left = reach.at + REACH_INTERVAL_MS - Date.now();
+  if (left <= 0) return;
+  reachTimer = setTimeout(() => {
+    reachTimer = null;
+    renderReach();
+  }, Math.min(left + 50, 1000));
+}
+
+async function runReachCheck() {
+  if (!current || reachBusy) return;
+  const { id } = current;
+  reachBusy = true;
+  reachError = '';
+  renderReach();
+  try {
+    const r = await call('check_reachability', { id });
+    if (current?.id === id) reach = r;
+  } catch (err) {
+    if (current?.id === id) reachError = String(err);
+  }
+  if (current?.id !== id) return;
+  reachBusy = false;
+  if (firewallState === 'done') firewallState = null;
+  renderReach();
+}
+
+/** Ripesca l'ultimo report del server (fatto da questa app o da un altro client), se recente. */
+async function restoreReach() {
+  if (!current || reach || reachBusy) return;
+  const { id } = current;
+  try {
+    const r = await call('get_reachability', { id });
+    if (current?.id === id && r && Date.now() - r.at < REACH_RESTORE_MAX_AGE_MS && !reach) {
+      reach = r;
+      renderReach();
+    }
+  } catch {}
+}
+
+async function allowFirewall() {
+  if (!current || current.remote || !reach || firewallState === 'working') return;
+  const { id } = current;
+  firewallState = 'working';
+  reachError = '';
+  renderReach();
+  try {
+    await invoke('firewall_allow', { port: reach.port, program: reach.firewall?.program ?? null });
+    if (current?.id !== id) return;
+    firewallState = 'done';
+    renderReach();
+    // Il backend ha dimenticato i report: il nuovo test è fresco anche entro i 10 s.
+    await runReachCheck();
+  } catch (err) {
+    if (current?.id !== id) return;
+    firewallState = null;
+    reachError = String(err);
+    renderReach();
+  }
+}
+
+async function onReachAction(kind) {
+  if (!current) return;
+  if (kind === 'retry') return runReachCheck();
+  if (kind === 'enable_upnp') return setFlag('upnp', true);
+  if (kind === 'enable_tunnel') {
+    if (!net?.tunnel?.linked) {
+      needsAccount = true;
+      render();
+      return;
+    }
+    return setFlag('tunnel', true);
+  }
+  if (kind === 'open_settings_tunnel') {
+    needsAccount = true;
+    render();
+    return openPlayitSettings();
+  }
+  if (kind === 'open_firewall') return allowFirewall();
+}
+
 function render() {
   const body = $('network-body');
   if (!body || !current) return;
   if (!net) {
     body.innerHTML = `<p class="note py-2">${escapeHtml(t('ui.network.loading'))}</p>`;
+    renderReach();
     return;
   }
   if (current.remote) {
@@ -158,9 +363,11 @@ function render() {
     if (net.tunnel?.address) parts.push(row({ title: t('ui.network.tunnel'), note: t('ui.network.remote_hint'), status: pill(net.tunnel.state === 'online' ? 'on' : 'off', net.tunnel.state === 'online' ? 'ui.network.pill_on' : 'ui.network.pill_off'), extra: addressRow(net.tunnel.address, net.tunnel.state === 'online', 'tunnel') }));
     else parts.push(`<p class="note py-3">${escapeHtml(t('ui.network.remote_hint'))}</p>`);
     body.innerHTML = parts.join('');
+    renderReach();
     return;
   }
   body.innerHTML = lanRow(net) + upnpRow(net) + tunnelRow(net);
+  renderReach();
 }
 
 async function load() {
@@ -173,6 +380,7 @@ async function load() {
     console.warn('[network]', err);
   }
   render();
+  restoreReach();
 }
 
 /** Server attivo cambiato (o dati salvati): ricarica la card. */
@@ -181,6 +389,11 @@ export function renderNetworkCard(server, { isRemote = () => false } = {}) {
   if (current?.id !== server.id) {
     needsAccount = false;
     net = null;
+    reach = null;
+    reachBusy = false;
+    reachError = '';
+    reachDetails = false;
+    firewallState = null;
   }
   current = { id: server.id, remote: isRemote(server.id) };
   render();
@@ -282,6 +495,13 @@ export function setupNetwork(state, { isRemote = () => false, onSettingsChanged 
     const link = e.target.closest('button[data-url]');
     if (link) return openExternal(link.dataset.url);
     if (e.target.closest('button[data-open-settings]')) return openPlayitSettings();
+    if (e.target.closest('button[data-reach-check]')) return runReachCheck();
+    if (e.target.closest('button[data-reach-details]')) {
+      reachDetails = !reachDetails;
+      return renderReach();
+    }
+    const reachAction = e.target.closest('button[data-reach-action]');
+    if (reachAction) return onReachAction(reachAction.dataset.reachAction);
     if (e.target.closest('button[data-retry]')) {
       try {
         await call('retry_tunnel', { id: current.id });

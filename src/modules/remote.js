@@ -194,6 +194,12 @@ export class RemoteHost {
       case 'set_server_icon_from_path':
       case 'pick_server_icon_file':
         throw t('msg2.remote.not_available_remote');
+      case 'check_reachability':
+        return this.request('POST', s('/reach'));
+      case 'get_reachability':
+        return this.request('GET', s('/reach'));
+      case 'firewall_allow':
+        throw t('msg2.remote.not_available_remote');
       default:
         throw t('msg2.remote.command_unsupported', { cmd });
     }

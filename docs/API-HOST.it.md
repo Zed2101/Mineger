@@ -72,6 +72,8 @@ Il token è accettato **solo nell'header**. L'unica eccezione è `/api/ws?token=
 | `GET` | `/api/servers/{id}/tunnel` | Tunnel playit.gg del server: `{linked, account?, enabled, agent_running, state, address?, message?}` (`state`: `off`, `starting`, `online`, `error`). Il collegamento dell'account si fa solo dall'app host |
 | `GET` | `/api/servers/{id}/metrics` | CPU e RAM del processo Java |
 | `GET` | `/api/servers/{id}/disk-usage` | Byte e numero di file della cartella |
+| `POST` | `/api/servers/{id}/reach` | "I tuoi amici riescono a entrare?": prova da fuori la rete dell'host se la porta del server risponde sull'IP pubblico (portchecker.io + api.mcstatus.io, mcsrvstat.us di riserva) e ritorna `{at, status, port, lan_ip?, public_ip?, router_wan_ip?, cgnat, cgnat_kind?, vpn, upnp_state, listening_local?, local_slp?, external: {reachable, tested, latency_ms?, via?, error?}, external_slp?, tunnel_address?, tunnel_external?, firewall: {status, profile?, program?, detail?}, verdict: {category, title, detail, fix, address?, actions: [{kind}]}, duration_ms}`. `verdict.category`: `server_off`, `not_listening`, `ok`, `tunnel_ok`, `wrong_target`, `cgnat`, `firewall`, `port_closed`, `unknown`; `actions[].kind`: `enable_upnp`, `enable_tunnel`, `open_settings_tunnel`, `open_firewall`, `copy_address`, `retry`. Serve il server online; al massimo un test vero ogni 10 s per server (le chiamate prima ricevono l'ultimo report). Dura fino a ~10 s |
+| `GET` | `/api/servers/{id}/reach` | Ultimo report del test qui sopra, `null` se mai fatto |
 
 ### Mappa e giocatori
 

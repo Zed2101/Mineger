@@ -912,3 +912,27 @@ pub async fn set_curseforge_key(app: AppHandle, key: String) -> Result<(), Strin
     s.curseforge_api_key = key.trim().to_string();
     settings::save(&app, &s)
 }
+
+// ---------------------------------------------------------------------------
+// "I tuoi amici riescono a entrare?" (test di raggiungibilità dall'esterno)
+// ---------------------------------------------------------------------------
+
+/// Prova da fuori casa se la porta del server risponde e spiega perché no.
+/// Al massimo un test ogni 10 s per server: nel frattempo torna l'ultimo report.
+#[tauri::command]
+pub async fn check_reachability(app: AppHandle, id: String) -> Result<crate::reach::ReachReport, String> {
+    tauri::async_runtime::spawn_blocking(move || crate::reach::check(&app, &id)).await.map_err(|e| e.to_string())?
+}
+
+/// Ultimo report del test, se c'è (per ridisegnare la card senza rifare il test).
+#[tauri::command]
+pub async fn get_reachability(id: String) -> Result<Option<crate::reach::ReachReport>, String> {
+    Ok(crate::reach::last(&id))
+}
+
+/// Consente java.exe (o la sola porta) nel firewall di Windows: apre la richiesta UAC.
+/// Solo in locale: non è esposto all'host remoto.
+#[tauri::command]
+pub async fn firewall_allow(port: u16, program: Option<String>) -> Result<crate::firewall::FirewallInfo, String> {
+    tauri::async_runtime::spawn_blocking(move || crate::reach::firewall_allow(port, program.as_deref())).await.map_err(|e| e.to_string())?
+}

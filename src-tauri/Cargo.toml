@@ -47,3 +47,6 @@ discord-rich-presence = "1"
 fastanvil = "0.32"
 fastnbt = "2"
 flate2 = "1"
+# Test "I tuoi amici riescono a entrare?": regole di Windows Firewall lette dal registro
+[target.'cfg(windows)'.dependencies]
+winreg = "0.55"

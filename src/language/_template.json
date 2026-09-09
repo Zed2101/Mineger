@@ -387,6 +387,12 @@
     "discord": {
       "bad_url": "",
       "http": ""
+    },
+    "reach": {
+      "busy": "",
+      "firewall_declined": "",
+      "firewall_failed": "",
+      "firewall_unsupported": ""
     }
   },
   "msg": {
@@ -862,6 +868,9 @@
       "discord_url_required": "",
       "discord_test_ok": "",
       "discord_test_error": ""
+    },
+    "reach": {
+      "error": ""
     }
   },
   "progress": {
@@ -1436,6 +1445,39 @@
       "keep_days_unit": "",
       "on_stop": "",
       "backups_list": ""
+    },
+    "reach": {
+      "button": "",
+      "offline_tooltip": "",
+      "testing": "",
+      "fix_label": "",
+      "details": "",
+      "hide_details": "",
+      "tested_at": "",
+      "retry_in": "",
+      "retry": "",
+      "action_enable_upnp": "",
+      "action_enable_tunnel": "",
+      "action_open_settings_tunnel": "",
+      "action_open_firewall": "",
+      "firewall_working": "",
+      "firewall_done": "",
+      "remote_hint": "",
+      "pill_ok": "",
+      "pill_no": "",
+      "pill_unknown": "",
+      "f_public": "",
+      "f_wan": "",
+      "f_upnp": "",
+      "f_local": "",
+      "f_external": "",
+      "f_firewall": "",
+      "f_tunnel": "",
+      "f_vpn": "",
+      "f_duration": "",
+      "yes": "",
+      "no": "",
+      "untested": ""
     }
   },
   "presence": {
@@ -1537,5 +1579,70 @@
     "players_body": "",
     "schedule_title": "",
     "schedule_failed": ""
+  },
+  "reach": {
+    "server_off": {
+      "title": "",
+      "detail": "",
+      "detail_starting": "",
+      "fix": ""
+    },
+    "not_listening": {
+      "title": "",
+      "detail": "",
+      "fix": ""
+    },
+    "ok": {
+      "title": "",
+      "detail": "",
+      "fix": ""
+    },
+    "tunnel_ok": {
+      "title": "",
+      "detail": "",
+      "fix": ""
+    },
+    "wrong_target": {
+      "title": "",
+      "detail": "",
+      "fix": ""
+    },
+    "cgnat": {
+      "title": "",
+      "detail_cgnat": "",
+      "detail_private": "",
+      "detail_ds_lite": "",
+      "detail_upstream": "",
+      "detail_upnp": "",
+      "fix": ""
+    },
+    "firewall": {
+      "title": "",
+      "detail_blocked": "",
+      "detail_no_rule": "",
+      "profile_unknown": "",
+      "fix": ""
+    },
+    "port_closed": {
+      "title": "",
+      "detail_upnp_off": "",
+      "detail_upnp_failed": "",
+      "detail_upnp_pending": "",
+      "detail_upnp_open": "",
+      "detail_forwarded": "",
+      "fix": "",
+      "fix_upnp_off": "",
+      "fix_firewall_hint": ""
+    },
+    "unknown": {
+      "title": "",
+      "detail": "",
+      "listening": "",
+      "fix": ""
+    },
+    "probe": {
+      "timeout": "",
+      "no_service": ""
+    }
   }
 }

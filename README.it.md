@@ -42,6 +42,7 @@ Quando esce una nuova versione del modpack l'app te lo segnala e la installa con
 - **Mappa del mondo** letta dai file di regione: funziona con ogni tipo di server e versione, anche a server spento. Dimensioni e colori dei blocchi delle mod compresi. I giocatori sono marker sulla mappa: clic su uno per teletrasportarlo, vedere l'inventario, mandargli un messaggio a schermo, un suono, un effetto e altro.
 - **Apertura porta via UPnP** all'avvio, attivabile per singolo server.
 - Rilevamento automatico delle installazioni Java (incluse quelle del launcher Minecraft).
+- **"I tuoi amici riescono a entrare?"** — un pulsante prova da fuori casa se la porta del server risponde sul tuo IP pubblico e ti dice, in parole semplici, cosa c'è in mezzo (server che non ascolta, porta non inoltrata, CGNAT / doppio NAT, Windows Firewall, porta che punta altrove) e come rimediare, con l'indirizzo da dare agli amici pronto da copiare e rimedi a un clic come consentire Java nel firewall.
 
 ### Controllo remoto e integrazioni
 - **Host**: un'installazione di Mineger può esporre i suoi server in rete; gli amici li avviano e gestiscono dalla loro copia dell'app tramite un link d'invito.
