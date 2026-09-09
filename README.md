@@ -63,7 +63,7 @@ When a new version of the modpack is released the app tells you and installs it 
 
 **Requirements**
 - 64-bit Windows 10/11.
-- **Java** installed: 8/17/21 depending on the Minecraft version (Mineger detects what you have and tells you which runtime it will use). Recent versions need Java 21.
+- **Java**: 8/17/21 depending on the Minecraft version and loader (Mineger detects what you have, tells you which runtime it will use and, when one is missing, installs it with one click from Settings → Java). Recent versions need Java 21, Minecraft 26.1+ needs Java 25.
 
 ---
 

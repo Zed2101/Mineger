@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [1.3.0] — 2026-09-09
 
 ### Added
 - **"How friends get in" card** in Details: the three ways to reach a server side by side, each with its own switch, state and address: same network (LAN address), router via UPnP (opens at start, closes at stop, public IP shown, CGNAT warning, hint for manual port forwards) and the playit.gg tunnel. They are independent and can all be on. The UPnP and tunnel switches moved there from Properties and apply immediately while the server runs. Host API: `GET /api/servers/{id}/network`, `network-status` event.
