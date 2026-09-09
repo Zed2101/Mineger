@@ -339,6 +339,7 @@ pub fn spawn_server(app: &AppHandle, id: &str, spec: LaunchSpec) -> Result<(), S
                             drop(map);
                             emit_status(&app, &id, ServerStatus::Online, None, Some(started));
                             crate::cmdsnap::schedule(app.clone(), id.clone());
+                            crate::diagnose::clear(&id);
                             crate::tunnel::server_online(&app, &id, port);
                             crate::notify::event(&app, &id, crate::notify::Kind::Start, tr!("discord.start_title"), tr!("discord.start_body", "port" => port));
                         }
@@ -520,6 +521,8 @@ fn monitor_loop(app: AppHandle, id: String) {
             let upnp_mapped = rs.upnp_mapped;
             // Stop/kill chiesti dall'app (`Stopping`) o uscita pulita: non è un crash.
             let intended = rs.status == ServerStatus::Stopping || code == Some(0);
+            // Era arrivato a "Done"? Se no, l'uscita va spiegata anche con codice 0 (EULA…).
+            let was_online = rs.status != ServerStatus::Starting;
             map.remove(&id);
             drop(map);
 
@@ -534,6 +537,7 @@ fn monitor_loop(app: AppHandle, id: String) {
                     Err(e) => emit_line(&app, &id, &tr!("console.upnp.cleanup_failed", "error" => e)),
                 }
             }
+            crate::diagnose::on_exit(&app, &id, code, was_online, intended);
             crate::automation::on_exit(&app, &id, code, intended);
             return;
         }

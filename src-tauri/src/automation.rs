@@ -391,6 +391,13 @@ pub fn on_exit(app: &AppHandle, id: &str, code: Option<i32>, intended: bool) {
         return;
     }
 
+    // La diagnosi dice che riavviare non serve (EULA, porta occupata, Java, mod…): si ferma qui.
+    if let Some(d) = crate::diagnose::blocking_error(id) {
+        process::emit_line(app, id, &tr!("console.diagnosis.restart_suspended", "title" => d.title));
+        notify::event(app, id, notify::Kind::Crash, tr!("discord.crash_title"), tr!("discord.crash_diagnosis", "code" => code_text, "title" => d.title));
+        return;
+    }
+
     let attempt = {
         let mut crashes = CRASHES.lock().unwrap_or_else(|e| e.into_inner());
         let list = crashes.entry(id.to_string()).or_default();

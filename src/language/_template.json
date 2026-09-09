@@ -81,6 +81,10 @@
       "restart_scheduled": "",
       "restart_gave_up": "",
       "restart_failed": ""
+    },
+    "diagnosis": {
+      "line": "",
+      "restart_suspended": ""
     }
   },
   "errors": {
@@ -182,7 +186,20 @@
       "none_installed": "",
       "required_hint": "",
       "spawn_failed": "",
-      "version_too_old": ""
+      "version_too_old": "",
+      "need_major": "",
+      "range_exact": "",
+      "range_min": "",
+      "range_between": "",
+      "install_unsupported_platform": "",
+      "install_bad_major": "",
+      "install_api": "",
+      "install_no_build": "",
+      "install_zip": "",
+      "install_checksum": "",
+      "install_no_java_exe": "",
+      "install_probe_failed": "",
+      "install_in_progress": ""
     },
     "launch": {
       "args_file_not_found": "",
@@ -862,6 +879,30 @@
       "discord_url_required": "",
       "discord_test_ok": "",
       "discord_test_error": ""
+    },
+    "diagnosis": {
+      "install_java": "",
+      "installing": "",
+      "installed": "",
+      "install_error": "",
+      "copied": "",
+      "copy_failed": "",
+      "disable_mod": "",
+      "disabling": "",
+      "disabled_mod": "",
+      "start": "",
+      "accept_eula": "",
+      "open_properties": "",
+      "set_ram": "",
+      "ram_set": "",
+      "open_folder": "",
+      "open_subfolder": "",
+      "restart": "",
+      "exit_code": "",
+      "badge_title": "",
+      "action_error": "",
+      "java_missing_hint": "",
+      "working": ""
     }
   },
   "progress": {
@@ -928,7 +969,16 @@
     "paper": {
       "resolving": ""
     },
-    "verify": ""
+    "verify": "",
+    "java": {
+      "querying": "",
+      "already": "",
+      "downloading": "",
+      "verifying": "",
+      "extracting": "",
+      "checking": "",
+      "done": ""
+    }
   },
   "settings": {
     "language": {
@@ -1436,6 +1486,14 @@
       "keep_days_unit": "",
       "on_stop": "",
       "backups_list": ""
+    },
+    "diagnosis": {
+      "show_log": "",
+      "hide_log": "",
+      "copy": "",
+      "dismiss_title": "",
+      "java_install_row": "",
+      "java_install_hint": ""
     }
   },
   "presence": {
@@ -1536,6 +1594,175 @@
     "leave_title": "",
     "players_body": "",
     "schedule_title": "",
-    "schedule_failed": ""
+    "schedule_failed": "",
+    "crash_diagnosis": ""
+  },
+  "diagnosis": {
+    "actions": {
+      "search_mod": "",
+      "get_fabric_api": "",
+      "get_mod": "",
+      "loader_site": ""
+    },
+    "eula": {
+      "title": "",
+      "detail": "",
+      "fix": ""
+    },
+    "port_in_use": {
+      "title": "",
+      "detail_busy": "",
+      "fix_busy": "",
+      "detail_ip": "",
+      "fix_ip": "",
+      "detail_excluded": "",
+      "fix_excluded": ""
+    },
+    "java_too_old": {
+      "title": "",
+      "detail": "",
+      "detail_mod": "",
+      "fix": ""
+    },
+    "java_too_new": {
+      "title": "",
+      "detail": "",
+      "detail_prerelease": "",
+      "fix": ""
+    },
+    "heap": {
+      "title": "",
+      "detail_reserve": "",
+      "fix_lower": "",
+      "detail_invalid": "",
+      "fix_invalid": "",
+      "fix_32bit": "",
+      "detail_xms": "",
+      "fix_xms": "",
+      "detail_oom": "",
+      "fix_raise": "",
+      "fix_reduce": "",
+      "detail_vm": ""
+    },
+    "jvm_args": {
+      "title": "",
+      "title_argfile": "",
+      "detail_argfile": "",
+      "fix_argfile": "",
+      "detail": "",
+      "fix": ""
+    },
+    "jar": {
+      "title": "",
+      "detail": "",
+      "fix": "",
+      "detail_fabric": "",
+      "fix_fabric": "",
+      "detail_loader": "",
+      "fix_loader": ""
+    },
+    "mod_missing_dependency": {
+      "title": "",
+      "detail": "",
+      "state_missing": "",
+      "state_wrong": "",
+      "fix": "",
+      "fix_fabric_api": ""
+    },
+    "mod_incompatible": {
+      "title": "",
+      "title_generic": "",
+      "title_java": "",
+      "detail_java": "",
+      "fix_java": "",
+      "title_mc": "",
+      "detail_mc": "",
+      "fix_mc": "",
+      "title_loader_old": "",
+      "detail_loader_old": "",
+      "fix_loader_old": "",
+      "title_duplicate": "",
+      "detail_duplicate": "",
+      "fix_duplicate": "",
+      "title_mixin": "",
+      "detail_mixin": "",
+      "fix": "",
+      "detail_solution": "",
+      "detail_conflict": "",
+      "detail_generic": "",
+      "detail_entrypoint": "",
+      "detail_failure": "",
+      "detail_loading": "",
+      "title_version": "",
+      "title_version_unknown": "",
+      "detail_version": "",
+      "fix_version": "",
+      "fix_generic": ""
+    },
+    "mod_wrong_side_or_loader": {
+      "title_side": "",
+      "fix_side": "",
+      "title_side_unknown": "",
+      "fix_side_unknown": "",
+      "detail_side": "",
+      "detail_side_dep": "",
+      "title_loader": "",
+      "detail_loader": "",
+      "fix_loader": "",
+      "title_invalid": "",
+      "detail_invalid": "",
+      "fix_invalid": ""
+    },
+    "world_corrupt": {
+      "title": "",
+      "detail_lock": "",
+      "fix_lock": "",
+      "detail_newer": "",
+      "fix_newer": "",
+      "detail_level": "",
+      "fix_level": ""
+    },
+    "disk_full": {
+      "title": "",
+      "detail": "",
+      "fix": ""
+    },
+    "access_denied": {
+      "title": "",
+      "detail_virus": "",
+      "fix_virus": "",
+      "detail_locked": "",
+      "fix_locked": "",
+      "detail_java": "",
+      "fix_java": "",
+      "detail_denied": "",
+      "fix_denied": ""
+    },
+    "watchdog": {
+      "title": "",
+      "detail": "",
+      "fix": ""
+    },
+    "crash_report": {
+      "title_nofile": "",
+      "detail_nofile": "",
+      "fix": "",
+      "title_mod": "",
+      "detail_mod": "",
+      "fix_mod": "",
+      "title": "",
+      "detail": ""
+    },
+    "unknown_crash": {
+      "title": "",
+      "detail_access_violation": "",
+      "detail_stack_overflow": "",
+      "detail_dll": "",
+      "detail_memory": "",
+      "detail_oom_killer": "",
+      "detail_native": "",
+      "detail_generic": "",
+      "fix": ""
+    }
   }
 }

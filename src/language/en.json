@@ -81,6 +81,10 @@
       "restart_scheduled": "[Mineger] Crash detected: restarting in {seconds} s (attempt {attempt} of {max})",
       "restart_gave_up": "[Mineger] Crash detected: already {attempts} restarts in {minutes} minutes, giving up. Check the logs.",
       "restart_failed": "[Mineger] Automatic restart failed: {error}"
+    },
+    "diagnosis": {
+      "line": "[Mineger] ⚠ {title} — {fix}",
+      "restart_suspended": "[Mineger] Automatic restart suspended: {title}. Fix the problem (see the box above the console) and start the server again by hand."
     }
   },
   "errors": {
@@ -182,7 +186,20 @@
       "none_installed": "No Java installation found. Install Java {major} (e.g. Adoptium Temurin) or set the path in config.json",
       "required_hint": "{info} — Java {major} required",
       "spawn_failed": "Could not start Java ({java}): {error}",
-      "version_too_old": "Minecraft {version} requires Java {required} or newer, but only these are installed: Java {available}"
+      "version_too_old": "Minecraft {version} requires Java {required} or newer, but only these are installed: Java {available}",
+      "need_major": "Minecraft {version} ({kind}) needs Java {range}: install Java {major}. Java found: {available}",
+      "range_exact": "{min}",
+      "range_min": "{min} or newer",
+      "range_between": "{min} to {max}",
+      "install_unsupported_platform": "Automatic Java download is only available on 64-bit Windows: install Java by hand and press Rescan.",
+      "install_bad_major": "Invalid Java version: {major}",
+      "install_api": "Adoptium is not answering: {error}",
+      "install_no_build": "Adoptium has no Temurin {major} JRE for Windows x64",
+      "install_zip": "Invalid Java archive: {error}",
+      "install_checksum": "The downloaded file is corrupt (SHA-256 expected {expected}, got {actual}): try again",
+      "install_no_java_exe": "bin/java.exe not found after extracting to {path}",
+      "install_probe_failed": "The downloaded Java does not run ({path}): antivirus?",
+      "install_in_progress": "Java {major} is already being downloaded"
     },
     "launch": {
       "args_file_not_found": "args file not found: {file}",
@@ -862,6 +879,30 @@
       "discord_url_required": "Enter the webhook URL",
       "discord_test_ok": "Message sent: check the Discord channel",
       "discord_test_error": "Send failed: {error}"
+    },
+    "diagnosis": {
+      "install_java": "Install Java {major}",
+      "installing": "Java {major}: {message} ({percent}%)",
+      "installed": "Java {major} installed: {path}",
+      "install_error": "Installation failed: {error}",
+      "copied": "Copied!",
+      "copy_failed": "Copy failed",
+      "disable_mod": "Disable {mod}",
+      "disabling": "Disabling…",
+      "disabled_mod": "{mod} disabled: you can start the server again now.",
+      "start": "Start",
+      "accept_eula": "Accept the EULA",
+      "open_properties": "Open Properties",
+      "set_ram": "Set {mb} MB",
+      "ram_set": "Maximum RAM set to {mb} MB: you can start the server again now.",
+      "open_folder": "Open folder",
+      "open_subfolder": "Open {sub}/",
+      "restart": "Start again",
+      "exit_code": "exit code {code}",
+      "badge_title": "The server did not start: diagnosis in Console",
+      "action_error": "Failed: {error}",
+      "java_missing_hint": "Java {major} missing",
+      "working": "Please wait…"
     }
   },
   "progress": {
@@ -928,7 +969,16 @@
     "paper": {
       "resolving": "Looking up the Paper build…"
     },
-    "verify": "Verifying integrity…"
+    "verify": "Verifying integrity…",
+    "java": {
+      "querying": "Looking up the latest Temurin {major} on Adoptium…",
+      "already": "Java {version} is already installed",
+      "downloading": "Downloading Java {major}: {done} / {total} MB",
+      "verifying": "Verifying the file (SHA-256)…",
+      "extracting": "Extracting…",
+      "checking": "Running java -version…",
+      "done": "Java {version} installed in {path}"
+    }
   },
   "settings": {
     "language": {
@@ -1436,6 +1486,14 @@
       "keep_days_unit": "days (never the last one left)",
       "on_stop": "Automatic backup at every stop",
       "backups_list": "Available backups"
+    },
+    "diagnosis": {
+      "show_log": "Show the log lines",
+      "hide_log": "Hide the log lines",
+      "copy": "Copy diagnosis",
+      "dismiss_title": "Dismiss this diagnosis",
+      "java_install_row": "Install with one click (Temurin JRE):",
+      "java_install_hint": "Downloaded from Adoptium into Mineger's folder, no installer and no administrator rights; versions live side by side."
     }
   },
   "presence": {
@@ -1536,6 +1594,175 @@
     "leave_title": "{name} left",
     "players_body": "Online now: {count}",
     "schedule_title": "Schedule: {action}",
-    "schedule_failed": "Failed: {error}"
+    "schedule_failed": "Failed: {error}",
+    "crash_diagnosis": "Unexpected exit (code {code}). Automatic restart suspended: {title}"
+  },
+  "diagnosis": {
+    "actions": {
+      "search_mod": "Search for {name}",
+      "get_fabric_api": "Get Fabric API",
+      "get_mod": "Get {name}",
+      "loader_site": "{loader} website"
+    },
+    "eula": {
+      "title": "You need to accept the Minecraft EULA",
+      "detail": "The server stopped right away: eula.txt still says eula=false.",
+      "fix": "Press \"Accept the EULA\" and start the server again."
+    },
+    "port_in_use": {
+      "title": "Port {port} is already taken",
+      "detail_busy": "Another program (or another copy of this server) is already using port {port}, so Minecraft could not open it.",
+      "fix_busy": "Close the other server using port {port}, or change server-port in Properties, then start again.",
+      "detail_ip": "server-ip in server.properties points to an address this PC does not have.",
+      "fix_ip": "Clear the server-ip field in Properties and start again.",
+      "detail_excluded": "Windows reserves port {port} for Hyper-V/WSL: no program can use it (netsh interface ipv4 show excludedportrange protocol=tcp).",
+      "fix_excluded": "Pick another port in Properties (e.g. 25566) and start again."
+    },
+    "java_too_old": {
+      "title": "Java {need} is needed, the server started with Java {have}",
+      "detail": "The server is built for Java {need}: the Java {have} in use cannot run it.",
+      "detail_mod": "A mod is built for Java {need}, newer than the Java {have} the server started with.",
+      "fix": "Install Java {need} with one click: Mineger will use it on its own at the next start."
+    },
+    "java_too_new": {
+      "title": "Java {have} is too new for this server",
+      "detail": "Minecraft {version} with {kind} only works with Java {range}: a newer one breaks the loader at startup.",
+      "detail_prerelease": "The Java in use ({have}) is a pre-release or unofficial build: the server refuses it.",
+      "fix": "Install Java {need} with one click: Mineger will pick it for this server."
+    },
+    "heap": {
+      "title": "Memory problem",
+      "detail_reserve": "Java could not reserve {ram} MB: the PC does not have enough free RAM (or the Java is 32-bit).",
+      "fix_lower": "Lower the maximum RAM to {mb} MB in Properties and start again.",
+      "detail_invalid": "Java refused the memory value: {line}",
+      "fix_invalid": "Check the maximum RAM in Properties and the options in user_jvm_args.txt, then start again.",
+      "fix_32bit": "The Java in use is 32-bit: install 64-bit Java {major} with one click.",
+      "detail_xms": "The initial memory (-Xms in user_jvm_args.txt) is larger than the maximum ({ram} MB).",
+      "fix_xms": "Remove or lower -Xms in user_jvm_args.txt (or raise the maximum RAM in Properties) and start again.",
+      "detail_oom": "Java ran out of memory ({what}): {ram} MB are not enough for this server.",
+      "fix_raise": "Raise the maximum RAM to {mb} MB in Properties and start again.",
+      "fix_reduce": "The PC has no more RAM to give the server: remove some mods, lower view-distance in Properties, then start again.",
+      "detail_vm": "Java could not start: {line}"
+    },
+    "jvm_args": {
+      "title": "Invalid Java startup options",
+      "title_argfile": "A Forge/NeoForge installation file is missing",
+      "detail_argfile": "Java cannot find {file}: the loader installation is incomplete or was moved.",
+      "fix_argfile": "Reinstall the loader (or recreate the server with the same version) and start again.",
+      "detail": "Java refused an option: {line}",
+      "fix": "Open the server folder, remove that option from user_jvm_args.txt and start again."
+    },
+    "jar": {
+      "title": "The server file cannot be used",
+      "detail": "{line}",
+      "fix": "Check that the server jar is in the folder and intact (download it again if needed), then start again.",
+      "detail_fabric": "server.jar, the official server that Fabric launches, is missing.",
+      "fix_fabric": "Put server.jar back in the server folder (or recreate the server) and start again.",
+      "detail_loader": "The loader installation is broken: {line}",
+      "fix_loader": "Reinstall the loader (or recreate the server with the same version) and start again."
+    },
+    "mod_missing_dependency": {
+      "title": "The mod {mod} is missing a dependency",
+      "detail": "{mod} needs {dep} ({range}), which {state}.",
+      "state_missing": "is not installed",
+      "state_wrong": "is installed in version {have}",
+      "fix": "Install {dep} from the Mods tab (in the required version) or disable {mod}, then start again.",
+      "fix_fabric_api": "Install Fabric API (or update it) from the Mods tab: almost every Fabric mod needs it. Then start again."
+    },
+    "mod_incompatible": {
+      "title": "The mod {mod} does not work with this server",
+      "title_generic": "Some mods are not compatible",
+      "title_java": "A mod needs Java {need}, too new for this loader",
+      "detail_java": "The mod {mod} is built for Java {need}, but this server can use Java {max} at most.",
+      "fix_java": "Replace the mod with the build for this Minecraft version, or disable it, then start again.",
+      "title_mc": "The mod {mod} is for another Minecraft version",
+      "detail_mc": "{mod} is made for Minecraft {range}, while this server is {version}.",
+      "fix_mc": "Replace {mod} with the version for Minecraft {version} (Mods tab) or disable it, then start again.",
+      "title_loader_old": "The mod {mod} wants a newer loader",
+      "detail_loader_old": "{mod} needs {loader} {range}.",
+      "fix_loader_old": "Update {loader} (reinstall it in the server folder) and start again.",
+      "title_duplicate": "The mod {mod} is installed twice",
+      "detail_duplicate": "Two files provide the same mod ({mod}): {files}",
+      "fix_duplicate": "Disable (or delete) the older copy from the Mods tab and start again.",
+      "title_mixin": "The mod {mod} conflicts with the game or another mod",
+      "detail_mixin": "{mod} patches the game in a way this version (or another mod) does not allow: {line}",
+      "fix": "Update {mod} to the build for Minecraft {version} or disable it, then start again.",
+      "detail_solution": "Fabric suggests: {line}",
+      "detail_conflict": "{line}",
+      "detail_generic": "The loader refused the set of installed mods: see the log lines below for the names.",
+      "detail_entrypoint": "{mod} crashed while starting up.",
+      "detail_failure": "{line}",
+      "detail_loading": "{line}",
+      "title_version": "The mod {mod} is made for another Minecraft version",
+      "title_version_unknown": "A mod is made for another Minecraft version",
+      "detail_version": "It looks for game code that does not exist (or changed) in Minecraft {version}: {class}",
+      "fix_version": "Replace the mod with the build for Minecraft {version} (Mods tab) or disable it, then start again.",
+      "fix_generic": "Look at the log lines below: the mod they name needs the build for this version, or has to go. Then start again."
+    },
+    "mod_wrong_side_or_loader": {
+      "title_side": "The mod {mod} is for the client, not the server",
+      "fix_side": "Disable {mod} and start again: the server does not need it (players keep it in their own client).",
+      "title_side_unknown": "A client-only mod blocks the server",
+      "fix_side_unknown": "Open the mods folder and remove the mods that only belong in the client (minimaps, shaders, HUDs, menus…), then start again.",
+      "detail_side": "The server tried to load code that only exists in the client ({class}).",
+      "detail_side_dep": "{mod} depends on {dep}, which only exists in the client: {mod} is a client mod too.",
+      "title_loader": "{file} is a mod for another loader",
+      "detail_loader": "{file} is made for {other}, but this server uses {loader}.",
+      "fix_loader": "Disable {file} and download the {loader} version from the Mods tab, then start again.",
+      "title_invalid": "{file} is not a valid mod",
+      "detail_invalid": "The loader does not recognise {file} as a mod: corrupt file, incomplete download, or not a jar.",
+      "fix_invalid": "Disable {file} (or download it again) and start again."
+    },
+    "world_corrupt": {
+      "title": "There is a problem with the world",
+      "detail_lock": "The world appears to be open in another instance (world/session.lock): another server is using it, or the lock was left behind by a crash.",
+      "fix_lock": "Close the other server using this world; if none is running, just start again (or delete world/session.lock).",
+      "detail_newer": "The world was saved by a newer Minecraft version (data {newer} > {current}): going back is not supported.",
+      "fix_newer": "Go back to the Minecraft version you last played with, or restore a backup from the Automation tab.",
+      "detail_level": "level.dat is corrupt or unreadable: {line}",
+      "fix_level": "Restore a backup from the Automation tab, or in world/ rename level.dat_old to level.dat, then start again."
+    },
+    "disk_full": {
+      "title": "Disk full",
+      "detail": "The disk where the server lives has no space left.",
+      "fix": "Free some space (old backups, other files) and start again."
+    },
+    "access_denied": {
+      "title": "Windows blocked a server file",
+      "detail_virus": "The antivirus quarantined a file: {line}",
+      "fix_virus": "Restore the file from quarantine (or add the server folder to the exclusions), download the mod again from its official source and start again.",
+      "detail_locked": "A file is in use by another program: {line}",
+      "fix_locked": "Close the other program (an editor, another server, the antivirus) and start again.",
+      "detail_java": "The Java installation is broken: {line}",
+      "fix_java": "Install Java {major} with one click: Mineger will use that one.",
+      "detail_denied": "Access denied to a file or folder: {line}",
+      "fix_denied": "Move the server out of protected folders (Program Files, OneDrive, a synced Desktop) and start again."
+    },
+    "watchdog": {
+      "title": "The server froze ({seconds} s without responding)",
+      "detail": "The watchdog killed the server because one tick took too long: too much to load, a problematic chunk, or a mod stuck in a loop.",
+      "fix": "Start again; if it happens again, raise max-tick-time in Properties, lower view-distance, or look for the mod in the crash report."
+    },
+    "crash_report": {
+      "title_nofile": "The server crashed",
+      "detail_nofile": "No recent crash report was found: the last log lines are below.",
+      "fix": "Open crash-reports/ and read the report: if a mod shows up, update or disable it; if you just added a mod, try without it.",
+      "title_mod": "Crash caused by the mod {mod}",
+      "detail_mod": "The crash report ({file}) points at the mod {mod}: {description}",
+      "fix_mod": "Disable {mod} and start again; then look for an update of the mod.",
+      "title": "The server crashed: {description}",
+      "detail": "Crash report saved as {file}."
+    },
+    "unknown_crash": {
+      "title": "The server closed on its own (exit code {code})",
+      "detail_access_violation": "Code {code}: native crash (drivers, antivirus, a mod's native libraries).",
+      "detail_stack_overflow": "Code {code}: stack overflow, often a mod stuck in a loop.",
+      "detail_dll": "Code {code}: Java is missing a DLL (broken installation).",
+      "detail_memory": "Code {code}: usually memory (too much or too little RAM, JVM options).",
+      "detail_oom_killer": "Code 137: the system killed the server for lack of RAM.",
+      "detail_native": "Code {code}: Java crashed (native error).",
+      "detail_generic": "No known error in the last lines (exit code {code}).",
+      "fix": "Look at the last lines below and the files in logs/ and crash-reports/; if you just added a mod, try disabling it."
+    }
   }
 }

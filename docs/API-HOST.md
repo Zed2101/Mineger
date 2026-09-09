@@ -54,8 +54,9 @@ The token is accepted **only in the header**. The single exception is `/api/ws?t
 | `DELETE` | `/api/servers/{id}` | Permanently delete a server (refused while it is running) |
 | `POST` | `/api/loaders/mc-versions` | Minecraft versions for a kind: `{kind}` |
 | `POST` | `/api/loaders/versions` | Loader builds: `{kind, mc_version}` |
+| `POST` | `/api/java/install` | `{major}`: downloads a Temurin JRE (Adoptium, Windows x64) into the host's own `java/` folder, no installer and no admin rights, versions side by side. Returns `{ok, major}` at once; progress and outcome arrive as `java-install-progress` events (`{major, percent, message, error?}`, `percent` 100 = done). The new runtime shows up in the server list right after |
 
-`kind`: `vanilla` · `paper` · `forge` · `neoforge` · `fabric`.
+`kind`: `vanilla` · `paper` · `forge` · `neoforge` · `fabric`. Every server in `/api/servers` also carries `java_required` (the Java major Mineger wants for its version **and** loader) and `java_missing` (no installed Java fits: the server cannot start until one is installed).
 
 ### Server lifecycle
 
@@ -72,6 +73,8 @@ The token is accepted **only in the header**. The single exception is `/api/ws?t
 | `GET` | `/api/servers/{id}/tunnel` | playit.gg tunnel of the server: `{linked, account?, enabled, agent_running, state, address?, message?}` (`state`: `off`, `starting`, `online`, `error`). Linking the account is local to the host app |
 | `GET` | `/api/servers/{id}/metrics` | CPU and RAM of the Java process |
 | `GET` | `/api/servers/{id}/disk-usage` | Bytes and file count of the folder |
+| `GET` | `/api/servers/{id}/diagnosis` | Plain-language diagnosis of the last failed start or crash, or `null`: `{category, title, detail, fix, evidence, actions, code?, at}`. `category`: `eula`, `port_in_use`, `java_too_old`, `java_too_new`, `heap`, `jvm_args`, `jar`, `mod_missing_dependency`, `mod_incompatible`, `mod_wrong_side_or_loader`, `world_corrupt`, `disk_full`, `access_denied`, `watchdog`, `crash_report`, `unknown_crash`. `actions` are the buttons the app shows: `{kind: "install_java", major}`, `{kind: "disable_mod", name, display}` (`name` is the jar for `/mods/toggle`), `{kind: "accept_eula"}`, `{kind: "open_properties"}`, `{kind: "set_ram", mb}`, `{kind: "open_folder", sub?}`, `{kind: "open_url", url, label}`, `{kind: "restart"}`. `evidence` holds the raw log lines (and the crash report path). Set when the process exits (`server-diagnosis` event), cleared when the server reaches online |
+| `DELETE` | `/api/servers/{id}/diagnosis` | Dismisses the diagnosis |
 
 ### Map and players
 
@@ -134,7 +137,7 @@ Tiles are rendered from the region files, so the map works with the server off a
 GET /api/ws?token=<token>
 ```
 
-WebSocket that forwards the app's events: `server-status`, `server-output`, `create-progress`, `update-progress`, `mod-progress`, `backup-progress`, `pack-updates`, `webhook-call`, `map-progress`, `commands-ready`, `tunnel-status`, `network-status`, `backup-result` (`{id, ok, source, file?, error?, at, pruned}` after every backup, whoever started it), `schedule-run` (`{id, schedule_id, ok, message, at}`).
+WebSocket that forwards the app's events: `server-status`, `server-output`, `create-progress`, `update-progress`, `mod-progress`, `backup-progress`, `pack-updates`, `webhook-call`, `map-progress`, `commands-ready`, `tunnel-status`, `network-status`, `backup-result` (`{id, ok, source, file?, error?, at, pruned}` after every backup, whoever started it), `schedule-run` (`{id, schedule_id, ok, message, at}`), `server-diagnosis` (`{id, diagnosis}` when a start fails or the server crashes; `diagnosis` as in `GET /diagnosis`), `java-install-progress` (`{major, percent, message, error?}` while a Java download runs on the host).
 
 ---
 

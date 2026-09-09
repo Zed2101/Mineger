@@ -76,15 +76,16 @@ fn build_entry(app: &AppHandle, path: &Path, data: ServerDataFile) -> ServerEntr
         Err(e) => (tr!("errors.launch.not_startable", "error" => e), false),
     };
 
-    let (java_info, java_state) = match java::resolve(app, &data.version) {
+    let java_required = java::requirement(&data.version, kind.as_str()).preferred;
+    let (java_info, java_state, java_missing) = match java::resolve_for(app, &data.version, kind.as_str()) {
         Ok(choice) => {
             let base = format!("Java {} ({})", choice.runtime.major, choice.runtime.version);
             match choice.warning {
-                Some(_) => (tr!("errors.java.required_hint", "info" => base, "major" => choice.required_major), "warn"),
-                None => (base, "ok"),
+                Some(_) => (tr!("errors.java.required_hint", "info" => base, "major" => choice.required_major), "warn", false),
+                None => (base, "ok", false),
             }
         }
-        Err(e) => (e, "err"),
+        Err(e) => (e, "err", true),
     };
 
     ServerEntry {
@@ -107,6 +108,8 @@ fn build_entry(app: &AppHandle, path: &Path, data: ServerDataFile) -> ServerEntr
         source: data.source,
         kind: kind.as_str().to_string(),
         content_folder: crate::utils::content_folder(path).to_string(),
+        java_required,
+        java_missing,
     }
 }
 
@@ -160,7 +163,7 @@ pub fn start_server(app: &AppHandle, id: &str) -> Result<String, String> {
     let mut data = read_server_data(&dir)?;
 
     let plan = launch::resolve(&dir, &data.launch)?;
-    let java = java::resolve(app, &data.version)?;
+    let java = java::resolve_for(app, &data.version, crate::modsvc::server_kind(&dir, &data).as_str())?;
 
     if !eula_accepted(&dir) {
         return Err(EULA_REQUIRED.to_string());
@@ -733,4 +736,25 @@ mod delete_tests {
         assert!(!is_inside(&root, &root.join("inesistente")));
         let _ = fs::remove_dir_all(&root);
     }
+}
+
+// ---------------------------------------------------------------------------
+// Diagnosi degli avvii falliti + Java con un clic (Fase 21)
+// ---------------------------------------------------------------------------
+
+/// L'ultima diagnosi del server (uscita non voluta o avvio fallito), finché non torna online o viene chiusa.
+pub fn get_diagnosis(app: &AppHandle, id: &str) -> Result<Option<crate::diagnose::Diagnosis>, String> {
+    server_dir(app, id)?;
+    Ok(crate::diagnose::get(id))
+}
+
+pub fn dismiss_diagnosis(app: &AppHandle, id: &str) -> Result<(), String> {
+    server_dir(app, id)?;
+    crate::diagnose::dismiss(id);
+    Ok(())
+}
+
+/// Scarica e installa una JRE Temurin nella cartella dell'app (avanzamento: evento `java-install-progress`).
+pub fn install_java(app: &AppHandle, major: u32) -> Result<java::JavaRuntime, String> {
+    crate::javadl::install_and_notify(app, major)
 }

@@ -54,6 +54,7 @@ Il token è accettato **solo nell'header**. L'unica eccezione è `/api/ws?token=
 | `DELETE` | `/api/servers/{id}` | Elimina definitivamente un server (rifiutato se è in esecuzione) |
 | `POST` | `/api/loaders/mc-versions` | Versioni di Minecraft per un tipo: `{kind}` |
 | `POST` | `/api/loaders/versions` | Build del loader: `{kind, mc_version}` |
+| `POST` | `/api/java/install` | `{major}`: scarica una JRE Temurin (Adoptium, Windows x64) nella cartella `java/` dell'host, senza installer né permessi di amministratore, con le versioni una accanto all'altra. Ritorna subito `{ok, major}`; avanzamento ed esito arrivano come eventi `java-install-progress` (`{major, percent, message, error?}`, `percent` 100 = fatto). La nuova Java compare subito nella lista server |
 
 `kind`: `vanilla` · `paper` · `forge` · `neoforge` · `fabric`.
 
@@ -72,6 +73,8 @@ Il token è accettato **solo nell'header**. L'unica eccezione è `/api/ws?token=
 | `GET` | `/api/servers/{id}/tunnel` | Tunnel playit.gg del server: `{linked, account?, enabled, agent_running, state, address?, message?}` (`state`: `off`, `starting`, `online`, `error`). Il collegamento dell'account si fa solo dall'app host |
 | `GET` | `/api/servers/{id}/metrics` | CPU e RAM del processo Java |
 | `GET` | `/api/servers/{id}/disk-usage` | Byte e numero di file della cartella |
+| `GET` | `/api/servers/{id}/diagnosis` | Diagnosi in parole semplici dell'ultimo avvio fallito o crash, oppure `null`: `{category, title, detail, fix, evidence, actions, code?, at}`. `category`: `eula`, `port_in_use`, `java_too_old`, `java_too_new`, `heap`, `jvm_args`, `jar`, `mod_missing_dependency`, `mod_incompatible`, `mod_wrong_side_or_loader`, `world_corrupt`, `disk_full`, `access_denied`, `watchdog`, `crash_report`, `unknown_crash`. `actions` sono i pulsanti che l'app mostra: `{kind: "install_java", major}`, `{kind: "disable_mod", name, display}` (`name` è il jar per `/mods/toggle`), `{kind: "accept_eula"}`, `{kind: "open_properties"}`, `{kind: "set_ram", mb}`, `{kind: "open_folder", sub?}`, `{kind: "open_url", url, label}`, `{kind: "restart"}`. `evidence` contiene le righe grezze del log (e il percorso del crash report). Impostata quando il processo esce (evento `server-diagnosis`), azzerata quando il server arriva online |
+| `DELETE` | `/api/servers/{id}/diagnosis` | Chiude la diagnosi |
 
 ### Mappa e giocatori
 
@@ -134,7 +137,7 @@ Le tile vengono rese dai file di regione: la mappa funziona anche a server spent
 GET /api/ws?token=<token>
 ```
 
-WebSocket che inoltra gli eventi dell'app: `server-status`, `server-output`, `create-progress`, `update-progress`, `mod-progress`, `backup-progress`, `pack-updates`, `webhook-call`, `map-progress`, `commands-ready`, `tunnel-status`, `network-status`, `backup-result` (`{id, ok, source, file?, error?, at, pruned}` dopo ogni backup, da chiunque avviato), `schedule-run` (`{id, schedule_id, ok, message, at}`).
+WebSocket che inoltra gli eventi dell'app: `server-status`, `server-output`, `create-progress`, `update-progress`, `mod-progress`, `backup-progress`, `pack-updates`, `webhook-call`, `map-progress`, `commands-ready`, `tunnel-status`, `network-status`, `backup-result` (`{id, ok, source, file?, error?, at, pruned}` dopo ogni backup, da chiunque avviato), `schedule-run` (`{id, schedule_id, ok, message, at}`), `server-diagnosis` (`{id, diagnosis}` quando un avvio fallisce o il server va in crash; `diagnosis` come in `GET /diagnosis`), `java-install-progress` (`{major, percent, message, error?}` durante un download di Java sull'host).
 
 ---
 

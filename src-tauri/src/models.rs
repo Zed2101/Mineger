@@ -368,6 +368,10 @@ pub struct ServerEntry {
     pub kind: String,
     /// Cartella dei contenuti: "mods" o "plugins"
     pub content_folder: String,
+    /// Major Java preferita per versione e loader (quella da installare se manca)
+    pub java_required: u32,
+    /// Nessuna Java installata rientra nell'intervallo accettato: il server non può partire
+    pub java_missing: bool,
 }
 
 /// Campione CPU/RAM del processo Java

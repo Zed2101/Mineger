@@ -31,6 +31,8 @@ pub mod upnp;
 pub mod utils;
 pub mod worldindex;
 pub mod worldmap;
+pub mod diagnose;
+pub mod javadl;
 
 use std::time::Duration;
 use tauri::RunEvent;
@@ -171,6 +173,9 @@ pub fn run() {
             commands::get_system_language,
             commands::set_language,
             commands::list_languages,
+            commands::install_java,
+            commands::get_diagnosis,
+            commands::dismiss_diagnosis,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

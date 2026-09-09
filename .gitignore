@@ -46,3 +46,6 @@ src-tauri/binaries/
 # Sito (GitHub Pages): CSS compilato e release.json generati in CI
 site/tailwind.css
 site/release.json
+
+# JRE Temurin scaricate dall'app in dev (`<repo>/java`, vedi paths::java_dir)
+/java/

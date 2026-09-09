@@ -1,5 +1,14 @@
 [
   {
+    "id": "java_25",
+    "java_version": 25,
+    "rules": {
+      "min_inclusive": "26.1",
+      "max_inclusive": null
+    },
+    "note": "Required from 26.1 (javaVersion.majorVersion in Mojang's version manifest)."
+  },
+  {
     "id": "java_21",
     "java_version": 21,
     "rules": {

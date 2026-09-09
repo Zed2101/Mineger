@@ -80,3 +80,24 @@ pub fn config_path(app: &AppHandle) -> Result<PathBuf, String> {
     fs::create_dir_all(&dir).map_err(|e| crate::tr!("errors.file.create_failed", "path" => dir.display(), "error" => e))?;
     Ok(dir.join("config.json"))
 }
+
+/// JRE scaricate dall'app (Temurin), una sottocartella per installazione. Viene creata se manca.
+/// debug: `<repo>/java` (gitignored) · release: `app_data_dir/java`
+/// Deve coincidere con `java::managed_root()`, che la ricava senza AppHandle.
+pub fn java_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    let dir = java_dir_uncreated(app)?;
+    fs::create_dir_all(&dir).map_err(|e| crate::tr!("errors.file.create_failed", "path" => dir.display(), "error" => e))?;
+    Ok(dir)
+}
+
+#[cfg(debug_assertions)]
+fn java_dir_uncreated(_app: &AppHandle) -> Result<PathBuf, String> {
+    let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    Ok(manifest.parent().map(|p| p.join("java")).unwrap_or_else(|| PathBuf::from("../java")))
+}
+
+#[cfg(not(debug_assertions))]
+fn java_dir_uncreated(app: &AppHandle) -> Result<PathBuf, String> {
+    let base = app.path().app_data_dir().map_err(|e| format!("app_data_dir: {}", e))?;
+    Ok(base.join("java"))
+}

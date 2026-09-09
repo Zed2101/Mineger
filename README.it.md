@@ -42,6 +42,8 @@ Quando esce una nuova versione del modpack l'app te lo segnala e la installa con
 - **Mappa del mondo** letta dai file di regione: funziona con ogni tipo di server e versione, anche a server spento. Dimensioni e colori dei blocchi delle mod compresi. I giocatori sono marker sulla mappa: clic su uno per teletrasportarlo, vedere l'inventario, mandargli un messaggio a schermo, un suono, un effetto e altro.
 - **Apertura porta via UPnP** all'avvio, attivabile per singolo server.
 - Rilevamento automatico delle installazioni Java (incluse quelle del launcher Minecraft).
+- **Diagnosi degli avvii falliti in parole semplici**: quando un server non parte o va in crash, il tab Console spiega cos'è successo e cosa fare (EULA, porta occupata, Java sbagliata, memoria, opzioni JVM, mod con dipendenze mancanti o incompatibili, mod solo-client, mondo corrotto, disco pieno, file bloccati da Windows, crash report) e offre il rimedio come pulsante: installa Java, disattiva la mod colpevole, accetta la EULA, imposta la RAM, apri la cartella. Il riavvio automatico si ferma quando riavviare non servirebbe.
+- **La Java giusta per versione e loader** (minima e massima: Forge 1.12 vuole esattamente la 8, Forge 1.16 si rompe con la 17…) e **Java con un clic**: una JRE Temurin scaricata da Adoptium nella cartella di Mineger, senza installer, con le versioni una accanto all'altra.
 
 ### Controllo remoto e integrazioni
 - **Host**: un'installazione di Mineger può esporre i suoi server in rete; gli amici li avviano e gestiscono dalla loro copia dell'app tramite un link d'invito.
