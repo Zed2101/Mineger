@@ -207,6 +207,12 @@ export class RemoteHost {
       case 'save_text_file':
       case 'firewall_allow':
         throw t('msg2.remote.not_available_remote');
+      case 'get_diagnosis':
+        return this.request('GET', s('/diagnosis'));
+      case 'dismiss_diagnosis':
+        return this.request('DELETE', s('/diagnosis'));
+      case 'install_java':
+        return this.request('POST', '/api/java/install', { json: { major: args.major } });
       default:
         throw t('msg2.remote.command_unsupported', { cmd });
     }

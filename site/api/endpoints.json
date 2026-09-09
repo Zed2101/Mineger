@@ -232,6 +232,25 @@
           },
           "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\\n  -d '{\"kind\":\"neoforge\",\"mc_version\":\"1.21.1\"}' $HOST/api/loaders/versions",
           "response": "[ { \"version\": \"21.1.209\", \"tag\": \"latest\", \"recommended\": true, \"date\": \"2026-06-12\" }, \"…\" ]"
+        },
+        {
+          "method": "POST",
+          "path": "/api/java/install",
+          "auth": "token",
+          "title": {
+            "en": "Install a Java runtime",
+            "it": "Installa una Java"
+          },
+          "desc": {
+            "en": "Downloads a Temurin JRE (<code>major</code> 8, 11, 17, 21, 25…) from Adoptium into the host's own <code>java/</code> folder: no installer, no admin rights, versions side by side. Returns at once; progress and outcome arrive as <code>java-install-progress</code> events (<code>percent</code> 100 = done, <code>error: true</code> = failed). Every server in <code>/api/servers</code> carries <code>java_required</code> (the major Mineger wants for its version and loader) and <code>java_missing</code> (no installed Java fits). Windows x64 only.",
+            "it": "Scarica una JRE Temurin (<code>major</code> 8, 11, 17, 21, 25…) da Adoptium nella cartella <code>java/</code> dell'host: niente installer, niente permessi di amministratore, versioni una accanto all'altra. Ritorna subito; avanzamento ed esito arrivano come eventi <code>java-install-progress</code> (<code>percent</code> 100 = fatto, <code>error: true</code> = fallito). Ogni server in <code>/api/servers</code> porta <code>java_required</code> (la major che Mineger vuole per versione e loader) e <code>java_missing</code> (nessuna Java installata va bene). Solo Windows x64."
+          },
+          "use": {
+            "en": "A setup script that prepares a fresh host: create the servers, then install the Java each one needs.",
+            "it": "Uno script che prepara un host nuovo: crea i server, poi installa la Java che serve a ciascuno."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" -d '{\"major\":21}' \"$HOST/api/java/install\"",
+          "response": "{ \"ok\": true, \"major\": 21 }"
         }
       ]
     },
@@ -483,8 +502,8 @@
             "it": "Eventi in tempo reale"
           },
           "desc": {
-            "en": "A WebSocket that forwards every app event as <code>{ \"type\", \"payload\" }</code>: <code>server-status</code>, <code>server-output</code>, <code>create-progress</code>, <code>update-progress</code>, <code>mod-progress</code>, <code>backup-progress</code>, <code>pack-updates</code>, <code>webhook-call</code>, <code>map-progress</code>, <code>commands-ready</code>, <code>tunnel-status</code>, <code>network-status</code>. This is the only route that accepts the token in the query string, because browsers cannot set headers on a WebSocket.",
-            "it": "Un WebSocket che inoltra ogni evento dell'app come <code>{ \"type\", \"payload\" }</code>: <code>server-status</code>, <code>server-output</code>, <code>create-progress</code>, <code>update-progress</code>, <code>mod-progress</code>, <code>backup-progress</code>, <code>pack-updates</code>, <code>webhook-call</code>, <code>map-progress</code>, <code>commands-ready</code>, <code>tunnel-status</code>, <code>network-status</code>. È l'unica rotta che accetta il token nella query string, perché un browser non può impostare header su un WebSocket."
+            "en": "A WebSocket that forwards every app event as <code>{ \"type\", \"payload\" }</code>: <code>server-status</code>, <code>server-output</code>, <code>create-progress</code>, <code>update-progress</code>, <code>mod-progress</code>, <code>backup-progress</code>, <code>pack-updates</code>, <code>webhook-call</code>, <code>map-progress</code>, <code>commands-ready</code>, <code>tunnel-status</code>, <code>network-status</code>, <code>server-diagnosis</code>, <code>java-install-progress</code>. This is the only route that accepts the token in the query string, because browsers cannot set headers on a WebSocket.",
+            "it": "Un WebSocket che inoltra ogni evento dell'app come <code>{ \"type\", \"payload\" }</code>: <code>server-status</code>, <code>server-output</code>, <code>create-progress</code>, <code>update-progress</code>, <code>mod-progress</code>, <code>backup-progress</code>, <code>pack-updates</code>, <code>webhook-call</code>, <code>map-progress</code>, <code>commands-ready</code>, <code>tunnel-status</code>, <code>network-status</code>, <code>server-diagnosis</code>, <code>java-install-progress</code>. È l'unica rotta che accetta il token nella query string, perché un browser non può impostare header su un WebSocket."
           },
           "use": {
             "en": "A chat bridge: forward <code>joined the game</code> lines to Discord, and Discord messages back with <code>/command</code>.",
@@ -530,6 +549,44 @@
           },
           "request": "curl -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Vanilla%20coi%20bro/reach\"",
           "response": "{ \"at\": 1789000000000, \"status\": \"online\", \"port\": 25565, \"lan_ip\": \"192.168.1.10\", \"public_ip\": \"93.44.10.7\", \"router_wan_ip\": \"93.44.10.7\", \"cgnat\": false, \"vpn\": false, \"upnp_state\": \"open\", \"listening_local\": true, \"local_slp\": { \"protocol\": 773, \"version\": \"1.21.9\", \"max_players\": 20, \"online\": 0, \"motd\": \"A Minecraft Server\" }, \"external\": { \"reachable\": true, \"tested\": true, \"latency_ms\": 812, \"via\": \"portchecker.io\" }, \"external_slp\": { \"protocol\": 773, \"version\": \"1.21.9\", \"max_players\": 20, \"online\": 0 }, \"firewall\": { \"status\": \"allowed\", \"profile\": \"Private\", \"program\": \"c:\\\\program files\\\\java\\\\jdk-21\\\\bin\\\\java.exe\", \"detail\": \"java.exe\" }, \"verdict\": { \"category\": \"ok\", \"title\": \"Yes: friends can get in\", \"detail\": \"From outside your home, port 25565 answers on the public IP 93.44.10.7 (tested by portchecker.io, 812 ms).\", \"fix\": \"Give your friends this address. …\", \"address\": \"93.44.10.7:25565\", \"actions\": [ { \"kind\": \"copy_address\" }, { \"kind\": \"retry\" } ] }, \"duration_ms\": 4210 }"
+        },
+        {
+          "method": "GET",
+          "path": "/api/servers/{id}/diagnosis",
+          "auth": "token",
+          "title": {
+            "en": "Why the server did not start",
+            "it": "Perché il server non è partito"
+          },
+          "desc": {
+            "en": "The plain-language diagnosis of the last failed start or crash, or <code>null</code>. <code>category</code> is one of <code>eula</code>, <code>port_in_use</code>, <code>java_too_old</code>, <code>java_too_new</code>, <code>heap</code>, <code>jvm_args</code>, <code>jar</code>, <code>mod_missing_dependency</code>, <code>mod_incompatible</code>, <code>mod_wrong_side_or_loader</code>, <code>world_corrupt</code>, <code>disk_full</code>, <code>access_denied</code>, <code>watchdog</code>, <code>crash_report</code>, <code>unknown_crash</code>. <code>actions</code> are the fixes the app offers as buttons: <code>install_java</code> (<code>major</code>), <code>disable_mod</code> (<code>name</code> is the jar for <code>/mods/toggle</code>), <code>accept_eula</code>, <code>open_properties</code>, <code>set_ram</code> (<code>mb</code>), <code>open_folder</code>, <code>open_url</code>, <code>restart</code>. <code>evidence</code> holds the raw log lines. It is set when the process exits (also sent as the <code>server-diagnosis</code> event) and cleared when the server comes online; while a blocking one is present the automatic restart stays off.",
+            "it": "La diagnosi in parole semplici dell'ultimo avvio fallito o crash, oppure <code>null</code>. <code>category</code> è una fra <code>eula</code>, <code>port_in_use</code>, <code>java_too_old</code>, <code>java_too_new</code>, <code>heap</code>, <code>jvm_args</code>, <code>jar</code>, <code>mod_missing_dependency</code>, <code>mod_incompatible</code>, <code>mod_wrong_side_or_loader</code>, <code>world_corrupt</code>, <code>disk_full</code>, <code>access_denied</code>, <code>watchdog</code>, <code>crash_report</code>, <code>unknown_crash</code>. <code>actions</code> sono i rimedi che l'app offre come pulsanti: <code>install_java</code> (<code>major</code>), <code>disable_mod</code> (<code>name</code> è il jar per <code>/mods/toggle</code>), <code>accept_eula</code>, <code>open_properties</code>, <code>set_ram</code> (<code>mb</code>), <code>open_folder</code>, <code>open_url</code>, <code>restart</code>. <code>evidence</code> contiene le righe grezze del log. Viene impostata quando il processo esce (arriva anche come evento <code>server-diagnosis</code>) e azzerata quando il server arriva online; finché ce n'è una bloccante il riavvio automatico resta fermo."
+          },
+          "use": {
+            "en": "A Discord bot that, when <code>server-status</code> goes offline unexpectedly, posts the title and the fix instead of a stack trace.",
+            "it": "Un bot Discord che, quando <code>server-status</code> va offline all'improvviso, scrive titolo e rimedio invece di uno stack trace."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Vanilla%20coi%20bro/diagnosis\"",
+          "response": "{ \"category\": \"port_in_use\", \"title\": \"Port 25565 is already taken\", \"detail\": \"Another program (or another copy of this server) is already using port 25565, so Minecraft could not open it.\", \"fix\": \"Close the other server using port 25565, or change server-port in Properties, then start again.\", \"evidence\": [ \"[12:00:03] [Server thread/WARN]: **** FAILED TO BIND TO PORT!\", \"[12:00:03] [Server thread/WARN]: The exception was: java.net.BindException: Address already in use: bind\" ], \"actions\": [ { \"kind\": \"open_properties\" }, { \"kind\": \"restart\" } ], \"code\": 1, \"at\": 1789012800 }"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/servers/{id}/diagnosis",
+          "auth": "token",
+          "title": {
+            "en": "Dismiss the diagnosis",
+            "it": "Chiudi la diagnosi"
+          },
+          "desc": {
+            "en": "Forgets the current diagnosis of the server (the same as the × on the panel). A new one appears at the next failed start.",
+            "it": "Dimentica la diagnosi corrente del server (come la × sul riquadro). Una nuova compare al prossimo avvio fallito."
+          },
+          "use": {
+            "en": "Clear the warning after fixing the problem by hand.",
+            "it": "Togliere l'avviso dopo aver sistemato il problema a mano."
+          },
+          "request": "curl -X DELETE -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Vanilla%20coi%20bro/diagnosis\"",
+          "response": "{ \"ok\": true }"
         }
       ]
     },

@@ -985,3 +985,24 @@ pub async fn rollback_pack_update(app: AppHandle, id: String) -> Result<packs::R
     .await
     .map_err(|e| e.to_string())?
 }
+
+// ---------------------------------------------------------------------------
+// Diagnosi degli avvii falliti + Java con un clic (Fase 21)
+// ---------------------------------------------------------------------------
+
+/// Scarica e installa una JRE Temurin (8, 17, 21…) nella cartella dell'app. Avanzamento: `java-install-progress`.
+#[tauri::command]
+pub async fn install_java(app: AppHandle, major: u32) -> Result<java::JavaRuntime, String> {
+    tauri::async_runtime::spawn_blocking(move || service::install_java(&app, major)).await.map_err(|e| e.to_string())?
+}
+
+/// Ultima diagnosi del server (`null` se non ce n'è): categoria, spiegazione, rimedio, righe del log, azioni.
+#[tauri::command]
+pub async fn get_diagnosis(app: AppHandle, id: String) -> Result<Option<crate::diagnose::Diagnosis>, String> {
+    service::get_diagnosis(&app, &id)
+}
+
+#[tauri::command]
+pub async fn dismiss_diagnosis(app: AppHandle, id: String) -> Result<(), String> {
+    service::dismiss_diagnosis(&app, &id)
+}

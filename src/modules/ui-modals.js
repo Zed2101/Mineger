@@ -11,6 +11,7 @@ import { kindLabel, providerLabel } from './ui-packs.js';
 import { t, tp, onLanguageChange } from './i18n.js';
 import { classifyLink, splitLinkKindError } from './links.js';
 import { openModBrowser } from './ui-modbrowser.js';
+import { renderJavaInstallRow } from './ui-diagnosis.js';
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -443,6 +444,7 @@ async function renderSettings(state, refreshJava = false) {
     }
     const count = document.getElementById('settings-java-count');
     if (count) count.textContent = runtimes.length ? tp('ui.settings.java_installs', runtimes.length) : '';
+    renderJavaInstallRow(runtimes, () => renderSettings(state, true));
   } catch (err) {
     javaList.innerHTML = `<li class="note-err">${escapeHtml(t('msg.settings.error', { error: String(err) }))}</li>`;
   }

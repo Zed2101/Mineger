@@ -34,6 +34,8 @@ pub mod worldmap;
 pub mod firewall;
 pub mod reach;
 pub mod modsides;
+pub mod diagnose;
+pub mod javadl;
 
 use std::time::Duration;
 use tauri::RunEvent;
@@ -181,6 +183,9 @@ pub fn run() {
             commands::save_text_file,
             commands::get_pack_rollback,
             commands::rollback_pack_update,
+            commands::install_java,
+            commands::get_diagnosis,
+            commands::dismiss_diagnosis,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

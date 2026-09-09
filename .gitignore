@@ -49,3 +49,5 @@ site/release.json
 
 # Agent worktrees (Claude Code)
 .claude/worktrees/
+# JRE Temurin scaricate dall'app in dev (`<repo>/java`, vedi paths::java_dir)
+/java/

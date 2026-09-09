@@ -20,6 +20,7 @@ import { setupLanguage } from './modules/ui-language.js';
 import { setupAppUpdate } from './modules/ui-update.js';
 import { setupNetwork, renderNetworkCard, handleNetworkEvent, renderTunnelSettings } from './modules/ui-network.js';
 import { setupAutomation, renderAutomationTab, handleAutomationEvent } from './modules/ui-automation.js';
+import { setupDiagnosis, renderDiagnosis, handleDiagnosisEvent, onDiagnosisStatus, handleJavaInstallProgress } from './modules/ui-diagnosis.js';
 
 const { invoke } = window.__TAURI__.core;
 
@@ -198,6 +199,7 @@ function selectServer(id) {
   if (document.querySelector('.tab.active')?.dataset.target === 'view-map') renderMapTab(id);
 
   if (isRemoteId(id)) seedRemoteConsole(id);
+  renderDiagnosis(state, server);
 }
 
 // ---------------------------------------------------------------------------
@@ -230,6 +232,7 @@ function attachHost(meta) {
 }
 
 function handleRemoteEvent(hostId, type, payload) {
+  if (type === 'java-install-progress') return handleJavaInstallProgress(payload); // evento dell'host, senza id server
   if (!payload || payload.id === undefined) return;
   const normalized = { ...payload, id: makeRemoteId(hostId, payload.id) };
   if (!state.serverList.some((s) => s.id === normalized.id)) return; // server non ancora noto
@@ -242,6 +245,7 @@ function handleRemoteEvent(hostId, type, payload) {
   } else if (type === 'commands-ready') handleCommandsReady(state, normalized);
   else if (type === 'tunnel-status' || type === 'network-status') handleNetworkEvent(type, normalized);
   else if (type === 'backup-result' || type === 'schedule-run') handleAutomationEvent(type, normalized);
+  else if (type === 'server-diagnosis') handleDiagnosisEvent(state, normalized);
 }
 
 async function refreshRemoteServers(hostId) {
@@ -324,6 +328,7 @@ function onStatusChange(id) {
   renderPlayers(state, id);
   handleNetworkEvent('server-status', { id });
   handleAutomationEvent('server-status', { id });
+  onDiagnosisStatus(state, id);
 }
 
 async function startServer(id) {
@@ -520,6 +525,17 @@ async function initApp() {
   });
   await setupStatusListener(state, onStatusChange);
   await setupConsole(state);
+  await setupDiagnosis(state, {
+    startServer,
+    selectTab: (target) => document.querySelector(`.tab[data-target="${target}"]`)?.click(),
+    reloadServers: loadServers,
+    onModsChanged: (server, mods) => renderModsList(mods, server.id, server),
+    onLaunchChanged: (server) => {
+      populatePropertiesPanel(server);
+      setLaunchInfo(server.launch_info, server.launch_ok);
+      renderStats(state, server.id);
+    },
+  });
 
   // Sidebar: selezione, avvio rapido, rimozione host (delegati) + riordino
   sortable = makeSortable(serverListEl, {

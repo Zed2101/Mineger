@@ -26,6 +26,8 @@
 //   GET  /api/servers/{id}/reach           ultimo report del test (null se mai fatto)
 //   GET  /api/servers/{id}/mods/sides      lato client/server di ogni mod (cosa devono installare gli amici)
 //   GET|POST /api/servers/{id}/rollback    versione precedente del modpack / tornarci (server spento)
+//   GET|DELETE /api/servers/{id}/diagnosis diagnosi dell'ultimo avvio fallito / crash
+//   POST /api/java/install                 { major } scarica una JRE Temurin sull'host
 //
 // 2) Webhook in ingresso (`/hook/{id}`, token e permessi propri per ogni webhook):
 //   POST/GET /hook/{id}   action=say|command|start|stop|status  (+ message, from, command, server)
@@ -455,6 +457,8 @@ fn build_router(state: HostState) -> Router {
         .route("/api/servers/{id}/automation/discord/test", post(discord_test))
         .route("/api/servers/{id}/mods/sides", get(mod_sides))
         .route("/api/servers/{id}/rollback", get(pack_rollback).post(pack_rollback_run))
+        .route("/api/servers/{id}/diagnosis", get(get_diagnosis).delete(dismiss_diagnosis))
+        .route("/api/java/install", post(java_install))
         .route("/api/servers/{id}/info", put(update_info))
         .route("/api/servers/{id}/launch", put(update_launch))
         .route("/api/servers/{id}/properties", put(save_properties))
@@ -1511,4 +1515,38 @@ async fn pack_rollback_run(State(state): State<HostState>, Path(id): Path<String
         })
         .await?,
     ))
+}
+
+// ---------------------------------------------------------------------------
+// Diagnosi degli avvii falliti + Java con un clic (Fase 21)
+// ---------------------------------------------------------------------------
+
+async fn get_diagnosis(State(state): State<HostState>, Path(id): Path<String>) -> ApiResult<Option<crate::diagnose::Diagnosis>> {
+    let app = state.app.clone();
+    Ok(Json(blocking(move || service::get_diagnosis(&app, &id)).await?))
+}
+
+async fn dismiss_diagnosis(State(state): State<HostState>, Path(id): Path<String>) -> ApiResult<Value> {
+    let app = state.app.clone();
+    blocking(move || service::dismiss_diagnosis(&app, &id)).await?;
+    Ok(Json(json!({ "ok": true })))
+}
+
+#[derive(Deserialize)]
+struct JavaInstallBody {
+    major: u32,
+}
+
+/// Avvia il download di una JRE Temurin sull'host e ritorna subito: il client remoto ha un
+/// timeout di pochi secondi, mentre il download dura minuti. Avanzamento ed esito arrivano
+/// come eventi `java-install-progress` (`percent` 100 = fatto, `error: true` = fallito).
+async fn java_install(State(state): State<HostState>, Json(body): Json<JavaInstallBody>) -> ApiResult<Value> {
+    let app = state.app.clone();
+    let major = body.major;
+    thread::spawn(move || {
+        if let Err(e) = service::install_java(&app, major) {
+            println!("[Mineger] Installazione Java {} fallita: {}", major, e);
+        }
+    });
+    Ok(Json(json!({ "ok": true, "major": major })))
 }

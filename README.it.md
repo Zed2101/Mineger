@@ -45,6 +45,8 @@ Quando esce una nuova versione del modpack l'app te lo segnala e la installa con
 - **Apertura porta via UPnP** all'avvio, attivabile per singolo server.
 - Rilevamento automatico delle installazioni Java (incluse quelle del launcher Minecraft).
 - **"I tuoi amici riescono a entrare?"** — un pulsante prova da fuori casa se la porta del server risponde sul tuo IP pubblico e ti dice, in parole semplici, cosa c'è in mezzo (server che non ascolta, porta non inoltrata, CGNAT / doppio NAT, Windows Firewall, porta che punta altrove) e come rimediare, con l'indirizzo da dare agli amici pronto da copiare e rimedi a un clic come consentire Java nel firewall.
+- **Diagnosi degli avvii falliti in parole semplici**: quando un server non parte o va in crash, il tab Console spiega cos'è successo e cosa fare (EULA, porta occupata, Java sbagliata, memoria, opzioni JVM, mod con dipendenze mancanti o incompatibili, mod solo-client, mondo corrotto, disco pieno, file bloccati da Windows, crash report) e offre il rimedio come pulsante: installa Java, disattiva la mod colpevole, accetta la EULA, imposta la RAM, apri la cartella. Il riavvio automatico si ferma quando riavviare non servirebbe.
+- **La Java giusta per versione e loader** (minima e massima: Forge 1.12 vuole esattamente la 8, Forge 1.16 si rompe con la 17…) e **Java con un clic**: una JRE Temurin scaricata da Adoptium nella cartella di Mineger, senza installer, con le versioni una accanto all'altra.
 
 ### Controllo remoto e integrazioni
 - **Host**: un'installazione di Mineger può esporre i suoi server in rete; gli amici li avviano e gestiscono dalla loro copia dell'app tramite un link d'invito.

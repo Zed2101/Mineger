@@ -45,6 +45,8 @@ When a new version of the modpack is released the app tells you and installs it 
 - **UPnP port mapping** on startup, switchable per server.
 - Automatic detection of installed Java runtimes, including those shipped with the Minecraft launcher.
 - **"Can your friends get in?"** — one button tests from outside your network whether the server port answers on your public IP and tells you, in plain language, what is in the way (server not listening, port not forwarded, CGNAT / double NAT, Windows Firewall, wrong target) and how to fix it, with the address to share ready to copy and one-click fixes such as allowing Java in the firewall.
+- **Plain-language startup diagnosis**: when a server fails to start or crashes, the Console tab explains what happened and what to do (EULA, port in use, wrong Java, memory, bad JVM options, missing or incompatible mods, client-only mods, corrupt world, disk full, files blocked by Windows, crash reports) and offers the fix as a button: install Java, disable the culprit mod, accept the EULA, set the RAM, open the folder. Automatic restarts pause when a restart cannot help.
+- **The right Java per version and loader** (minimum and maximum: Forge 1.12 wants exactly 8, Forge 1.16 breaks on 17…) and **one-click Java install**: a Temurin JRE downloaded from Adoptium into Mineger's own folder, no installer, versions side by side.
 
 ### Remote control and integrations
 - **Host mode**: one Mineger installation can expose its servers over the network, so friends start and manage them from their own copy of the app through an invite link.
