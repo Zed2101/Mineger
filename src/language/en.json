@@ -86,6 +86,10 @@
     "diagnosis": {
       "line": "[Mineger] ⚠ {title} — {fix}",
       "restart_suspended": "[Mineger] Automatic restart suspended: {title}. Fix the problem (see the box above the console) and start the server again by hand."
+    },
+    "loader": {
+      "installing_from_pack": "[Mineger] The server pack ships the {loader} installer but not the libraries: installing {loader} now (once, it takes a minute)…",
+      "installed_from_pack": "[Mineger] {loader} installed: starting the server."
     }
   },
   "errors": {
@@ -217,7 +221,9 @@
       "no_builds": "{loader} has no builds for Minecraft {version}",
       "quilt_unsupported": "Quilt is not supported yet: choose a Fabric, Forge or NeoForge pack",
       "unsupported": "Unsupported loader: {loader}",
-      "unsupported_mc": "{loader} does not support Minecraft {version}"
+      "unsupported_mc": "{loader} does not support Minecraft {version}",
+      "installer_no_args": "The {loader} installer finished without creating the server libraries (libraries/…/win_args.txt)",
+      "java_for_installer": "Java is needed to run the loader installer: {error}"
     },
     "modrinth": {
       "index_invalid": "invalid modrinth.index.json: {error}",

@@ -86,6 +86,10 @@
     "diagnosis": {
       "line": "",
       "restart_suspended": ""
+    },
+    "loader": {
+      "installing_from_pack": "",
+      "installed_from_pack": ""
     }
   },
   "errors": {
@@ -217,7 +221,9 @@
       "no_builds": "",
       "quilt_unsupported": "",
       "unsupported": "",
-      "unsupported_mc": ""
+      "unsupported_mc": "",
+      "installer_no_args": "",
+      "java_for_installer": ""
     },
     "modrinth": {
       "index_invalid": "",

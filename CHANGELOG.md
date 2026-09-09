@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/).
 
+## [1.3.2] — 2026-09-09
+
+### Fixed
+- **Server packs that ship only the loader installer (All the Mods 10 and others) opened the NeoForge/Forge installer window on Start.** Those packs leave `neoforge-<version>-installer.jar` plus a `startserver.bat` that installs the loader on first run; Mineger took the installer for the server jar. Now the installer is never a launch candidate, it is run with `--install-server` right after the pack is extracted, and a server created before this fix is repaired on the next Start (the libraries are installed once, with progress in the console, then the server starts).
+
 ## [1.3.1] — 2026-09-09
 
 ### Fixed

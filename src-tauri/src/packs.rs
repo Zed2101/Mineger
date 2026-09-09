@@ -122,6 +122,13 @@ fn install_into(app: &AppHandle, dir: &Path, pack: &PackInfo, file: &PackFile, p
         other => Err(tr!("errors.pack.unsupported_kind", "kind" => other)),
     }?;
 
+    // Alcuni server pack (ATM10…) portano solo l'installer del loader e lo eseguono al primo
+    // avvio dal loro startserver.bat: lo facciamo noi adesso, così "Avvia" avvia il server.
+    if crate::launch::detect_args_file(dir).is_none() && installer_jar_in(dir).is_some() {
+        let java = crate::java::resolve_for(app, &file.mc_version, &file.loader).map_err(|e| tr!("errors.loader.java_for_installer", "error" => e))?;
+        ensure_loader_from_installer(&java.runtime.path, dir, progress)?;
+    }
+
     // Verifica che il risultato sia avviabile e rileva jar/args file
     let (_, launch) = create::detect_imported_server(dir);
     crate::launch::resolve(dir, &launch).map_err(|e| tr!("errors.pack.not_startable", "error" => e))?;
@@ -399,6 +406,51 @@ fn run_installer(java: &str, installer: &Path, flag: &str, dir: &Path, progress:
         return Err(tr!("errors.loader.installer_failed", "status" => status, "detail" => tail));
     }
     Ok(())
+}
+
+/// `neoforge-21.1.249-installer.jar` / `forge-1.20.1-47.3.0-installer.jar`: l'installer del
+/// loader, non un server. Alcuni server pack (ATM10…) lo lasciano nella radice con uno
+/// `startserver.bat` che lo esegue al primo avvio.
+pub fn is_installer_jar(name: &str) -> bool {
+    let n = name.to_ascii_lowercase();
+    n.ends_with("-installer.jar") && (n.starts_with("neoforge-") || n.starts_with("forge-"))
+}
+
+/// L'installer di Forge/NeoForge presente nella radice del server, con il loader che installa.
+pub fn installer_jar_in(dir: &Path) -> Option<(PathBuf, &'static str)> {
+    let mut found: Vec<(PathBuf, &'static str)> = fs::read_dir(dir)
+        .ok()?
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.is_file())
+        .filter_map(|p| {
+            let name = p.file_name()?.to_string_lossy().to_ascii_lowercase();
+            if !is_installer_jar(&name) {
+                return None;
+            }
+            Some((p, if name.starts_with("neoforge-") { "neoforge" } else { "forge" }))
+        })
+        .collect();
+    found.sort();
+    found.pop()
+}
+
+/// Se il server ha l'installer del loader ma non le librerie (`libraries/…/win_args.txt`),
+/// lo esegue con `--install-server` / `--installServer`. `Ok(true)` se ha installato qualcosa.
+pub fn ensure_loader_from_installer(java: &str, dir: &Path, progress: Progress) -> Result<bool, String> {
+    if crate::launch::detect_args_file(dir).is_some() {
+        return Ok(false);
+    }
+    let Some((installer, loader)) = installer_jar_in(dir) else { return Ok(false) };
+    let (flag, label) = if loader == "neoforge" { ("--install-server", "NeoForge") } else { ("--installServer", "Forge") };
+    progress("install", 12, &tr!("progress.loader.installing", "loader" => label));
+    run_installer(java, &installer, flag, dir, progress)?;
+    let _ = fs::remove_file(dir.join("installer.log"));
+    if crate::launch::detect_args_file(dir).is_none() {
+        return Err(tr!("errors.loader.installer_no_args", "loader" => label));
+    }
+    progress("install", 100, &tr!("progress.loader.installed", "loader" => label));
+    Ok(true)
 }
 
 // ---------------------------------------------------------------------------
@@ -876,6 +928,31 @@ pub fn rollback_update(app: &AppHandle, id: &str) -> Result<RollbackInfo, String
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn installer_jars_are_recognised_and_never_launched() {
+        assert!(is_installer_jar("neoforge-21.1.249-installer.jar"));
+        assert!(is_installer_jar("forge-1.20.1-47.3.0-installer.jar"));
+        assert!(is_installer_jar("NeoForge-21.1.249-INSTALLER.jar"));
+        assert!(!is_installer_jar("server.jar"));
+        assert!(!is_installer_jar("fabric-server-launch.jar"));
+        assert!(!is_installer_jar("paper-1.21.1-130.jar"));
+        assert!(!is_installer_jar("someinstaller.jar"));
+
+        let d = std::env::temp_dir().join(format!("mineger-inst-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&d);
+        fs::create_dir_all(&d).unwrap();
+        assert!(installer_jar_in(&d).is_none());
+        fs::write(d.join("neoforge-21.1.249-installer.jar"), b"x").unwrap();
+        fs::write(d.join("startserver.bat"), b"x").unwrap();
+        let (path, loader) = installer_jar_in(&d).unwrap();
+        assert_eq!(loader, "neoforge");
+        assert!(path.ends_with("neoforge-21.1.249-installer.jar"));
+        // il rilevamento del server importato non lo sceglie come jar di avvio
+        let (_, launch) = create::detect_imported_server(&d);
+        assert!(launch.jar.is_none(), "l'installer non deve diventare il jar di avvio");
+        let _ = fs::remove_dir_all(&d);
+    }
 
     #[test]
     fn rejects_unsafe_paths() {

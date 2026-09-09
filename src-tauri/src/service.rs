@@ -162,8 +162,38 @@ pub fn start_server(app: &AppHandle, id: &str) -> Result<String, String> {
     let dir = server_dir(app, id)?;
     let mut data = read_server_data(&dir)?;
 
+    // L'installer del loader non è un server: se un vecchio rilevamento l'ha scelto come jar
+    // di avvio (server pack senza librerie, es. ATM10), via, e si passa dagli args file.
+    if data.launch.jar.as_deref().map(crate::packs::is_installer_jar).unwrap_or(false) {
+        data.launch.jar = None;
+        write_server_data(&dir, &data)?;
+    }
+
+    let kind = match data.source.as_ref().map(|s| s.loader.as_str()).filter(|l| !l.is_empty() && data.kind.is_empty()) {
+        Some(loader) => loader.to_string(),
+        None => crate::modsvc::server_kind(&dir, &data).as_str().to_string(),
+    };
+    let java = java::resolve_for(app, &data.version, &kind)?;
+
+    // Server pack con il solo installer del loader: "Avvia" lo installa adesso, una volta,
+    // invece di aprire la finestra dell'installer.
+    if launch::detect_args_file(&dir).is_none() {
+        if let Some((_, loader)) = crate::packs::installer_jar_in(&dir) {
+            let label = if loader == "neoforge" { "NeoForge" } else { "Forge" };
+            process::emit_line(app, id, &tr!("console.loader.installing_from_pack", "loader" => label));
+            let mut last = 0u8;
+            let mut progress = |_: &str, p: u8, msg: &str| {
+                if p >= last.saturating_add(10) || p == 100 {
+                    last = p;
+                    process::emit_line(app, id, &format!("[Mineger] {} {}%: {}", label, p, msg));
+                }
+            };
+            crate::packs::ensure_loader_from_installer(&java.runtime.path, &dir, &mut progress)?;
+            process::emit_line(app, id, &tr!("console.loader.installed_from_pack", "loader" => label));
+        }
+    }
+
     let plan = launch::resolve(&dir, &data.launch)?;
-    let java = java::resolve_for(app, &data.version, crate::modsvc::server_kind(&dir, &data).as_str())?;
 
     if !eula_accepted(&dir) {
         return Err(EULA_REQUIRED.to_string());

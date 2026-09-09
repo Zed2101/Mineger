@@ -468,12 +468,14 @@ pub fn detect_imported_server(dir: &Path) -> (Option<String>, LaunchConfig) {
         return (version_from_vanilla_jar(&server_jar), launch);
     }
 
-    // 3. Un unico altro jar nella radice (Paper, Fabric, shim rinominato, ...)
+    // 3. Un unico altro jar nella radice (Paper, Fabric, shim rinominato, ...).
+    //    L'installer di Forge/NeoForge lasciato da un server pack non è un server: mai avviarlo.
     let jars: Vec<PathBuf> = fs::read_dir(dir)
         .map(|rd| {
             rd.flatten()
                 .map(|e| e.path())
                 .filter(|p| p.is_file() && p.extension().and_then(|s| s.to_str()) == Some("jar"))
+                .filter(|p| !crate::packs::is_installer_jar(&p.file_name().unwrap_or_default().to_string_lossy()))
                 .collect()
         })
         .unwrap_or_default();
