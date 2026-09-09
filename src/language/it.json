@@ -387,6 +387,12 @@
     "discord": {
       "bad_url": "URL del webhook Discord non valido (deve iniziare con https://)",
       "http": "Discord ha risposto {status}: {body}"
+    },
+    "reach": {
+      "busy": "un test è già in corso per questo server",
+      "firewall_declined": "permesso di amministratore negato: la regola del firewall non è stata aggiunta",
+      "firewall_failed": "regola del firewall non aggiunta: {error}",
+      "firewall_unsupported": "disponibile solo su Windows"
     }
   },
   "msg": {
@@ -862,6 +868,9 @@
       "discord_url_required": "Inserisci l'URL del webhook",
       "discord_test_ok": "Messaggio inviato: controlla il canale Discord",
       "discord_test_error": "Invio fallito: {error}"
+    },
+    "reach": {
+      "error": "Test non riuscito: {error}"
     }
   },
   "progress": {
@@ -1436,6 +1445,39 @@
       "keep_days_unit": "giorni (mai l'ultimo rimasto)",
       "on_stop": "Backup automatico a ogni arresto",
       "backups_list": "Backup disponibili"
+    },
+    "reach": {
+      "button": "I tuoi amici riescono a entrare?",
+      "offline_tooltip": "Avvia il server prima del test",
+      "testing": "Provo dall'esterno… ci vogliono circa 10 secondi",
+      "fix_label": "Cosa fare",
+      "details": "Dettagli",
+      "hide_details": "Nascondi dettagli",
+      "tested_at": "Provato alle {time}",
+      "retry_in": "Nuovo test tra {seconds} s",
+      "retry": "Riprova",
+      "action_enable_upnp": "Accendi UPnP",
+      "action_enable_tunnel": "Accendi il tunnel",
+      "action_open_settings_tunnel": "Collega playit.gg",
+      "action_open_firewall": "Consenti nel firewall",
+      "firewall_working": "Aggiungo la regola… conferma la richiesta di Windows",
+      "firewall_done": "Regola aggiunta: rifaccio il test…",
+      "remote_hint": "Il test parte dal PC dell'host.",
+      "pill_ok": "sì",
+      "pill_no": "no",
+      "pill_unknown": "non so",
+      "f_public": "IP pubblico",
+      "f_wan": "WAN router",
+      "f_upnp": "UPnP",
+      "f_local": "ascolto locale",
+      "f_external": "da fuori",
+      "f_firewall": "firewall",
+      "f_tunnel": "tunnel",
+      "f_vpn": "VPN/WARP",
+      "f_duration": "durata",
+      "yes": "sì",
+      "no": "no",
+      "untested": "non provato"
     }
   },
   "presence": {
@@ -1537,5 +1579,70 @@
     "players_body": "Online adesso: {count}",
     "schedule_title": "Pianificazione: {action}",
     "schedule_failed": "Fallita: {error}"
+  },
+  "reach": {
+    "server_off": {
+      "title": "Server spento",
+      "detail": "Il test dall'esterno ha senso solo con il server acceso.",
+      "detail_starting": "Il server sta ancora partendo: aspetta che sia online e riprova.",
+      "fix": "Avvia il server, aspetta che sia online e premi di nuovo il pulsante."
+    },
+    "not_listening": {
+      "title": "Il server non risponde nemmeno da qui",
+      "detail": "Nessuna risposta su {lan_ip}:{port} ({error}). Il processo è acceso ma non ascolta su questa porta o su questa interfaccia.",
+      "fix": "Se è appena partito, aspetta qualche secondo. Altrimenti controlla in Proprietà che server-ip sia vuoto e che server-port sia {port}."
+    },
+    "ok": {
+      "title": "Sì: gli amici entrano",
+      "detail": "Da fuori casa la porta {port} risponde sull'IP pubblico {public_ip} (provato da {via}, {latency} ms).",
+      "fix": "Dai agli amici questo indirizzo. Se il tuo IP pubblico cambia (riavvio del router, cambio operatore) l'indirizzo cambia con lui: rifai il test se non entrano più."
+    },
+    "tunnel_ok": {
+      "title": "Sì, tramite il tunnel",
+      "detail": "La porta {port} sull'IP pubblico non risponde, ma il tunnel playit.gg sì: gli amici entrano con l'indirizzo del tunnel.",
+      "fix": "Dai agli amici l'indirizzo del tunnel, incollato così com'è."
+    },
+    "wrong_target": {
+      "title": "La porta risponde, ma non è questo server",
+      "detail": "Su {public_ip}:{port} risponde un server Minecraft diverso (protocollo {external_protocol} invece di {local_protocol}): il port forward del router punta a un altro PC o a un altro server.",
+      "fix": "Nel pannello del router indirizza la porta {port} a {lan_ip}, oppure usa il tunnel."
+    },
+    "cgnat": {
+      "title": "Il tuo operatore condivide l'IP (CGNAT): nessuna porta può aprirsi",
+      "detail_cgnat": "Il router ha come indirizzo WAN {wan}, nello spazio condiviso dell'operatore (100.64.0.0/10): le connessioni in entrata si fermano prima di arrivare a casa tua, con o senza port forward.",
+      "detail_private": "Il router ha come indirizzo WAN {wan}, un IP privato: c'è un altro apparato (modem dell'operatore o doppio NAT) davanti, e le connessioni in entrata non arrivano.",
+      "detail_ds_lite": "Il router ha come indirizzo WAN {wan} (DS-Lite): su questa linea le connessioni IPv4 in entrata sono impossibili.",
+      "detail_upstream": "L'IP WAN del router ({wan}) non coincide con l'IP pubblico visto da internet ({public_ip}): c'è un NAT dell'operatore, o una VPN attiva sul PC, in mezzo.",
+      "detail_upnp": "Il router riferisce un IP privato: le connessioni in entrata non arrivano a casa tua.",
+      "fix": "Accendi il tunnel playit.gg: funziona a prescindere. In alternativa chiedi un IP pubblico all'operatore: Fastweb lo dà gratis su richiesta (192193 o assistenza social), Iliad dà l'\"IPv4 full stack\" dal servizio clienti (oppure usa una porta nell'intervallo assegnato, che vedi nel pannello del router), TIM e WindTre FWA su richiesta."
+    },
+    "firewall": {
+      "title": "Windows Firewall blocca Java",
+      "detail_blocked": "La porta arriva fino al PC, ma una regola blocca {program} in entrata ({rule}): chi prova a entrare va in timeout.",
+      "detail_no_rule": "La porta arriva fino al PC, ma nessuna regola consente {program} in entrata sul profilo di rete {profile}: Windows scarta le connessioni in silenzio (è quello che succede quando si chiude l'avviso di sicurezza con Annulla).",
+      "profile_unknown": "attivo",
+      "fix": "Premi \"Consenti nel firewall\": aggiunge una regola per Java sulla porta {port} (Windows chiede il permesso di amministratore). Oppure Impostazioni di Windows → Firewall → Consenti un'app."
+    },
+    "port_closed": {
+      "title": "Da fuori la porta {port} non risponde",
+      "detail_upnp_off": "UPnP è spento e il router non sta inoltrando la porta {port} a questo PC.",
+      "detail_upnp_failed": "Il router ha rifiutato l'apertura via UPnP ({message}).",
+      "detail_upnp_pending": "UPnP non ha ancora aperto la porta sul router.",
+      "detail_upnp_open": "Il router dice di aver aperto la porta, ma da fuori non risponde: può essere l'operatore che blocca le porte in entrata, o un antivirus con un suo firewall.",
+      "detail_forwarded": "Il router gestisce già la porta {port} con una regola sua, ma da fuori non risponde: controlla che punti a {lan_ip}.",
+      "fix": "Apri la porta a mano nel pannello del router: porta {port} TCP verso {lan_ip}. Oppure accendi il tunnel playit.gg, che non ha bisogno di porte.",
+      "fix_upnp_off": "Accendi UPnP (il router apre la porta da solo) oppure fai un port forward a mano: porta {port} TCP verso {lan_ip}. Se non va, il tunnel funziona sempre.",
+      "fix_firewall_hint": " Dopo, consenti anche Java nel firewall di Windows."
+    },
+    "unknown": {
+      "title": "Non sono riuscito a provare dall'esterno",
+      "detail": "I servizi che fanno il test da fuori non hanno risposto ({error}).{facts}",
+      "listening": " Il server ascolta in locale.",
+      "fix": "Riprova tra qualche secondo. Con una VPN o un proxy attivi il test può fallire anche se gli amici entrano."
+    },
+    "probe": {
+      "timeout": "nessuna risposta",
+      "no_service": "servizio esterno non raggiungibile"
+    }
   }
 }

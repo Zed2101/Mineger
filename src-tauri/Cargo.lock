@@ -2323,6 +2323,7 @@ dependencies = [
  "tokio",
  "tower-http",
  "uuid 1.18.1",
+ "winreg",
  "zip 2.4.2",
 ]
 

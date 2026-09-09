@@ -22,6 +22,8 @@
 //   DELETE /api/servers/{id}/mods/{name}
 //   POST /api/servers/{id}/mods            multipart (campo "file", ripetibile)
 //   GET  /api/ws?token=...                 stream eventi JSON { type, payload }
+//   POST /api/servers/{id}/reach           test "gli amici riescono a entrare?" (max 1 ogni 10 s)
+//   GET  /api/servers/{id}/reach           ultimo report del test (null se mai fatto)
 //
 // 2) Webhook in ingresso (`/hook/{id}`, token e permessi propri per ogni webhook):
 //   POST/GET /hook/{id}   action=say|command|start|stop|status  (+ message, from, command, server)
@@ -465,6 +467,7 @@ fn build_router(state: HostState) -> Router {
         .route("/api/packs/resolve", post(packs_resolve))
         .route("/api/packs/install", post(packs_install))
         .route("/api/ws", get(ws_upgrade))
+        .route("/api/servers/{id}/reach", get(reach_last).post(reach_check))
         .route_layer(auth_layer())
         .layer(DefaultBodyLimit::max(MAX_API_BYTES));
 
@@ -830,6 +833,16 @@ async fn network_status(State(state): State<HostState>, Path(id): Path<String>) 
 async fn tunnel_status(State(state): State<HostState>, Path(id): Path<String>) -> ApiResult<crate::tunnel::TunnelStatus> {
     let app = state.app.clone();
     Ok(Json(blocking(move || Ok::<_, String>(service::tunnel_status(&app, &id))).await?))
+}
+
+/// "Gli amici riescono a entrare?": il test gira sull'host (è la sua rete che conta).
+async fn reach_check(State(state): State<HostState>, Path(id): Path<String>) -> ApiResult<crate::reach::ReachReport> {
+    let app = state.app.clone();
+    Ok(Json(blocking(move || crate::reach::check(&app, &id)).await?))
+}
+
+async fn reach_last(Path(id): Path<String>) -> ApiResult<Option<crate::reach::ReachReport>> {
+    Ok(Json(crate::reach::last(&id)))
 }
 
 #[derive(Deserialize)]

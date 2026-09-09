@@ -492,6 +492,44 @@
           },
           "request": "websocat \"ws://HOST:25580/api/ws?token=$TOKEN\"",
           "response": "{ \"type\": \"server-output\", \"payload\": { \"id\": \"Vanilla coi bro\", \"line\": \"[12:00:31] [Server thread/INFO]: Steve joined the game\" } }\n{ \"type\": \"server-status\", \"payload\": { \"id\": \"Vanilla coi bro\", \"status\": \"online\", \"started_at\": 1789000000000 } }"
+        },
+        {
+          "method": "POST",
+          "path": "/api/servers/{id}/reach",
+          "auth": "token",
+          "title": {
+            "en": "Can my friends get in?",
+            "it": "I tuoi amici riescono a entrare?"
+          },
+          "desc": {
+            "en": "Tests, from outside the host's network, whether the server port answers on the public IP: a plain TCP connect by portchecker.io (to the caller's own IP, not logged) plus a real Server List Ping by api.mcstatus.io (cached 60 s on their side; mcsrvstat.us as fallback) to be sure it is <em>this</em> server that answers. Meanwhile it checks the local listener, the router's WAN address (CGNAT / double NAT / DS-Lite detection), the UPnP state, the Windows Firewall rules for the server's <code>java.exe</code> and, when on, the playit.gg tunnel. The <code>verdict</code> tells the story in plain language: <code>category</code> is one of <code>server_off</code>, <code>not_listening</code>, <code>ok</code>, <code>tunnel_ok</code>, <code>wrong_target</code>, <code>cgnat</code>, <code>firewall</code>, <code>port_closed</code>, <code>unknown</code>; <code>address</code> is the one to hand to friends when there is one; <code>actions[].kind</code> lists the fixes the app offers (<code>enable_upnp</code>, <code>enable_tunnel</code>, <code>open_settings_tunnel</code>, <code>open_firewall</code>, <code>copy_address</code>, <code>retry</code>). Needs the server online. At most one real test every 10 s per server: earlier calls get the last report back (same <code>at</code>). Takes up to about 10 s.",
+            "it": "Prova, da fuori la rete dell'host, se la porta del server risponde sull'IP pubblico: un connect TCP fatto da portchecker.io (verso l'IP di chi chiama, non loggato) più un vero Server List Ping fatto da api.mcstatus.io (cache di 60 s dalla loro parte; mcsrvstat.us di riserva) per essere sicuri che a rispondere sia <em>questo</em> server. Intanto controlla l'ascolto locale, l'indirizzo WAN del router (riconosce CGNAT / doppio NAT / DS-Lite), lo stato UPnP, le regole di Windows Firewall per la <code>java.exe</code> del server e, se acceso, il tunnel playit.gg. Il <code>verdict</code> racconta la storia in parole semplici: <code>category</code> è uno tra <code>server_off</code>, <code>not_listening</code>, <code>ok</code>, <code>tunnel_ok</code>, <code>wrong_target</code>, <code>cgnat</code>, <code>firewall</code>, <code>port_closed</code>, <code>unknown</code>; <code>address</code> è quello da dare agli amici quando ce n'è uno; <code>actions[].kind</code> elenca i rimedi che l'app propone (<code>enable_upnp</code>, <code>enable_tunnel</code>, <code>open_settings_tunnel</code>, <code>open_firewall</code>, <code>copy_address</code>, <code>retry</code>). Serve il server online. Al massimo un test vero ogni 10 s per server: le chiamate prima ricevono l'ultimo report (stesso <code>at</code>). Dura fino a circa 10 s."
+          },
+          "use": {
+            "en": "A Discord bot command <code>!canjoin</code> that answers with the verdict and the address, so the host does not have to open the app when a friend says \"it doesn't connect\".",
+            "it": "Un comando <code>!entro</code> del bot Discord che risponde con il verdetto e l'indirizzo, così l'host non deve aprire l'app quando un amico dice \"non si connette\"."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Vanilla%20coi%20bro/reach\"",
+          "response": "{ \"at\": 1789000000000, \"status\": \"online\", \"port\": 25565, \"lan_ip\": \"192.168.1.10\", \"public_ip\": \"93.44.10.7\", \"router_wan_ip\": \"93.44.10.7\", \"cgnat\": false, \"vpn\": false, \"upnp_state\": \"open\", \"listening_local\": true, \"local_slp\": { \"protocol\": 773, \"version\": \"1.21.9\", \"max_players\": 20, \"online\": 0, \"motd\": \"A Minecraft Server\" }, \"external\": { \"reachable\": true, \"tested\": true, \"latency_ms\": 812, \"via\": \"portchecker.io\" }, \"external_slp\": { \"protocol\": 773, \"version\": \"1.21.9\", \"max_players\": 20, \"online\": 0 }, \"firewall\": { \"status\": \"allowed\", \"profile\": \"Private\", \"program\": \"c:\\\\program files\\\\java\\\\jdk-21\\\\bin\\\\java.exe\", \"detail\": \"java.exe\" }, \"verdict\": { \"category\": \"ok\", \"title\": \"Yes: friends can get in\", \"detail\": \"From outside your home, port 25565 answers on the public IP 93.44.10.7 (tested by portchecker.io, 812 ms).\", \"fix\": \"Give your friends this address. …\", \"address\": \"93.44.10.7:25565\", \"actions\": [ { \"kind\": \"copy_address\" }, { \"kind\": \"retry\" } ] }, \"duration_ms\": 4210 }"
+        },
+        {
+          "method": "GET",
+          "path": "/api/servers/{id}/reach",
+          "auth": "token",
+          "title": {
+            "en": "Last reachability report",
+            "it": "Ultimo report di raggiungibilità"
+          },
+          "desc": {
+            "en": "The last report produced by <code>POST /reach</code> for this server, exactly as it was returned; <code>null</code> if the test never ran since the host started. No network activity.",
+            "it": "L'ultimo report prodotto da <code>POST /reach</code> per questo server, identico a com'è stato restituito; <code>null</code> se il test non è mai stato fatto da quando l'host è partito. Nessuna attività di rete."
+          },
+          "use": {
+            "en": "A status page that shows the last verdict and its time without triggering a new test at every refresh.",
+            "it": "Una pagina di stato che mostra l'ultimo verdetto e la sua ora senza far partire un test a ogni ricarica."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Vanilla%20coi%20bro/reach\"",
+          "response": "{ \"at\": 1789000000000, \"status\": \"online\", \"port\": 25565, \"lan_ip\": \"192.168.1.10\", \"public_ip\": \"93.44.10.7\", \"router_wan_ip\": \"93.44.10.7\", \"cgnat\": false, \"vpn\": false, \"upnp_state\": \"open\", \"listening_local\": true, \"local_slp\": { \"protocol\": 773, \"version\": \"1.21.9\", \"max_players\": 20, \"online\": 0, \"motd\": \"A Minecraft Server\" }, \"external\": { \"reachable\": true, \"tested\": true, \"latency_ms\": 812, \"via\": \"portchecker.io\" }, \"external_slp\": { \"protocol\": 773, \"version\": \"1.21.9\", \"max_players\": 20, \"online\": 0 }, \"firewall\": { \"status\": \"allowed\", \"profile\": \"Private\", \"program\": \"c:\\\\program files\\\\java\\\\jdk-21\\\\bin\\\\java.exe\", \"detail\": \"java.exe\" }, \"verdict\": { \"category\": \"ok\", \"title\": \"Yes: friends can get in\", \"detail\": \"From outside your home, port 25565 answers on the public IP 93.44.10.7 (tested by portchecker.io, 812 ms).\", \"fix\": \"Give your friends this address. …\", \"address\": \"93.44.10.7:25565\", \"actions\": [ { \"kind\": \"copy_address\" }, { \"kind\": \"retry\" } ] }, \"duration_ms\": 4210 }"
         }
       ]
     },
