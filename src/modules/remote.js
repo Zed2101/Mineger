@@ -194,6 +194,14 @@ export class RemoteHost {
       case 'set_server_icon_from_path':
       case 'pick_server_icon_file':
         throw t('msg2.remote.not_available_remote');
+      case 'get_mod_sides':
+        return this.request('GET', s('/mods/sides'));
+      case 'get_pack_rollback':
+        return this.request('GET', s('/rollback'));
+      case 'rollback_pack_update':
+        return this.request('POST', s('/rollback'));
+      case 'save_text_file':
+        throw t('msg2.remote.not_available_remote');
       default:
         throw t('msg2.remote.command_unsupported', { cmd });
     }

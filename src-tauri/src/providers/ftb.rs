@@ -7,7 +7,7 @@
 // Alcuni file sono ospitati su CurseForge (campo `curseforge`): in quel caso
 // l'URL diretto manca e si passa dall'API CurseForge.
 
-use super::{epoch_to_iso, normalize_loader, http, PackFile, PackInfo, PackResolution, ParsedLink, Provider};
+use super::{classify_response, epoch_to_iso, http, normalize_loader, with_retry, PackFile, PackInfo, PackResolution, ParsedLink, Provider};
 use crate::tr;
 use serde::Deserialize;
 use std::time::Duration;
@@ -138,13 +138,11 @@ struct SearchResult {
     packs: Vec<u64>,
 }
 
+/// GET con retry su 429/5xx/timeout (l'API FTB va e viene).
 fn get<T: serde::de::DeserializeOwned>(path: &str) -> Result<T, String> {
     let client = http(Duration::from_secs(30))?;
-    let resp = client
-        .get(format!("{}{}", API, path))
-        .header("Accept", "application/json")
-        .send()
-        .map_err(|e| tr!("errors.http.unreachable", "who" => "FTB", "error" => e))?;
+    let url = format!("{}{}", API, path);
+    let resp = with_retry("FTB", || classify_response("FTB", client.get(&url).header("Accept", "application/json").send()))?;
     if !resp.status().is_success() {
         return Err(tr!("errors.http.status", "who" => "FTB", "status" => resp.status()));
     }

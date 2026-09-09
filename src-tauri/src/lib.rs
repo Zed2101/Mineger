@@ -31,6 +31,7 @@ pub mod upnp;
 pub mod utils;
 pub mod worldindex;
 pub mod worldmap;
+pub mod modsides;
 
 use std::time::Duration;
 use tauri::RunEvent;
@@ -171,6 +172,10 @@ pub fn run() {
             commands::get_system_language,
             commands::set_language,
             commands::list_languages,
+            commands::get_mod_sides,
+            commands::save_text_file,
+            commands::get_pack_rollback,
+            commands::rollback_pack_update,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

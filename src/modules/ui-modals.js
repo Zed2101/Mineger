@@ -9,6 +9,8 @@ import { call } from './api.js';
 import { loadIcons, allIcons, iconUrl, rememberIcon, forgetIcon, DEFAULT_ICON } from './icons.js';
 import { kindLabel, providerLabel } from './ui-packs.js';
 import { t, tp, onLanguageChange } from './i18n.js';
+import { classifyLink, splitLinkKindError } from './links.js';
+import { openModBrowser } from './ui-modbrowser.js';
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -902,9 +904,37 @@ function setupWizard(hooks) {
     linkState.showAll = false;
     renderVersions();
     document.getElementById('link-result').classList.add('hidden');
+    document.getElementById('link-kind-action').classList.add('hidden');
     const note = document.getElementById('link-note');
     note.textContent = '';
     note.className = 'note mt-1.5 block min-h-[14px]';
+  }
+
+  /**
+   * Il link non è un modpack (`LINK_KIND:<kind>:…`): mostra la spiegazione e,
+   * per mod e plugin, il pulsante che apre il catalogo del server selezionato
+   * (se è del tipo giusto) con lo slug già cercato.
+   */
+  function showLinkKind(url, linkKind, note) {
+    note.textContent = linkKind.message;
+    const actionable = linkKind.kind === 'mod' || linkKind.kind === 'plugin';
+    note.className = `${actionable ? 'note-warn' : 'note-err'} mt-1.5 block min-h-[14px]`;
+    const btn = document.getElementById('link-kind-action');
+    const server = hooks.getActiveServer?.();
+    const compatible =
+      actionable &&
+      server &&
+      server.kind !== 'vanilla' &&
+      (linkKind.kind === 'plugin' ? server.content_folder === 'plugins' : server.content_folder !== 'plugins');
+    btn.classList.toggle('hidden', !compatible);
+    if (!compatible) return;
+    btn.textContent = t('msg2.links.open_catalog', { server: server.name });
+    const parsed = classifyLink(url);
+    btn.onclick = () => {
+      if (busy) return;
+      hide('modal-new');
+      openModBrowser(server, { query: parsed?.slug ? parsed.slug.replace(/[-_]+/g, ' ') : '', source: parsed?.provider });
+    };
   }
 
   async function searchLink() {
@@ -944,8 +974,13 @@ function setupWizard(hooks) {
         ? tp('msg.wizard.versions_found', res.files.length)
         : t('msg.wizard.no_installable_versions');
     } catch (err) {
-      note.textContent = String(err);
-      note.className = 'note-err mt-1.5 block min-h-[14px]';
+      const linkKind = splitLinkKindError(err);
+      if (linkKind) {
+        showLinkKind(url, linkKind, note);
+      } else {
+        note.textContent = String(err);
+        note.className = 'note-err mt-1.5 block min-h-[14px]';
+      }
     } finally {
       btn.disabled = false;
     }
@@ -1147,12 +1182,17 @@ function setupWizard(hooks) {
   listen('create-progress', (event) => {
     const { phase, percent, message } = event.payload;
     if (phase === 'error') return;
+    // Attesa per un rate limit: solo il testo, la barra resta dov'è
+    if (phase === 'wait') {
+      progressText.textContent = message;
+      return;
+    }
     setProgress(true, percent, message);
   });
 }
 
 /**
- * @param hooks { onServerCreated(id), onServerDeleted(server), isServerActive(id), onRemoteHostAdded(meta), onRemoveHost(hostId) }
+ * @param hooks { onServerCreated(id), onServerDeleted(server), isServerActive(id), onRemoteHostAdded(meta), onRemoveHost(hostId), getActiveServer() }
  */
 export function setupModals(state, refreshCallback, updateBannerCallback, hooks = {}) {
   setupDelete(state, hooks);

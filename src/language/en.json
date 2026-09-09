@@ -81,7 +81,8 @@
       "restart_scheduled": "[Mineger] Crash detected: restarting in {seconds} s (attempt {attempt} of {max})",
       "restart_gave_up": "[Mineger] Crash detected: already {attempts} restarts in {minutes} minutes, giving up. Check the logs.",
       "restart_failed": "[Mineger] Automatic restart failed: {error}"
-    }
+    },
+    "pack_rolled_back": "Modpack taken back to version {version}. Mods and configs of the undone update remain in {dir}"
   },
   "errors": {
     "app": {
@@ -168,7 +169,8 @@
       "client": "HTTP client: {error}",
       "invalid_response": "Invalid response from {who}: {error}",
       "status": "{who}: HTTP {status}",
-      "unreachable": "{who} unreachable: {error}"
+      "unreachable": "{who} unreachable: {error}",
+      "rate_limited": "{who} is rate-limiting requests: retried several times without success. Wait a few minutes and try again."
     },
     "icons": {
       "copy_failed": "Copy failed: {error}",
@@ -271,7 +273,11 @@
       "warn_modrinth_install": "Modrinth modpack: Mineger will download the server-side files and install the loader (Fabric/Forge/NeoForge); this takes a few minutes.",
       "warn_no_mrpack": "No .mrpack version published for this project",
       "warn_no_server_pack": "This modpack does not publish a server pack on CurseForge and cannot be built from the client pack: download the server files from the author's site and use \"Import ZIP\".",
-      "warn_only_ftb_stubs": "The \"server packs\" of this modpack are only FTB installers (a few KB) and the FTB API does not know this pack: download the server files from the author's site and use \"Import ZIP\"."
+      "warn_only_ftb_stubs": "The \"server packs\" of this modpack are only FTB installers (a few KB) and the FTB API does not know this pack: download the server files from the author's site and use \"Import ZIP\".",
+      "backup_failed_hint": "World backup failed, update cancelled: {error}. Try a manual backup from the Automation tab: if it works, run the update again.",
+      "no_rollback": "No previous version to restore",
+      "stop_before_rollback": "Stop the server before going back to the previous version",
+      "rollback_swap_failed": "Could not put the previous version back: {error}"
     },
     "paper": {
       "build_not_found": "Paper build {build} not found for Minecraft {version}",
@@ -387,6 +393,18 @@
     "discord": {
       "bad_url": "Invalid Discord webhook URL (it must start with https://)",
       "http": "Discord answered {status}: {body}"
+    },
+    "link": {
+      "is_mod": "This link is a mod ({name}), not a modpack. To add it to an existing server open the server → Mods tab → + Add and search the catalogue.",
+      "is_plugin": "This link is a plugin ({name}) for Paper/Spigot servers, not a modpack. To add it to a Paper server open the server → Mods tab → + Add and search the catalogue.",
+      "is_resourcepack": "This link is a resource pack ({name}): it goes into the game of whoever joins, not on the server. There is nothing to install here.",
+      "is_shader": "This link is a shader ({name}): it goes into the game of whoever joins (with Iris or OptiFine), not on the server. There is nothing to install here.",
+      "is_datapack": "This link is a datapack ({name}), not a modpack: download it from its page and copy it into the datapacks/ folder of the server's world.",
+      "is_world": "This link is a world ({name}), not a modpack: download it from its page and replace the server's world folder (with the server off).",
+      "is_unknown": "This link does not lead to a modpack ({name}): only CurseForge, Modrinth or FTB modpacks can be installed here."
+    },
+    "modsides": {
+      "modrinth_unavailable": "Modrinth unreachable ({error}): sides come from the jar files only."
     }
   },
   "msg": {
@@ -673,7 +691,21 @@
       "update_confirm_stop": "• The server will be stopped",
       "update_confirm_title": "Update \"{name}\" to {version}?",
       "update_confirm_world": "• The world is backed up and moved to the new version",
-      "updated_to": "Updated to {version}. Rollback: {dir}"
+      "updated_to": "Updated to {version}. Rollback: {dir}",
+      "confirm_backup_first": "• The world is backed up first (if that fails, the update does not start)",
+      "confirm_kept": "• Kept: world, server.properties, whitelist/ops/bans, backups, icon",
+      "confirm_replaced": "• Replaced: the pack's mods, config and scripts (manually added mods end up in mods-precedenti/)",
+      "confirm_rollback_new": "• You can go back to the previous version with one click (server off)",
+      "updated_summary": "Updated from {previous} to {version}.",
+      "summary_kept": " Kept ({count}): {list}.",
+      "summary_replaced": " Replaced ({count}): {list}.",
+      "summary_backup": " World backup: {file}.",
+      "summary_no_backup": " No world to back up.",
+      "rollback_available": "Version {version} ({when}) kept: you can go back if something is wrong.",
+      "rollback_confirm": "Go back to version {version} of “{name}”?\n\n• The current world and settings are kept\n• Mods and configs of the last update are set aside (.undone-…)\n• The server must be off",
+      "rollback_stop_first": "Stop the server before going back to the previous version",
+      "rolling_back": "Restoring the previous version…",
+      "rolled_back": "Back to version {version}. The newer version remains in {dir}."
     },
     "properties": {
       "icon_none": "No icon: the default Minecraft one will show in the server list",
@@ -862,6 +894,53 @@
       "discord_url_required": "Enter the webhook URL",
       "discord_test_ok": "Message sent: check the Discord channel",
       "discord_test_error": "Send failed: {error}"
+    },
+    "links": {
+      "open_catalog": "Open the mod catalogue of “{server}”",
+      "modpack_in_browser": "This is a modpack link: modpacks are installed as a new server from + Add server → Add from link.",
+      "open_wizard": "Open “Add from link”",
+      "searching_slug": "Link recognised ({source}): searching for “{slug}”…",
+      "not_installable": "This is a link to a {kind}: it is not installed on the server.",
+      "cf_needs_key": "The link is from CurseForge but the API key is missing (Settings): searching for “{slug}” on Modrinth.",
+      "kinds": {
+        "resourcepack": "resource pack",
+        "shader": "shader",
+        "datapack": "datapack",
+        "world": "world",
+        "unknown": "unrecognised content"
+      }
+    },
+    "modsides": {
+      "loading": "Reading the mods…",
+      "count": {
+        "one": "{count} mod to install",
+        "other": "{count} mods to install"
+      },
+      "server_only": {
+        "one": "{count} mod stays on the server only",
+        "other": "{count} mods stay on the server only"
+      },
+      "unknown_hint": {
+        "one": "{count} mod without side information: listed to be safe",
+        "other": "{count} mods without side information: listed to be safe"
+      },
+      "client_pill": "client only",
+      "client_pill_title": "Useless on the server; on Forge it can prevent start-up",
+      "unknown_pill": "side unknown",
+      "client_only_note": {
+        "one": "{count} client-only mod installed: useless on the server, on Forge it can prevent start-up.",
+        "other": "{count} client-only mods installed: useless on the server, on Forge they can prevent start-up."
+      },
+      "disabling": "Disabling {count} client-only mods…",
+      "disabled_done": "Disabled {count} client-only mods",
+      "copied": "Copied!",
+      "copy_failed": "Copy failed",
+      "saved": "Saved to {path}",
+      "save_failed": "Save failed: {error}",
+      "text_header": "Mods to install to join “{name}” ({env})",
+      "text_none": "No mods to install",
+      "error": "Error: {error}",
+      "empty": "No enabled mods"
     }
   },
   "progress": {
@@ -928,7 +1007,12 @@
     "paper": {
       "resolving": "Looking up the Paper build…"
     },
-    "verify": "Verifying integrity…"
+    "verify": "Verifying integrity…",
+    "retry": {
+      "rate_limited": "{who} asked to wait {seconds} s (attempt {attempt} of {max})…",
+      "transient": "{who} is not answering ({error}): retrying in {seconds} s (attempt {attempt} of {max})…",
+      "modrinth_window": "Modrinth: request limit reached, waiting {seconds} s before continuing…"
+    }
   },
   "settings": {
     "language": {
@@ -1436,6 +1520,23 @@
       "keep_days_unit": "days (never the last one left)",
       "on_stop": "Automatic backup at every stop",
       "backups_list": "Available backups"
+    },
+    "link": {
+      "open_catalog": "Open the mod catalogue"
+    },
+    "packs": {
+      "plan": "The world is backed up first. Kept: world, server.properties, whitelist/ops/bans, backups, icon. Replaced: the pack's mods, config and scripts.",
+      "rollback_title": "Previous version kept",
+      "rollback_button": "Go back to the previous version"
+    },
+    "modsides": {
+      "button": "What your friends must install",
+      "title": "What your friends must install",
+      "intro": "The mods below must also be installed in the game of whoever joins, with the same loader and Minecraft version. Server-only mods are not listed.",
+      "copy": "Copy list",
+      "save": "Save .txt",
+      "close": "Close",
+      "disable_all": "Disable them"
     }
   },
   "presence": {

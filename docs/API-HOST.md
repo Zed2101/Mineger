@@ -116,6 +116,7 @@ Tiles are rendered from the region files, so the map works with the server off a
 | `POST` | `/api/servers/{id}/mods` | Upload `.jar` files (multipart) |
 | `POST` | `/api/servers/{id}/mods/toggle` | Enable/disable: `{name, enabled}` |
 | `DELETE` | `/api/servers/{id}/mods/{name}` | Delete a file |
+| `GET` | `/api/servers/{id}/mods/sides` | Client/server side of every installed mod (`both` · `client` · `server` · `unknown`, with where it comes from: `api` · `jar` · `list`), loader and Minecraft version: what friends must install, which client-only mods are pointless on the server |
 
 `provider`: `modrinth` · `curseforge`. Searches always filter by the **server's loader**; when nothing exists for the Minecraft version, the response carries `relaxed_mc: true` and the builds are marked `compatible: false`.
 
@@ -127,6 +128,10 @@ Tiles are rendered from the region files, so the map works with the server off a
 | `POST` | `/api/packs/install` | Install: `{name, provider, project_id, file_id}` |
 | `GET` | `/api/servers/{id}/updates` | Check for modpack updates |
 | `POST` | `/api/servers/{id}/update` | Update the modpack (backup + data migration) |
+| `GET` | `/api/servers/{id}/rollback` | Previous modpack version kept next to the server after an update (`null` if none) |
+| `POST` | `/api/servers/{id}/rollback` | Go back to the previous modpack version (server off): world, settings and backups are kept, the undone version stays in `.undone-…` |
+
+`/api/packs/resolve` answers `400` with `error` starting with `LINK_KIND:<kind>:` (`mod` · `plugin` · `resourcepack` · `datapack` · `shader` · `world` · `unknown`) when the link is not a modpack; the text after the second colon explains where that content goes. `/api/servers/{id}/update` answers with `kept`, `replaced`, `backup_file` and `previous_version` next to `new_version`. Rate limits from CurseForge and Modrinth are retried with growing waits; the progress events carry phase `wait` meanwhile.
 
 ### Real-time events
 

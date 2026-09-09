@@ -30,6 +30,8 @@ When a new version of the modpack is released the app tells you and installs it 
 - Every installed file shows **where it came from** (Modrinth, CurseForge or *manual*) along with its version.
 - An **update** button appears on mods that have a newer build available.
 - Enable and disable files without deleting them (`.jar` ⇄ `.jar.disabled`).
+- **"What your friends must install"**: the list of mods players need on their side (loader and Minecraft version included), to copy or save as `.txt`; client-only mods are flagged in the list and can be disabled in one go.
+- Mod links pasted where a modpack is expected (and vice versa) are recognised and redirected to the right place; CurseForge/Modrinth rate limits are waited out with visible retries; a modpack update backs up the world first, says what it keeps and what it replaces, and can be undone with one click.
 
 ### Day-to-day management
 - Start and stop with live status, a console with colour-coded logs, and command input.

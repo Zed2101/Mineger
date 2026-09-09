@@ -81,7 +81,8 @@
       "restart_scheduled": "",
       "restart_gave_up": "",
       "restart_failed": ""
-    }
+    },
+    "pack_rolled_back": ""
   },
   "errors": {
     "app": {
@@ -168,7 +169,8 @@
       "client": "",
       "invalid_response": "",
       "status": "",
-      "unreachable": ""
+      "unreachable": "",
+      "rate_limited": ""
     },
     "icons": {
       "copy_failed": "",
@@ -271,7 +273,11 @@
       "warn_modrinth_install": "",
       "warn_no_mrpack": "",
       "warn_no_server_pack": "",
-      "warn_only_ftb_stubs": ""
+      "warn_only_ftb_stubs": "",
+      "backup_failed_hint": "",
+      "no_rollback": "",
+      "stop_before_rollback": "",
+      "rollback_swap_failed": ""
     },
     "paper": {
       "build_not_found": "",
@@ -387,6 +393,18 @@
     "discord": {
       "bad_url": "",
       "http": ""
+    },
+    "link": {
+      "is_mod": "",
+      "is_plugin": "",
+      "is_resourcepack": "",
+      "is_shader": "",
+      "is_datapack": "",
+      "is_world": "",
+      "is_unknown": ""
+    },
+    "modsides": {
+      "modrinth_unavailable": ""
     }
   },
   "msg": {
@@ -673,7 +691,21 @@
       "update_confirm_stop": "",
       "update_confirm_title": "",
       "update_confirm_world": "",
-      "updated_to": ""
+      "updated_to": "",
+      "confirm_backup_first": "",
+      "confirm_kept": "",
+      "confirm_replaced": "",
+      "confirm_rollback_new": "",
+      "updated_summary": "",
+      "summary_kept": "",
+      "summary_replaced": "",
+      "summary_backup": "",
+      "summary_no_backup": "",
+      "rollback_available": "",
+      "rollback_confirm": "",
+      "rollback_stop_first": "",
+      "rolling_back": "",
+      "rolled_back": ""
     },
     "properties": {
       "icon_none": "",
@@ -862,6 +894,53 @@
       "discord_url_required": "",
       "discord_test_ok": "",
       "discord_test_error": ""
+    },
+    "links": {
+      "open_catalog": "",
+      "modpack_in_browser": "",
+      "open_wizard": "",
+      "searching_slug": "",
+      "not_installable": "",
+      "cf_needs_key": "",
+      "kinds": {
+        "resourcepack": "",
+        "shader": "",
+        "datapack": "",
+        "world": "",
+        "unknown": ""
+      }
+    },
+    "modsides": {
+      "loading": "",
+      "count": {
+        "one": "",
+        "other": ""
+      },
+      "server_only": {
+        "one": "",
+        "other": ""
+      },
+      "unknown_hint": {
+        "one": "",
+        "other": ""
+      },
+      "client_pill": "",
+      "client_pill_title": "",
+      "unknown_pill": "",
+      "client_only_note": {
+        "one": "",
+        "other": ""
+      },
+      "disabling": "",
+      "disabled_done": "",
+      "copied": "",
+      "copy_failed": "",
+      "saved": "",
+      "save_failed": "",
+      "text_header": "",
+      "text_none": "",
+      "error": "",
+      "empty": ""
     }
   },
   "progress": {
@@ -928,7 +1007,12 @@
     "paper": {
       "resolving": ""
     },
-    "verify": ""
+    "verify": "",
+    "retry": {
+      "rate_limited": "",
+      "transient": "",
+      "modrinth_window": ""
+    }
   },
   "settings": {
     "language": {
@@ -1436,6 +1520,23 @@
       "keep_days_unit": "",
       "on_stop": "",
       "backups_list": ""
+    },
+    "link": {
+      "open_catalog": ""
+    },
+    "packs": {
+      "plan": "",
+      "rollback_title": "",
+      "rollback_button": ""
+    },
+    "modsides": {
+      "button": "",
+      "title": "",
+      "intro": "",
+      "copy": "",
+      "save": "",
+      "close": "",
+      "disable_all": ""
     }
   },
   "presence": {

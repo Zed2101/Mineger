@@ -7,6 +7,7 @@
 import { escapeHtml, formatBytes, formatInt, formatRelativeDay } from './utils.js';
 import { call } from './api.js';
 import { t, tp } from './i18n.js';
+import { classifyLink, looksLikeUrl } from './links.js';
 
 const { listen } = window.__TAURI__.event;
 
@@ -47,6 +48,70 @@ function renderCurseforgeNotice() {
 }
 const contentWord = (plural = false) =>
   state.ctx?.content === 'plugin' ? (plural ? 'plugin' : 'plugin') : plural ? 'mod' : 'mod';
+
+/** Un link a un modpack incollato nella ricerca: i modpack si installano dal wizard. */
+function renderModpackLinkNotice(url) {
+  el('mb-results').innerHTML = `<div class="key-notice">
+      <p class="font-semibold text-text-main">${escapeHtml(t('msg2.links.modpack_in_browser'))}</p>
+      <div class="mt-3 flex items-center gap-2">
+        <button type="button" id="btn-mb-open-wizard" class="btn-outline-accent" data-url="${escapeHtml(url)}">${escapeHtml(t('msg2.links.open_wizard'))}</button>
+      </div>
+    </div>`;
+  el('mb-versions-box').classList.add('hidden');
+  el('btn-mb-install').disabled = true;
+}
+
+/** Chiude il catalogo e apre il wizard "Aggiungi da link" con l'URL già cercato. */
+function openWizardWithLink(url) {
+  el('modal-mods').classList.add('hidden');
+  document.getElementById('btn-add-server')?.click();
+  document.querySelector('.selection-card[data-type="link"]')?.click();
+  const input = document.getElementById('link-url');
+  if (input) {
+    input.value = url;
+    document.getElementById('btn-link-search')?.click();
+  }
+}
+
+function setSource(source) {
+  state.source = source;
+  el('mb-source')
+    .querySelectorAll('.seg')
+    .forEach((b) => b.classList.toggle('active', b.dataset.source === source));
+}
+
+/**
+ * Se la ricerca è un link: modpack → avviso con pulsante per il wizard; mod o
+ * plugin → si cerca lo slug sulla fonte giusta; altro → non si installa sul
+ * server. Ritorna la query da usare, oppure `null` se non c'è niente da cercare.
+ */
+function queryFromLink(raw) {
+  if (!looksLikeUrl(raw)) return raw;
+  const link = classifyLink(raw);
+  if (!link) return raw;
+  if (link.kind === 'modpack') {
+    renderModpackLinkNotice(raw);
+    note('');
+    return null;
+  }
+  if (link.kind === 'mod' || link.kind === 'plugin' || link.kind === 'unknown') {
+    const slug = link.slug.replace(/[-_]+/g, ' ');
+    if (link.provider === 'curseforge' && !state.ctx?.curseforge_ready) {
+      setSource('modrinth');
+      note(t('msg2.links.cf_needs_key', { slug }), 'warn');
+    } else if (link.provider === 'curseforge' || link.provider === 'modrinth') {
+      setSource(link.provider);
+      note(t('msg2.links.searching_slug', { source: SOURCE_LABEL[link.provider], slug }));
+    }
+    el('mb-query').value = slug;
+    return slug;
+  }
+  const kind = t(`msg2.links.kinds.${link.kind}`);
+  el('mb-results').innerHTML = '';
+  el('mb-versions-box').classList.add('hidden');
+  note(t('msg2.links.not_installable', { kind }), 'warn');
+  return null;
+}
 
 function note(text, cls = '') {
   const n = el('mb-note');
@@ -138,13 +203,15 @@ async function search() {
     note('');
     return;
   }
-  const query = el('mb-query').value.trim();
   state.hits = [];
   state.selected = null;
   state.versions = [];
   state.fileId = null;
   renderVersions();
-  note(t('msg.modbrowser.searching', { source: SOURCE_LABEL[state.source] }));
+  note('');
+  const query = queryFromLink(el('mb-query').value.trim());
+  if (query === null) return;
+  if (!el('mb-note').textContent) note(t('msg.modbrowser.searching', { source: SOURCE_LABEL[state.source] }));
   setBusy(true);
   try {
     const res = await call('search_mods', { id: state.server.id, provider: state.source, query, limit: 20 });
@@ -234,14 +301,18 @@ async function install() {
 // Apertura / setup
 // ---------------------------------------------------------------------------
 
-export async function openModBrowser(server) {
+/**
+ * @param server ServerEntry
+ * @param opts   { query, source }: ricerca iniziale (es. lo slug di un link mod) e fonte da selezionare
+ */
+export async function openModBrowser(server, opts = {}) {
   state.server = server;
   state.hits = [];
   state.selected = null;
   state.versions = [];
   state.fileId = null;
   el('mb-results').innerHTML = '';
-  el('mb-query').value = '';
+  el('mb-query').value = opts.query || '';
   renderVersions();
   el('modal-mods').classList.remove('hidden');
   note(t('msg.modbrowser.reading_server'));
@@ -266,13 +337,14 @@ export async function openModBrowser(server) {
     return;
   }
   el('btn-mb-search').disabled = false;
+  if (opts.source && (opts.source !== 'curseforge' || state.ctx.curseforge_ready)) setSource(opts.source);
   if (!state.ctx.curseforge_ready && state.source === 'curseforge') {
     state.source = 'modrinth';
     el('mb-source').querySelectorAll('.seg').forEach((b) => b.classList.toggle('active', b.dataset.source === 'modrinth'));
   }
   note('');
   el('mb-query').focus();
-  // Prima schermata: i più scaricati per questo server.
+  // Prima schermata: i più scaricati per questo server (o la ricerca chiesta).
   search();
 }
 
@@ -305,6 +377,11 @@ export function setupModBrowser(hooks = {}) {
     if (e.target.closest('#btn-cf-settings')) {
       el('modal-mods').classList.add('hidden');
       document.getElementById('btn-settings')?.click();
+      return;
+    }
+    const wizard = e.target.closest('#btn-mb-open-wizard');
+    if (wizard) {
+      openWizardWithLink(wizard.dataset.url || '');
       return;
     }
     const row = e.target.closest('.hit-row');
