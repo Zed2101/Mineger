@@ -30,6 +30,8 @@ Quando esce una nuova versione del modpack l'app te lo segnala e la installa con
 - Ogni file installato mostra **da dove arriva** (Modrinth, CurseForge o *manuale*) e la sua versione.
 - Pulsante **aggiorna** sulle mod per cui è uscita una versione più recente.
 - Attivazione/disattivazione senza cancellare i file (`.jar` ⇄ `.jar.disabled`).
+- **"Cosa devono installare gli amici"**: l'elenco delle mod che chi entra deve avere (con loader e versione di Minecraft), da copiare o salvare in `.txt`; le mod solo-client sono segnalate nella lista e si disattivano in un colpo solo.
+- I link a una mod incollati dove serve un modpack (e viceversa) vengono riconosciuti e indirizzati al posto giusto; i rate limit di CurseForge/Modrinth vengono attesi con tentativi visibili; l'aggiornamento di un modpack fa prima il backup del mondo, dice cosa conserva e cosa sostituisce, e si può annullare con un clic.
 
 ### Gestione quotidiana
 - Avvio e arresto con stato in tempo reale, console con i log colorati e invio comandi.

@@ -198,6 +198,13 @@ export class RemoteHost {
         return this.request('POST', s('/reach'));
       case 'get_reachability':
         return this.request('GET', s('/reach'));
+      case 'get_mod_sides':
+        return this.request('GET', s('/mods/sides'));
+      case 'get_pack_rollback':
+        return this.request('GET', s('/rollback'));
+      case 'rollback_pack_update':
+        return this.request('POST', s('/rollback'));
+      case 'save_text_file':
       case 'firewall_allow':
         throw t('msg2.remote.not_available_remote');
       default:

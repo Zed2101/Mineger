@@ -112,6 +112,8 @@ pub fn install(
     if kind == ServerKind::Vanilla {
         return Err(tr!("errors.mods.vanilla_no_content"));
     }
+    // Le attese per i rate limit (CurseForge/Modrinth) compaiono nella modale
+    let _notice = providers::retry_notice_scope(Box::new(crate::packs::wait_notifier(app, "mod-progress", "id", id.to_string())));
 
     progress("resolve", 0, &tr!("progress.mods.resolving"));
     let all = mods::versions(app, provider, project_id, content, &data.version, kind.loader())?.files;
@@ -242,6 +244,7 @@ pub fn update(app: &AppHandle, id: &str, name: &str, progress: Progress) -> Resu
         .ok_or_else(|| tr!("errors.mods.installed_manually", "name" => name))?;
     let provider = Provider::from_str(&src.provider)
         .ok_or_else(|| tr!("errors.mods.unknown_source_detail", "provider" => src.provider))?;
+    let _notice = providers::retry_notice_scope(Box::new(crate::packs::wait_notifier(app, "mod-progress", "id", id.to_string())));
 
     progress("resolve", 0, &tr!("progress.mods.resolving_latest"));
     let latest = mods::latest(app, provider, &src.project_id, content, &data.version, kind.loader())?

@@ -24,6 +24,8 @@
 //   GET  /api/ws?token=...                 stream eventi JSON { type, payload }
 //   POST /api/servers/{id}/reach           test "gli amici riescono a entrare?" (max 1 ogni 10 s)
 //   GET  /api/servers/{id}/reach           ultimo report del test (null se mai fatto)
+//   GET  /api/servers/{id}/mods/sides      lato client/server di ogni mod (cosa devono installare gli amici)
+//   GET|POST /api/servers/{id}/rollback    versione precedente del modpack / tornarci (server spento)
 //
 // 2) Webhook in ingresso (`/hook/{id}`, token e permessi propri per ogni webhook):
 //   POST/GET /hook/{id}   action=say|command|start|stop|status  (+ message, from, command, server)
@@ -451,6 +453,8 @@ fn build_router(state: HostState) -> Router {
         .route("/api/servers/{id}/automation", get(get_automation).put(put_automation))
         .route("/api/servers/{id}/automation/run", post(run_schedule))
         .route("/api/servers/{id}/automation/discord/test", post(discord_test))
+        .route("/api/servers/{id}/mods/sides", get(mod_sides))
+        .route("/api/servers/{id}/rollback", get(pack_rollback).post(pack_rollback_run))
         .route("/api/servers/{id}/info", put(update_info))
         .route("/api/servers/{id}/launch", put(update_launch))
         .route("/api/servers/{id}/properties", put(save_properties))
@@ -1472,6 +1476,34 @@ async fn server_update(State(state): State<HostState>, Path(id): Path<String>) -
         blocking(move || {
             let mut progress = crate::packs::progress_emitter(&app, "update-progress", "id", id.clone());
             let r = crate::packs::update_server(&app, &id, &mut progress);
+            if r.is_ok() {
+                crate::packs::check_updates(&app, Some(&id));
+            }
+            r
+        })
+        .await?,
+    ))
+}
+
+// ---------------------------------------------------------------------------
+// Fase 20 — lato delle mod, rollback dell'aggiornamento del modpack
+// ---------------------------------------------------------------------------
+
+async fn mod_sides(State(state): State<HostState>, Path(id): Path<String>) -> ApiResult<crate::modsides::ModSidesReport> {
+    let app = state.app.clone();
+    Ok(Json(blocking(move || crate::modsides::report(&app, &id)).await?))
+}
+
+async fn pack_rollback(State(state): State<HostState>, Path(id): Path<String>) -> ApiResult<Option<crate::packs::RollbackInfo>> {
+    let app = state.app.clone();
+    Ok(Json(blocking(move || crate::packs::rollback_info(&app, &id)).await?))
+}
+
+async fn pack_rollback_run(State(state): State<HostState>, Path(id): Path<String>) -> ApiResult<crate::packs::RollbackInfo> {
+    let app = state.app.clone();
+    Ok(Json(
+        blocking(move || {
+            let r = crate::packs::rollback_update(&app, &id);
             if r.is_ok() {
                 crate::packs::check_updates(&app, Some(&id));
             }

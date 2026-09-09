@@ -8,6 +8,7 @@
 import { formatBytes, escapeHtml } from './utils.js';
 import { call, isRemoteId } from './api.js';
 import { openModBrowser } from './ui-modbrowser.js';
+import { openModSides, loadModSides, setupModSides } from './ui-modsides.js';
 import { t, tp } from './i18n.js';
 
 const TRASH_ICON = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
@@ -17,6 +18,42 @@ let filter = 'all'; // all | on | off
 let query = '';
 let updates = new Map(); // nome file → ModUpdate
 let currentServer = null;
+let sides = new Map(); // nome file → ModSide (lato client/server), quando noto
+let sidesToken = 0;
+
+/** Server moddato (cartella mods/, non vanilla): solo lì ha senso parlare di lato client. */
+function isModded(server) {
+  return !!server && server.kind !== 'vanilla' && server.content_folder !== 'plugins';
+}
+
+/** Mod attive rilevate solo-client. */
+function clientOnlyEnabled() {
+  return currentMods.filter((m) => m.enabled !== false && sides.get(m.name)?.side === 'client');
+}
+
+function renderClientOnlyNote() {
+  const box = document.getElementById('mods-client-note');
+  const list = clientOnlyEnabled();
+  box.classList.toggle('hidden', list.length === 0);
+  if (list.length) document.getElementById('mods-client-text').textContent = tp('msg2.modsides.client_only_note', list.length);
+}
+
+/** Chiede i lati al backend (cache per server) e ridisegna con le pill "solo client". */
+async function refreshSides(server) {
+  sides = new Map();
+  renderClientOnlyNote();
+  if (!isModded(server) || !(server.mods || []).length) return;
+  const token = ++sidesToken;
+  try {
+    const report = await loadModSides(server);
+    if (token !== sidesToken) return;
+    sides = new Map((report.mods || []).map((m) => [m.name, m]));
+    renderGrid();
+    renderClientOnlyNote();
+  } catch (err) {
+    console.warn('get_mod_sides', err);
+  }
+}
 
 /** "mod" oppure "plugin" secondo il tipo di server selezionato. */
 function contentWord() {
@@ -87,6 +124,7 @@ function renderGrid() {
     const safeName = escapeHtml(mod.name);
     const up = updates.get(mod.name);
     const version = mod.source?.version ? `v${escapeHtml(mod.source.version)}` : '';
+    const clientOnly = sides.get(mod.name)?.side === 'client';
     const li = document.createElement('li');
     li.className = 'card flex items-center justify-between gap-3 px-4 py-2.5';
     li.innerHTML = `
@@ -96,6 +134,7 @@ function renderGrid() {
           ${sourceBadge(mod)}
           ${version ? `<span class="font-mono text-[10px] text-text-muted">${version}</span>` : ''}
           <span class="font-mono text-[10px] text-text-faint">${formatBytes(mod.size)}${enabled ? '' : ` · ${escapeHtml(t('msg.mods.disabled_tag'))}`}</span>
+          ${clientOnly ? `<span class="tag-pill beta" title="${escapeHtml(t('msg2.modsides.client_pill_title'))}">${escapeHtml(t('msg2.modsides.client_pill'))}</span>` : ''}
         </div>
       </div>
       <div class="flex shrink-0 items-center gap-3">
@@ -128,6 +167,8 @@ export function renderModsList(mods, serverId = null, server = null) {
   document.getElementById('btn-open-mods-folder').textContent =
     contentWord() === 'plugin' ? t('msg.mods.open_plugins_folder') : t('msg.mods.open_mods_folder');
   document.getElementById('btn-open-mods-folder').classList.toggle('hidden', !!serverId && isRemoteId(serverId));
+  document.getElementById('btn-mod-sides').classList.toggle('hidden', !isModded(server));
+  refreshSides(server);
 }
 
 /**
@@ -179,7 +220,38 @@ export function setupMods(state, isRunning) {
     currentMods = mods;
     renderToolbar();
     renderGrid();
+    renderClientOnlyNote();
+    refreshSides(server);
   }
+
+  // "Cosa devono installare gli amici" + disattivazione in blocco delle mod solo client
+  setupModSides();
+  document.getElementById('btn-mod-sides').addEventListener('click', () => {
+    const server = activeServer();
+    if (server) openModSides(server);
+  });
+  document.getElementById('btn-disable-client-only').addEventListener('click', async () => {
+    const server = activeServer();
+    const list = clientOnlyEnabled();
+    if (!server || !list.length) return;
+    const btn = document.getElementById('btn-disable-client-only');
+    btn.disabled = true;
+    setNote(t('msg2.modsides.disabling', { count: list.length }));
+    let mods = null;
+    let failed = null;
+    for (const m of list) {
+      try {
+        mods = await call('toggle_mod', { id: server.id, name: m.name, enabled: false });
+      } catch (err) {
+        failed = err;
+        break;
+      }
+    }
+    if (mods) apply(server, mods);
+    if (failed) setNote(t('msg.mods.error', { error: failed }), 'err');
+    else setNote(t('msg2.modsides.disabled_done', { count: list.length }) + restartHint(server), 'ok');
+    btn.disabled = false;
+  });
 
   function reportAdd(server, res) {
     apply(server, res.mods);

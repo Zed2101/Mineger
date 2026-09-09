@@ -497,6 +497,7 @@ async function initApp() {
     isServerActive: (id) => !!id && getRuntime(state, id).status !== 'offline',
     onRemoteHostAdded: async (meta) => attachHost(meta),
     onRemoveHost: removeRemoteHost,
+    getActiveServer: () => state.serverList.find((s) => s.id === state.activeServerId) || null,
   });
   setupMods(state, (id) => getRuntime(state, id).status !== 'offline');
   setupModBrowser({

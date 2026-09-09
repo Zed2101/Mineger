@@ -222,7 +222,8 @@ pub fn list_backups(server_dir: &Path) -> Result<Vec<BackupInfo>, String> {
     Ok(out)
 }
 
-fn world_dirs(server_dir: &Path) -> Vec<PathBuf> {
+/// Cartelle del mondo presenti (level-name, _nether, _the_end). Usata anche dall'aggiornamento dei modpack.
+pub fn world_dirs(server_dir: &Path) -> Vec<PathBuf> {
     let level = parse_server_properties(server_dir)
         .get("level-name")
         .cloned()

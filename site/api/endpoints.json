@@ -714,6 +714,25 @@
           },
           "request": "curl -X DELETE -H \"Authorization: Bearer $TOKEN\" \\\n  \"$HOST/api/servers/Cave%20Horror/mods/suspicious-mod.jar\"",
           "response": "[ \"…\" ]"
+        },
+        {
+          "method": "GET",
+          "path": "/api/servers/{id}/mods/sides",
+          "auth": "token",
+          "title": {
+            "en": "Mod sides: what friends must install",
+            "it": "Lato delle mod: cosa devono installare gli amici"
+          },
+          "desc": {
+            "en": "For every installed mod, whether it is needed on the client, on the server or on both (<code>both</code> · <code>client</code> · <code>server</code> · <code>unknown</code>) and where that comes from (<code>api</code> = Modrinth, <code>jar</code> = the jar's own metadata, <code>list</code> = well-known client-only mods), plus loader and Minecraft version. Client-only mods are pointless on a server and, on Forge, can prevent start-up. Cached next to the server; the first call on a big pack hashes every jar and asks Modrinth in batches.",
+            "it": "Per ogni mod installata, se serve al client, al server o a entrambi (<code>both</code> · <code>client</code> · <code>server</code> · <code>unknown</code>) e da dove viene l'informazione (<code>api</code> = Modrinth, <code>jar</code> = i metadati del jar, <code>list</code> = mod solo-client notissime), più loader e versione di Minecraft. Le mod solo-client sono inutili sul server e, su Forge, possono impedire l'avvio. In cache accanto al server; la prima chiamata su un pack grande calcola l'hash di ogni jar e interroga Modrinth a blocchi."
+          },
+          "use": {
+            "en": "Post the list of mods your friends need in the Discord channel, or strip client-only mods before the first start.",
+            "it": "Pubblica nel canale Discord l'elenco delle mod che servono agli amici, o togli le mod solo-client prima del primo avvio."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Cave%20Horror/mods/sides\"",
+          "response": "{ \"mc_version\": \"1.20.1\", \"loader\": \"forge\", \"loader_version\": \"47.3.0\", \"client_only\": 1, \"warning\": null,\n  \"mods\": [ { \"name\": \"jei-1.20.1-forge-15.20.0.106.jar\", \"display\": \"Just Enough Items\", \"id\": \"jei\", \"version\": \"15.20.0.106\", \"side\": \"both\", \"confidence\": \"api\", \"source_url\": \"https://modrinth.com/mod/jei\", \"enabled\": true },\n            { \"name\": \"BetterF3-7.0.2-Forge-1.20.1.jar\", \"display\": \"BetterF3\", \"id\": \"betterf3\", \"version\": \"7.0.2\", \"side\": \"client\", \"confidence\": \"jar\", \"source_url\": null, \"enabled\": true } ] }"
         }
       ]
     },
@@ -803,6 +822,44 @@
           },
           "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Cobblemon/update\"",
           "response": "{ \"server_id\": \"Cobblemon\", \"new_version\": \"1.6.2\", \"extra_mods\": [], \"rollback_dir\": \"…/backups/rollback-2026-09-08\" }"
+        },
+        {
+          "method": "GET",
+          "path": "/api/servers/{id}/rollback",
+          "auth": "token",
+          "title": {
+            "en": "Previous modpack version",
+            "it": "Versione precedente del modpack"
+          },
+          "desc": {
+            "en": "After a modpack update the previous installation stays next to the server (<code>.old-&lt;id&gt;-&lt;timestamp&gt;</code>, only the latest one). Returns its version and when it was set aside, or <code>null</code> when there is nothing to go back to.",
+            "it": "Dopo un aggiornamento del modpack l'installazione precedente resta accanto al server (<code>.old-&lt;id&gt;-&lt;timestamp&gt;</code>, solo l'ultima). Ritorna la sua versione e quando è stata messa da parte, oppure <code>null</code> se non c'è niente a cui tornare."
+          },
+          "use": {
+            "en": "Show a \"go back\" button only when it makes sense.",
+            "it": "Mostra il pulsante \"torna indietro\" solo quando ha senso."
+          },
+          "request": "curl -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Cobblemon/rollback\"",
+          "response": "{ \"dir\": \"…/servers/.old-Cobblemon-1789000000\", \"at\": 1789000000, \"version\": \"1.6.1\", \"pack_name\": \"Cobblemon\", \"current_version\": \"1.6.2\" }"
+        },
+        {
+          "method": "POST",
+          "path": "/api/servers/{id}/rollback",
+          "auth": "token",
+          "title": {
+            "en": "Go back to the previous modpack version",
+            "it": "Torna alla versione precedente del modpack"
+          },
+          "desc": {
+            "en": "Puts the previous installation back in place. The server must be off. The current world, <code>server.properties</code>, whitelist/ops/bans, backups, icon and automation settings are carried over; the undone version is kept as <code>.undone-&lt;id&gt;-&lt;timestamp&gt;</code> (only the latest one) and the update becomes available again.",
+            "it": "Rimette al suo posto l'installazione precedente. Il server deve essere spento. Mondo attuale, <code>server.properties</code>, whitelist/op/ban, backup, icona e automazione vengono portati dentro; la versione annullata resta come <code>.undone-&lt;id&gt;-&lt;timestamp&gt;</code> (solo l'ultima) e l'aggiornamento torna disponibile."
+          },
+          "use": {
+            "en": "The new pack version crashes at start-up: go back, keep playing, retry next week.",
+            "it": "La nuova versione del pack crasha all'avvio: torna indietro, continua a giocare, riprova la settimana prossima."
+          },
+          "request": "curl -X POST -H \"Authorization: Bearer $TOKEN\" \"$HOST/api/servers/Cobblemon/rollback\"",
+          "response": "{ \"dir\": \"…/servers/.undone-Cobblemon-1789003600\", \"at\": 1789003600, \"version\": \"1.6.1\", \"pack_name\": \"Cobblemon\", \"current_version\": \"1.6.1\" }"
         }
       ]
     },

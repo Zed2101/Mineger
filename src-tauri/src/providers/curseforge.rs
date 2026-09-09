@@ -8,7 +8,7 @@
 // Se l'autore vieta la distribuzione (`allowModDistribution: false`) il download
 // non è disponibile: si rimanda alla pagina del progetto.
 
-use super::{http, iso_to_epoch, normalize_loader, PackFile, PackInfo, PackResolution, ParsedLink, Provider};
+use super::{classify_response, http, iso_to_epoch, link_kind_error, normalize_loader, pretty_slug, with_retry, LinkKind, PackFile, PackInfo, PackResolution, ParsedLink, Provider};
 use crate::settings;
 use crate::tr;
 use serde::Deserialize;
@@ -57,6 +57,9 @@ struct Mod {
     authors: Vec<Author>,
     #[serde(default = "default_true", rename = "allowModDistribution")]
     allow_mod_distribution: bool,
+    /// 4471 modpack, 6 mod, 5 plugin, 12 resource pack… (0 = non dichiarato)
+    #[serde(default, rename = "classId")]
+    class_id: u32,
 }
 
 fn default_true() -> bool {
@@ -124,17 +127,20 @@ pub fn is_configured(app: &AppHandle) -> bool {
     api_key(app).is_some()
 }
 
-/// Chiamata grezza all'API CurseForge (usata anche da `providers::mods`).
-pub fn api_get<T: serde::de::DeserializeOwned>(app: &AppHandle, path: &str, query: &[(&str, String)]) -> Result<T, String> {
+/// GET con retry su 429/5xx/timeout. Il 403 (chiave o throttling: CurseForge non
+/// li distingue) NON viene ritentato: lo traduce il chiamante.
+fn send(app: &AppHandle, path: &str, query: &[(&str, String)]) -> Result<reqwest::blocking::Response, String> {
     let key = api_key(app).ok_or_else(key_missing)?;
     let client = http(Duration::from_secs(30))?;
-    let resp = client
-        .get(format!("{}{}", API, path))
-        .header("x-api-key", key)
-        .header("Accept", "application/json")
-        .query(query)
-        .send()
-        .map_err(|e| tr!("errors.http.unreachable", "who" => "CurseForge", "error" => e))?;
+    let url = format!("{}{}", API, path);
+    with_retry("CurseForge", || {
+        classify_response("CurseForge", client.get(&url).header("x-api-key", &key).header("Accept", "application/json").query(query).send())
+    })
+}
+
+/// Chiamata grezza all'API CurseForge (usata anche da `providers::mods`).
+pub fn api_get<T: serde::de::DeserializeOwned>(app: &AppHandle, path: &str, query: &[(&str, String)]) -> Result<T, String> {
+    let resp = send(app, path, query)?;
     let status = resp.status();
     if status.as_u16() == 403 || status.as_u16() == 401 {
         return Err(tr!("errors.curseforge.key_rejected"));
@@ -149,15 +155,7 @@ pub fn api_get<T: serde::de::DeserializeOwned>(app: &AppHandle, path: &str, quer
 }
 
 fn get<T: serde::de::DeserializeOwned>(app: &AppHandle, path: &str, query: &[(&str, String)]) -> Result<Envelope<T>, String> {
-    let key = api_key(app).ok_or_else(key_missing)?;
-    let client = http(Duration::from_secs(30))?;
-    let resp = client
-        .get(format!("{}{}", API, path))
-        .header("x-api-key", key)
-        .header("Accept", "application/json")
-        .query(query)
-        .send()
-        .map_err(|e| tr!("errors.http.unreachable", "who" => "CurseForge", "error" => e))?;
+    let resp = send(app, path, query)?;
 
     let status = resp.status();
     if status.as_u16() == 403 || status.as_u16() == 401 {
@@ -231,16 +229,21 @@ fn to_pack_info(m: &Mod) -> PackInfo {
     }
 }
 
-fn find_mod_by_slug(app: &AppHandle, slug: &str) -> Result<Mod, String> {
-    let env: Envelope<Vec<Mod>> = get(
-        app,
-        "/mods/search",
-        &[("gameId", GAME_MINECRAFT.to_string()), ("classId", CLASS_MODPACKS.to_string()), ("slug", slug.to_string())],
-    )?;
+/// Progetto per slug nella classe indicata (senza classe: primo progetto con quello slug, di qualunque tipo).
+fn find_by_slug(app: &AppHandle, slug: &str, class_id: Option<u32>) -> Result<Mod, String> {
+    let mut query = vec![("gameId", GAME_MINECRAFT.to_string()), ("slug", slug.to_string())];
+    if let Some(c) = class_id {
+        query.push(("classId", c.to_string()));
+    }
+    let env: Envelope<Vec<Mod>> = get(app, "/mods/search", &query)?;
     env.data
         .into_iter()
         .find(|m| m.slug.eq_ignore_ascii_case(slug))
         .ok_or_else(|| tr!("errors.curseforge.pack_not_found", "name" => slug))
+}
+
+fn find_mod_by_slug(app: &AppHandle, slug: &str) -> Result<Mod, String> {
+    find_by_slug(app, slug, Some(CLASS_MODPACKS))
 }
 
 fn get_mod(app: &AppHandle, id: &str) -> Result<Mod, String> {
@@ -379,8 +382,36 @@ fn build_resolution(app: &AppHandle, m: Mod, wanted_file: Option<&str>) -> Resul
     Ok(PackResolution { pack, files: pack_files, suggested_file_id: suggested, warning })
 }
 
+/// Risolve un link CurseForge. Se non porta a un modpack (mod, plugin, resource
+/// pack…) l'errore è `LINK_KIND:<kind>:…` con il nome del progetto: preso
+/// dall'API quando c'è la chiave, altrimenti dallo slug.
 pub fn resolve(app: &AppHandle, link: &ParsedLink) -> Result<PackResolution, String> {
-    let m = if link.key.chars().all(|c| c.is_ascii_digit()) { get_mod(app, &link.key)? } else { find_mod_by_slug(app, &link.key)? };
+    let numeric = link.key.chars().all(|c| c.is_ascii_digit());
+    let m = match link.kind {
+        LinkKind::Modpack => {
+            if numeric {
+                get_mod(app, &link.key)?
+            } else {
+                find_mod_by_slug(app, &link.key)?
+            }
+        }
+        // `/projects/<id>`, link diretti ai file, classi sconosciute: chiede all'API
+        LinkKind::Unknown => {
+            if numeric {
+                get_mod(app, &link.key)?
+            } else {
+                find_by_slug(app, &link.key, None)?
+            }
+        }
+        other => {
+            let name = find_by_slug(app, &link.key, other.curseforge_class_id()).map(|m| m.name).unwrap_or_else(|_| pretty_slug(&link.key));
+            return Err(link_kind_error(other, &name));
+        }
+    };
+    let kind = LinkKind::from_curseforge_class_id(m.class_id);
+    if m.class_id != 0 && kind != LinkKind::Modpack {
+        return Err(link_kind_error(kind, &m.name));
+    }
     build_resolution(app, m, link.file_id.as_deref())
 }
 
@@ -428,7 +459,7 @@ mod tests {
     fn parses_file_json() {
         let json = r#"{"data":{"id":8649107,"displayName":"ServerFiles-8.0.zip","fileName":"ServerFiles-8.0.zip","fileDate":"2026-08-14T10:00:00Z","fileLength":1180000000,"hashes":[{"value":"ABCDEF","algo":1},{"value":"x","algo":2}],"downloadUrl":"https://edge.forgecdn.net/files/8649/107/ServerFiles-8.0.zip","gameVersions":["1.21.1","NeoForge"],"isServerPack":true,"serverPackFileId":null}}"#;
         let env: Envelope<File> = serde_json::from_str(json).unwrap();
-        let m = Mod { id: 1, name: "ATM10".into(), slug: "all-the-mods-10".into(), summary: String::new(), links: Links { website_url: "https://www.curseforge.com/minecraft/modpacks/all-the-mods-10".into() }, logo: None, authors: vec![], allow_mod_distribution: true };
+        let m = Mod { id: 1, name: "ATM10".into(), slug: "all-the-mods-10".into(), summary: String::new(), links: Links { website_url: "https://www.curseforge.com/minecraft/modpacks/all-the-mods-10".into() }, logo: None, authors: vec![], allow_mod_distribution: true, class_id: 4471 };
         let pf = to_pack_file(&m, &env.data);
         assert_eq!(pf.id, "8649107");
         assert_eq!(pf.version, "8.0");
@@ -441,6 +472,16 @@ mod tests {
 
         let m2 = Mod { allow_mod_distribution: false, ..m };
         assert!(to_pack_file(&m2, &env.data).download_url.is_none());
+    }
+
+    #[test]
+    fn reads_class_id_from_project_json() {
+        let json = r#"{"data":{"id":238222,"name":"Just Enough Items (JEI)","slug":"jei","classId":6,"links":{"websiteUrl":"https://www.curseforge.com/minecraft/mc-mods/jei"}}}"#;
+        let env: Envelope<Mod> = serde_json::from_str(json).unwrap();
+        assert_eq!(LinkKind::from_curseforge_class_id(env.data.class_id), LinkKind::Mod);
+        let json = r#"{"data":{"id":1,"name":"X","slug":"x"}}"#;
+        let env: Envelope<Mod> = serde_json::from_str(json).unwrap();
+        assert_eq!(env.data.class_id, 0, "assente = non dichiarato, non un errore");
     }
 }
 

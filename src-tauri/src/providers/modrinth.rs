@@ -5,10 +5,9 @@
 // hash ed `env.server`) + cartelle `overrides/` e `server-overrides/`.
 // L'installazione del loader (Fabric/Forge/NeoForge) la fa `packs.rs`.
 
-use super::{http, iso_to_epoch, normalize_loader, PackFile, PackInfo, PackResolution, ParsedLink, Provider};
+use super::{iso_to_epoch, link_kind_error, modrinth_request, normalize_loader, LinkKind, PackFile, PackInfo, PackResolution, ParsedLink, Provider};
 use crate::tr;
 use serde::Deserialize;
-use std::time::Duration;
 
 const API: &str = "https://api.modrinth.com/v2";
 
@@ -23,6 +22,9 @@ struct Project {
     icon_url: Option<String>,
     #[serde(default)]
     project_type: String,
+    /// Plugin e datapack hanno `project_type: mod`: li distinguono i loader
+    #[serde(default)]
+    loaders: Vec<String>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -125,13 +127,10 @@ impl MrpackIndex {
     }
 }
 
+/// GET con attesa sui rate limit (429 e finestra esaurita) e retry sugli errori transitori.
 fn get<T: serde::de::DeserializeOwned>(path: &str) -> Result<T, String> {
-    let client = http(Duration::from_secs(30))?;
-    let resp = client
-        .get(format!("{}{}", API, path))
-        .header("Accept", "application/json")
-        .send()
-        .map_err(|e| tr!("errors.http.unreachable", "who" => "Modrinth", "error" => e))?;
+    let url = format!("{}{}", API, path);
+    let resp = modrinth_request(|c| c.get(&url))?;
     if resp.status().as_u16() == 404 {
         return Err(tr!("errors.modrinth.project_not_found"));
     }
@@ -165,10 +164,18 @@ fn to_pack_file(slug: &str, v: &Version) -> Option<PackFile> {
     })
 }
 
+/// Risolve un link Modrinth. Se il progetto non è un modpack l'errore è
+/// `LINK_KIND:<kind>:…` con il titolo del progetto (l'API conferma il tipo
+/// anche per i link `/project/<id>`).
 pub fn resolve(link: &ParsedLink) -> Result<PackResolution, String> {
     let project: Project = get(&format!("/project/{}", link.key))?;
-    if project.project_type != "modpack" && !project.project_type.is_empty() {
-        return Err(tr!("errors.modrinth.not_a_modpack", "name" => project.title, "kind" => project.project_type));
+    let mut kind = LinkKind::from_modrinth(&project.project_type, &project.loaders);
+    // Il percorso del link (canonico sul sito) è più preciso dell'euristica sui loader
+    if kind == LinkKind::Mod && matches!(link.kind, LinkKind::Plugin | LinkKind::DataPack) {
+        kind = link.kind;
+    }
+    if kind != LinkKind::Modpack {
+        return Err(link_kind_error(kind, &project.title));
     }
     let versions: Vec<Version> = get(&format!("/project/{}/version", project.id))?;
 
@@ -248,5 +255,15 @@ mod tests {
         assert_eq!(pf.kind, "mrpack");
         let no_mrpack: Version = serde_json::from_str(r#"{"id":"z","files":[{"url":"u","filename":"x.zip"}]}"#).unwrap();
         assert!(to_pack_file("pack", &no_mrpack).is_none());
+    }
+
+    #[test]
+    fn project_type_and_loaders_tell_the_kind() {
+        let p: Project = serde_json::from_str(r#"{"id":"AANobbMI","slug":"sodium","title":"Sodium","project_type":"mod","loaders":["fabric","neoforge"]}"#).unwrap();
+        assert_eq!(LinkKind::from_modrinth(&p.project_type, &p.loaders), LinkKind::Mod);
+        let p: Project = serde_json::from_str(r#"{"id":"x","slug":"terralith","title":"Terralith","project_type":"mod","loaders":["datapack"]}"#).unwrap();
+        assert_eq!(LinkKind::from_modrinth(&p.project_type, &p.loaders), LinkKind::DataPack);
+        let p: Project = serde_json::from_str(r#"{"id":"y","slug":"fo","title":"FO","project_type":"modpack"}"#).unwrap();
+        assert_eq!(LinkKind::from_modrinth(&p.project_type, &p.loaders), LinkKind::Modpack);
     }
 }

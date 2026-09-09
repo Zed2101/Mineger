@@ -33,6 +33,7 @@ pub mod worldindex;
 pub mod worldmap;
 pub mod firewall;
 pub mod reach;
+pub mod modsides;
 
 use std::time::Duration;
 use tauri::RunEvent;
@@ -176,6 +177,10 @@ pub fn run() {
             commands::check_reachability,
             commands::get_reachability,
             commands::firewall_allow,
+            commands::get_mod_sides,
+            commands::save_text_file,
+            commands::get_pack_rollback,
+            commands::rollback_pack_update,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

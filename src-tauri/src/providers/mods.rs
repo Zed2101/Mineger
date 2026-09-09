@@ -7,10 +7,9 @@
 // FTB pubblica solo modpack: non espone un catalogo di singole mod, quindi le fonti
 // installabili sono due. Le mod copiate a mano restano senza sorgente ("manuale").
 
-use super::{epoch_to_iso, http, iso_to_epoch, normalize_loader, Provider, USER_AGENT};
+use super::{epoch_to_iso, iso_to_epoch, modrinth_request, normalize_loader, Provider};
 use crate::tr;
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
 use tauri::AppHandle;
 
 const MODRINTH_API: &str = "https://api.modrinth.com/v2";
@@ -124,14 +123,9 @@ pub fn loader_matches(server_loader: &str, file_loaders: &[String]) -> bool {
 // Modrinth
 // ---------------------------------------------------------------------------
 
+/// GET Modrinth con User-Agent identificativo, attesa sui rate limit e retry (vedi `providers::modrinth_request`).
 fn mr_get<T: serde::de::DeserializeOwned>(url: &str) -> Result<T, String> {
-    let client = http(Duration::from_secs(30))?;
-    let resp = client
-        .get(url)
-        .header("User-Agent", USER_AGENT)
-        .header("Accept", "application/json")
-        .send()
-        .map_err(|e| tr!("errors.http.unreachable", "who" => "Modrinth", "error" => e))?;
+    let resp = modrinth_request(|c| c.get(url))?;
     if resp.status().as_u16() == 404 {
         return Err(tr!("errors.modrinth.project_not_found"));
     }

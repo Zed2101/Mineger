@@ -83,6 +83,8 @@ pub fn safe_rel_path(p: &str) -> Result<PathBuf, String> {
 
 /// Installa un pack in un nuovo server. Ritorna l'id (nome cartella).
 pub fn install(app: &AppHandle, name: &str, provider: Provider, project_id: &str, file_id: &str, progress: Progress) -> Result<String, String> {
+    // Le attese per i rate limit di CurseForge/Modrinth finiscono nella barra del wizard
+    let _notice = providers::retry_notice_scope(Box::new(wait_notifier(app, "create-progress", "name", name.to_string())));
     progress("resolve", 0, &tr!("progress.pack.resolving"));
     let (pack, file) = providers::file_by_id(app, provider, project_id, file_id)?;
     let (id, dir) = create::prepare_server_dir(app, name)?;
@@ -520,6 +522,22 @@ pub struct UpdateResult {
     pub extra_mods: Vec<String>,
     /// Cartella del vecchio server (rollback)
     pub rollback_dir: String,
+    /// Cosa è stato conservato: mondo, server.properties, whitelist/op/ban, backup, icona…
+    pub kept: Vec<String>,
+    /// Cosa il pack ha sostituito: mods/, config/, script…
+    pub replaced: Vec<String>,
+    /// Backup del mondo fatto prima di toccare qualcosa (None = nessun mondo da salvare)
+    pub backup_file: Option<String>,
+    pub previous_version: String,
+}
+
+/// Cosa è stato portato nella nuova installazione da `migrate_user_data`.
+#[derive(Serialize, Clone, Debug, Default, PartialEq, Eq)]
+pub struct Migration {
+    /// Mod che c'erano prima ma non nel nuovo pack: copiate in `mods-precedenti/`
+    pub extra_mods: Vec<String>,
+    /// File e cartelle dell'utente conservati (mondo, impostazioni, backup…), in ordine
+    pub kept: Vec<String>,
 }
 
 const USER_FILES: &[&str] = &[
@@ -553,36 +571,48 @@ fn mod_base_name(file: &str) -> String {
     file.strip_suffix(".disabled").unwrap_or(file).to_string()
 }
 
-/// Porta nel nuovo server i dati dell'utente: file di configurazione, mondo (spostato), backup.
-/// Ritorna le mod "extra" (presenti prima ma non nel nuovo pack), copiate in `mods-precedenti/`.
-pub fn migrate_user_data(old: &Path, new: &Path) -> Result<Vec<String>, String> {
+/// File dell'utente (copiati), cartelle dell'utente (copiate) e mondo (spostato,
+/// può essere enorme) da `from` a `to`. Ritorna i nomi di ciò che c'era davvero.
+fn carry_user_data(from: &Path, to: &Path) -> Result<Vec<String>, String> {
+    let mut kept = Vec::new();
     for f in USER_FILES {
-        let src = old.join(f);
+        let src = from.join(f);
         if src.is_file() {
-            fs::copy(&src, new.join(f)).map_err(|e| tr!("errors.file.generic", "path" => f, "error" => e))?;
+            fs::copy(&src, to.join(f)).map_err(|e| tr!("errors.file.generic", "path" => f, "error" => e))?;
+            kept.push(f.to_string());
         }
     }
     for d in USER_DIRS {
-        let src = old.join(d);
+        let src = from.join(d);
         if src.is_dir() {
-            copy_dir_all(&src, &new.join(d))?;
+            copy_dir_all(&src, &to.join(d))?;
+            kept.push(format!("{}/", d));
         }
     }
 
-    // Mondo: spostato (può essere enorme). Il backup zip resta in backups/.
-    let level = utils::parse_server_properties(old).get("level-name").cloned().unwrap_or_else(|| "world".to_string());
+    // Mondo: spostato. Il backup zip resta in backups/.
+    let level = utils::parse_server_properties(from).get("level-name").cloned().unwrap_or_else(|| "world".to_string());
     for name in [level.clone(), format!("{}_nether", level), format!("{}_the_end", level)] {
-        let src = old.join(&name);
+        let src = from.join(&name);
         if src.is_dir() {
-            let dst = new.join(&name);
+            let dst = to.join(&name);
             if dst.exists() {
                 fs::remove_dir_all(&dst).map_err(|e| e.to_string())?;
             }
             if fs::rename(&src, &dst).is_err() {
                 copy_dir_all(&src, &dst)?;
             }
+            kept.push(format!("{}/", name));
         }
     }
+    Ok(kept)
+}
+
+/// Porta nel nuovo server i dati dell'utente: file di configurazione, mondo (spostato), backup.
+/// Ritorna cosa è stato conservato e le mod "extra" (presenti prima ma non nel
+/// nuovo pack), copiate in `mods-precedenti/`.
+pub fn migrate_user_data(old: &Path, new: &Path) -> Result<Migration, String> {
+    let kept = carry_user_data(old, new)?;
 
     // Mod aggiunte a mano
     let list = |dir: &Path| -> Vec<String> {
@@ -606,10 +636,42 @@ pub fn migrate_user_data(old: &Path, new: &Path) -> Result<Vec<String>, String> 
         }
     }
     extra.sort();
-    Ok(extra)
+    Ok(Migration { extra_mods: extra, kept })
+}
+
+/// Voci di primo livello che il pack ha sovrascritto: presenti sia prima sia
+/// dopo, escluse quelle conservate (`kept`) e quelle dell'app. Cartelle con `/`.
+pub fn replaced_by_pack(old: &Path, new: &Path, kept: &[String]) -> Vec<String> {
+    const OURS: &[&str] = &["server-data.json", ".mineger", "mods-precedenti"];
+    let names = |dir: &Path| -> Vec<String> {
+        fs::read_dir(dir)
+            .map(|rd| {
+                rd.flatten()
+                    .map(|e| {
+                        let n = e.file_name().to_string_lossy().to_string();
+                        if e.path().is_dir() { format!("{}/", n) } else { n }
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    let before = names(old);
+    let mut out: Vec<String> = names(new)
+        .into_iter()
+        .filter(|n| before.contains(n))
+        .filter(|n| !kept.contains(n) && !OURS.contains(&n.trim_end_matches('/')))
+        .collect();
+    out.sort();
+    out
 }
 
 /// Aggiorna un server installato da link all'ultima versione compatibile.
+///
+/// Prima di toccare qualcosa fa un backup del mondo come gli altri backup
+/// (retention, esito registrato, notifica): se fallisce, l'aggiornamento non
+/// parte. La cartella precedente resta accanto al server come `.old-<id>-<ts>`
+/// (una sola: le più vecchie vengono eliminate) e `rollback_update` la rimette
+/// al suo posto.
 pub fn update_server(app: &AppHandle, id: &str, progress: Progress) -> Result<UpdateResult, String> {
     if process::is_running(id) {
         return Err(tr!("errors.pack.stop_before_update"));
@@ -618,6 +680,7 @@ pub fn update_server(app: &AppHandle, id: &str, progress: Progress) -> Result<Up
     let mut data = service::read_server_data(&dir)?;
     let source = data.source.clone().ok_or_else(|| tr!("errors.pack.not_from_link"))?;
     let provider = Provider::from_str(&source.provider).ok_or_else(|| tr!("errors.provider.unknown"))?;
+    let _notice = providers::retry_notice_scope(Box::new(wait_notifier(app, "update-progress", "id", id.to_string())));
 
     progress("resolve", 0, &tr!("progress.pack.latest"));
     let latest = providers::latest_compatible(app, provider, &source.project_id, &source.mc_version, &source.loader, &source.kind)?
@@ -627,13 +690,20 @@ pub fn update_server(app: &AppHandle, id: &str, progress: Progress) -> Result<Up
     }
     let (pack, file) = providers::file_by_id(app, provider, &source.project_id, &latest.id)?;
 
-    // 1. Backup del mondo (se esiste)
+    // 1. Backup del mondo (se esiste): con retention ed esito registrato come ogni altro backup
     progress("backup", 2, &tr!("progress.pack.backup"));
-    match backup::create_backup(app, id, &dir) {
-        Ok(info) => progress("backup", 5, &tr!("progress.pack.backup_created", "file" => info.file)),
-        Err(e) if e == tr!("errors.backup.no_world_dir") => progress("backup", 5, &tr!("progress.pack.no_world")),
-        Err(e) => return Err(tr!("errors.pack.backup_failed", "error" => e)),
-    }
+    let backup_file = if backup::world_dirs(&dir).is_empty() {
+        progress("backup", 5, &tr!("progress.pack.no_world"));
+        None
+    } else {
+        match crate::automation::run_backup(app, id, &dir, "pre_update") {
+            Ok(info) => {
+                progress("backup", 5, &tr!("progress.pack.backup_created", "file" => info.file));
+                Some(info.file)
+            }
+            Err(e) => return Err(tr!("errors.pack.backup_failed_hint", "error" => e)),
+        }
+    };
 
     // 2. Installazione in cartella temporanea
     let tmp = dir.with_file_name(format!(".tmp-{}", id));
@@ -652,10 +722,12 @@ pub fn update_server(app: &AppHandle, id: &str, progress: Progress) -> Result<Up
 
     // 3. Migrazione dati utente + server-data.json
     progress("migrate", 90, &tr!("progress.pack.migrating"));
-    let extra_mods = migrate_user_data(&dir, &tmp).map_err(|e| {
+    let replaced = replaced_by_pack(&dir, &tmp, &[]);
+    let migration = migrate_user_data(&dir, &tmp).map_err(|e| {
         let _ = fs::remove_dir_all(&tmp);
         e
     })?;
+    let replaced: Vec<String> = replaced.into_iter().filter(|n| !migration.kept.contains(n)).collect();
 
     data.source = Some(source_info(&pack, &file));
     data.mods = vec![];
@@ -689,8 +761,115 @@ pub fn update_server(app: &AppHandle, id: &str, progress: Progress) -> Result<Up
     Ok(UpdateResult {
         server_id: id.to_string(),
         new_version: file.version.clone(),
-        extra_mods,
+        extra_mods: migration.extra_mods,
         rollback_dir: old.to_string_lossy().to_string(),
+        kept: migration.kept,
+        replaced,
+        backup_file,
+        previous_version: source.version.clone(),
+    })
+}
+
+// ---------------------------------------------------------------------------
+// Rollback: la cartella `.old-<id>-<ts>` lasciata dall'aggiornamento
+// ---------------------------------------------------------------------------
+
+/// Versione precedente conservata accanto al server dopo un aggiornamento.
+#[derive(Serialize, Clone, Debug)]
+pub struct RollbackInfo {
+    pub dir: String,
+    /// Epoch secondi dell'aggiornamento che l'ha messa da parte
+    pub at: u64,
+    /// Versione del pack in quella cartella
+    pub version: String,
+    pub pack_name: String,
+    /// Versione attualmente installata
+    pub current_version: String,
+}
+
+/// Cartelle `<prefix><id>-<ts>` accanto al server, dalla più recente.
+fn sibling_dirs(dir: &Path, prefix: &str, id: &str) -> Vec<(PathBuf, u64)> {
+    let want = format!("{}{}-", prefix, id);
+    let Some(parent) = dir.parent() else { return vec![] };
+    let Ok(rd) = fs::read_dir(parent) else { return vec![] };
+    let mut out: Vec<(PathBuf, u64)> = rd
+        .flatten()
+        .filter(|e| e.path().is_dir())
+        .filter_map(|e| {
+            let name = e.file_name().to_string_lossy().to_string();
+            let ts = name.strip_prefix(&want)?.parse::<u64>().ok()?;
+            Some((e.path(), ts))
+        })
+        .collect();
+    out.sort_by(|a, b| b.1.cmp(&a.1));
+    out
+}
+
+fn rollback_dir_of(dir: &Path, id: &str) -> Option<(PathBuf, u64)> {
+    sibling_dirs(dir, ".old-", id).into_iter().next()
+}
+
+/// C'è una versione precedente a cui tornare?
+pub fn rollback_info(app: &AppHandle, id: &str) -> Result<Option<RollbackInfo>, String> {
+    let dir = service::server_dir(app, id)?;
+    let Some((old, at)) = rollback_dir_of(&dir, id) else { return Ok(None) };
+    let Ok(old_data) = service::read_server_data(&old) else { return Ok(None) };
+    let current = service::read_server_data(&dir).ok().and_then(|d| d.source).map(|s| s.version).unwrap_or_default();
+    let Some(src) = old_data.source else { return Ok(None) };
+    Ok(Some(RollbackInfo {
+        dir: old.to_string_lossy().to_string(),
+        at,
+        version: if src.version.is_empty() { src.file_name.clone() } else { src.version.clone() },
+        pack_name: src.pack_name,
+        current_version: current,
+    }))
+}
+
+/// Torna alla versione precedente del pack (server spento): la cartella
+/// `.old-<id>-<ts>` riprende il posto del server; mondo, impostazioni, backup e
+/// automazione attuali vengono portati dentro; la versione appena lasciata
+/// resta come `.undone-<id>-<ts>` (solo l'ultima).
+pub fn rollback_update(app: &AppHandle, id: &str) -> Result<RollbackInfo, String> {
+    if process::is_running(id) {
+        return Err(tr!("errors.pack.stop_before_rollback"));
+    }
+    let dir = service::server_dir(app, id)?;
+    let (old, _) = rollback_dir_of(&dir, id).ok_or_else(|| tr!("errors.pack.no_rollback"))?;
+    let mut old_data = service::read_server_data(&old)?;
+    let cur_data = service::read_server_data(&dir)?;
+
+    // 1. Scambio: l'attuale diventa `.undone-…`, la precedente torna al suo posto
+    for (p, _) in sibling_dirs(&dir, ".undone-", id) {
+        let _ = fs::remove_dir_all(p);
+    }
+    let undone = dir.with_file_name(format!(".undone-{}-{}", id, now_secs()));
+    fs::rename(&dir, &undone).map_err(|e| tr!("errors.pack.move_current_failed", "error" => e))?;
+    if let Err(e) = fs::rename(&old, &dir) {
+        let _ = fs::rename(&undone, &dir);
+        return Err(tr!("errors.pack.rollback_swap_failed", "error" => e));
+    }
+
+    // 2. Dati dell'utente dalla versione lasciata (il mondo era stato spostato lì dall'aggiornamento)
+    carry_user_data(&undone, &dir)?;
+
+    // 3. server-data.json: sorgente e mod della versione precedente, automazione e avvio di adesso
+    old_data.automation = cur_data.automation;
+    old_data.launch.max_ram_mb = cur_data.launch.max_ram_mb.or(old_data.launch.max_ram_mb);
+    old_data.launch.upnp = cur_data.launch.upnp.or(old_data.launch.upnp);
+    old_data.launch.tunnel = cur_data.launch.tunnel.or(old_data.launch.tunnel);
+    old_data.launch.tunnel_id = cur_data.launch.tunnel_id.or(old_data.launch.tunnel_id);
+    old_data.mods = vec![];
+    old_data.last_scan_timestamp = 0;
+    service::write_server_data(&dir, &old_data)?;
+
+    let version = old_data.source.as_ref().map(|s| if s.version.is_empty() { s.file_name.clone() } else { s.version.clone() }).unwrap_or_default();
+    process::emit_line(app, id, &tr!("console.pack_rolled_back", "version" => version, "dir" => undone.display()));
+    Ok(RollbackInfo {
+        dir: undone.to_string_lossy().to_string(),
+        at: now_secs(),
+        version: version.clone(),
+        pack_name: old_data.source.as_ref().map(|s| s.pack_name.clone()).unwrap_or_default(),
+        current_version: version,
     })
 }
 
@@ -728,8 +907,17 @@ mod tests {
         fs::write(new.join("mods/shared.jar"), b"a2").unwrap();
         fs::write(new.join("mods/packnew.jar"), b"n").unwrap();
 
-        let extra = migrate_user_data(&old, &new).unwrap();
-        assert_eq!(extra, vec!["mine.jar", "old-disabled.jar.disabled"]);
+        fs::create_dir_all(old.join("config")).unwrap();
+        fs::create_dir_all(new.join("config")).unwrap();
+        fs::write(old.join("run.bat"), b"old").unwrap();
+        fs::write(new.join("run.bat"), b"new").unwrap();
+        fs::write(old.join("server-data.json"), b"{}").unwrap();
+        fs::write(new.join("server-data.json"), b"{}").unwrap();
+
+        let replaced = replaced_by_pack(&old, &new, &[]);
+        let m = migrate_user_data(&old, &new).unwrap();
+        assert_eq!(m.extra_mods, vec!["mine.jar", "old-disabled.jar.disabled"]);
+        assert_eq!(m.kept, vec!["server.properties", "eula.txt", "backups/", "world/"]);
         assert!(new.join("server.properties").is_file());
         assert!(new.join("eula.txt").is_file());
         assert!(new.join("world/region/r.0.0.mca").is_file());
@@ -737,6 +925,27 @@ mod tests {
         assert!(new.join("backups/b.zip").is_file());
         assert!(new.join("mods-precedenti/mine.jar").is_file());
         assert_eq!(fs::read(new.join("mods/shared.jar")).unwrap(), b"a2", "le mod del pack non vengono sovrascritte");
+        // Sostituiti dal pack: quello che c'era in entrambe le cartelle e non è dell'utente né dell'app
+        let replaced: Vec<String> = replaced.into_iter().filter(|n| !m.kept.contains(n)).collect();
+        assert_eq!(replaced, vec!["config/", "mods/", "run.bat"]);
+    }
+
+    #[test]
+    fn rollback_dirs_are_found_newest_first() {
+        let base = std::env::temp_dir().join(format!("mineger-rollback-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&base);
+        let dir = base.join("srv");
+        fs::create_dir_all(&dir).unwrap();
+        assert!(rollback_dir_of(&dir, "srv").is_none());
+        fs::create_dir_all(base.join(".old-srv-100")).unwrap();
+        fs::create_dir_all(base.join(".old-srv-250")).unwrap();
+        fs::create_dir_all(base.join(".old-other-999")).unwrap();
+        fs::create_dir_all(base.join(".old-srv-boh")).unwrap();
+        let (p, ts) = rollback_dir_of(&dir, "srv").unwrap();
+        assert_eq!((p, ts), (base.join(".old-srv-250"), 250));
+        assert_eq!(sibling_dirs(&dir, ".old-", "srv").len(), 2);
+        assert!(sibling_dirs(&dir, ".undone-", "srv").is_empty());
+        let _ = fs::remove_dir_all(&base);
     }
 
     #[test]
@@ -749,13 +958,20 @@ mod tests {
 
 /// Closure di progress che emette sia al frontend locale (Tauri) sia ai client remoti (bus eventi).
 /// `key`/`value` identificano l'oggetto (es. ("name", nome server) per `create-progress`, ("id", id) per `update-progress`).
-pub fn progress_emitter(app: &AppHandle, event: &'static str, key: &'static str, value: String) -> impl FnMut(&str, u8, &str) {
+pub fn progress_emitter(app: &AppHandle, event: &'static str, key: &'static str, value: String) -> impl FnMut(&str, u8, &str) + 'static {
     let app = app.clone();
     move |phase: &str, percent: u8, message: &str| {
         let payload = serde_json::json!({ key: value, "phase": phase, "percent": percent, "message": message });
         let _ = app.emit(event, payload.clone());
         crate::events::publish(event, payload);
     }
+}
+
+/// Le attese del retry (rate limit, server che non risponde) sullo stesso evento
+/// di progresso, con fase `wait`: la UI aggiorna il testo senza toccare la barra.
+pub fn wait_notifier(app: &AppHandle, event: &'static str, key: &'static str, value: String) -> impl FnMut(&str) + 'static {
+    let mut emit = progress_emitter(app, event, key, value);
+    move |message: &str| emit("wait", 0, message)
 }
 
 #[cfg(test)]

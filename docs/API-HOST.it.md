@@ -118,6 +118,7 @@ Le tile vengono rese dai file di regione: la mappa funziona anche a server spent
 | `POST` | `/api/servers/{id}/mods` | Carica file `.jar` (multipart) |
 | `POST` | `/api/servers/{id}/mods/toggle` | Attiva/disattiva: `{name, enabled}` |
 | `DELETE` | `/api/servers/{id}/mods/{name}` | Elimina un file |
+| `GET` | `/api/servers/{id}/mods/sides` | Lato client/server di ogni mod installata (`both` · `client` · `server` · `unknown`, con la provenienza: `api` · `jar` · `list`), loader e versione di Minecraft: cosa devono installare gli amici, quali mod solo-client sono inutili sul server |
 
 `provider`: `modrinth` · `curseforge`. Le ricerche filtrano sempre per il **loader del server**; se per la versione di Minecraft non esiste nulla, la risposta contiene `relaxed_mc: true` e le build sono marcate `compatible: false`.
 
@@ -129,6 +130,10 @@ Le tile vengono rese dai file di regione: la mappa funziona anche a server spent
 | `POST` | `/api/packs/install` | Installa: `{name, provider, project_id, file_id}` |
 | `GET` | `/api/servers/{id}/updates` | Controlla aggiornamenti del modpack |
 | `POST` | `/api/servers/{id}/update` | Aggiorna il modpack (backup + migrazione dati) |
+| `GET` | `/api/servers/{id}/rollback` | Versione precedente del modpack conservata accanto al server dopo un aggiornamento (`null` se non c'è) |
+| `POST` | `/api/servers/{id}/rollback` | Torna alla versione precedente del modpack (server spento): mondo, impostazioni e backup restano, la versione annullata resta in `.undone-…` |
+
+`/api/packs/resolve` risponde `400` con `error` che inizia con `LINK_KIND:<kind>:` (`mod` · `plugin` · `resourcepack` · `datapack` · `shader` · `world` · `unknown`) quando il link non è un modpack; il testo dopo i due punti spiega dove va quel contenuto. `/api/servers/{id}/update` risponde con `kept`, `replaced`, `backup_file` e `previous_version` accanto a `new_version`. I rate limit di CurseForge e Modrinth vengono ritentati con attese crescenti; nel frattempo gli eventi di progresso hanno fase `wait`.
 
 ### Eventi in tempo reale
 

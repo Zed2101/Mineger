@@ -81,7 +81,8 @@
       "restart_scheduled": "[Mineger] Crash rilevato: riavvio fra {seconds} s (tentativo {attempt} di {max})",
       "restart_gave_up": "[Mineger] Crash rilevato: già {attempts} riavvii in {minutes} minuti, rinuncio. Controlla i log.",
       "restart_failed": "[Mineger] Riavvio automatico fallito: {error}"
-    }
+    },
+    "pack_rolled_back": "Modpack riportato alla versione {version}. Mod e config dell'aggiornamento annullato restano in {dir}"
   },
   "errors": {
     "app": {
@@ -168,7 +169,8 @@
       "client": "HTTP client: {error}",
       "invalid_response": "Risposta {who} non valida: {error}",
       "status": "{who}: HTTP {status}",
-      "unreachable": "{who} non raggiungibile: {error}"
+      "unreachable": "{who} non raggiungibile: {error}",
+      "rate_limited": "{who} sta limitando le richieste: ho riprovato più volte senza successo. Aspetta qualche minuto e riprova."
     },
     "icons": {
       "copy_failed": "Copia fallita: {error}",
@@ -271,7 +273,11 @@
       "warn_modrinth_install": "Modpack Modrinth: Mineger scaricherà i file lato server e installerà il loader (Fabric/Forge/NeoForge); serve qualche minuto.",
       "warn_no_mrpack": "Nessuna versione .mrpack pubblicata per questo progetto",
       "warn_no_server_pack": "Questo modpack non pubblica un server pack su CurseForge e non è installabile dal pack client: scarica i file server dal sito dell'autore e usa \"Importa ZIP\".",
-      "warn_only_ftb_stubs": "I \"server pack\" di questo modpack sono solo installer FTB (pochi KB) e l'API FTB non conosce il pack: scarica i file server dal sito dell'autore e usa \"Importa ZIP\"."
+      "warn_only_ftb_stubs": "I \"server pack\" di questo modpack sono solo installer FTB (pochi KB) e l'API FTB non conosce il pack: scarica i file server dal sito dell'autore e usa \"Importa ZIP\".",
+      "backup_failed_hint": "Backup del mondo fallito, aggiornamento annullato: {error}. Prova a fare un backup a mano dal tab Automazione: se riesce, riprova l'aggiornamento.",
+      "no_rollback": "Nessuna versione precedente da ripristinare",
+      "stop_before_rollback": "Ferma il server prima di tornare alla versione precedente",
+      "rollback_swap_failed": "Impossibile rimettere la versione precedente: {error}"
     },
     "paper": {
       "build_not_found": "Build Paper {build} non trovata per Minecraft {version}",
@@ -393,6 +399,18 @@
       "firewall_declined": "permesso di amministratore negato: la regola del firewall non è stata aggiunta",
       "firewall_failed": "regola del firewall non aggiunta: {error}",
       "firewall_unsupported": "disponibile solo su Windows"
+    },
+    "link": {
+      "is_mod": "Questo link è una mod ({name}), non un modpack. Per aggiungerla a un server esistente apri il server → tab Mods → + Aggiungi e cercala nel catalogo.",
+      "is_plugin": "Questo link è un plugin ({name}) per server Paper/Spigot, non un modpack. Per aggiungerlo a un server Paper apri il server → tab Mods → + Aggiungi e cercalo nel catalogo.",
+      "is_resourcepack": "Questo link è un resource pack ({name}): va installato nel gioco di chi entra, non sul server. Qui non c'è niente da installare.",
+      "is_shader": "Questo link è uno shader ({name}): va installato nel gioco di chi entra (con Iris o OptiFine), non sul server. Qui non c'è niente da installare.",
+      "is_datapack": "Questo link è un datapack ({name}), non un modpack: scaricalo dalla sua pagina e copialo nella cartella datapacks/ del mondo del server.",
+      "is_world": "Questo link è un mondo ({name}), non un modpack: scaricalo dalla sua pagina e sostituisci la cartella del mondo del server (a server spento).",
+      "is_unknown": "Questo link non porta a un modpack ({name}): qui si installano solo modpack di CurseForge, Modrinth o FTB."
+    },
+    "modsides": {
+      "modrinth_unavailable": "Modrinth non raggiungibile ({error}): i lati sono dedotti solo dai file jar."
     }
   },
   "msg": {
@@ -679,7 +697,21 @@
       "update_confirm_stop": "• Il server verrà fermato",
       "update_confirm_title": "Aggiornare \"{name}\" a {version}?",
       "update_confirm_world": "• Il mondo viene salvato in un backup e spostato nella nuova versione",
-      "updated_to": "Aggiornato a {version}. Rollback: {dir}"
+      "updated_to": "Aggiornato a {version}. Rollback: {dir}",
+      "confirm_backup_first": "• Prima viene fatto un backup del mondo (se fallisce, l'aggiornamento non parte)",
+      "confirm_kept": "• Viene conservato: mondo, server.properties, whitelist/op/ban, backup, icona",
+      "confirm_replaced": "• Viene sostituito: mods, config e script del pack (le mod aggiunte a mano finiscono in mods-precedenti/)",
+      "confirm_rollback_new": "• Potrai tornare alla versione precedente con un clic (a server spento)",
+      "updated_summary": "Aggiornato da {previous} a {version}.",
+      "summary_kept": " Conservati ({count}): {list}.",
+      "summary_replaced": " Sostituiti ({count}): {list}.",
+      "summary_backup": " Backup del mondo: {file}.",
+      "summary_no_backup": " Nessun mondo da salvare.",
+      "rollback_available": "Versione {version} ({when}) conservata: puoi tornarci se qualcosa non va.",
+      "rollback_confirm": "Tornare alla versione {version} di «{name}»?\n\n• Il mondo e le impostazioni attuali vengono mantenuti\n• Mod e config dell'ultimo aggiornamento vengono messe da parte (.undone-…)\n• Il server deve essere spento",
+      "rollback_stop_first": "Ferma il server prima di tornare alla versione precedente",
+      "rolling_back": "Ripristino della versione precedente…",
+      "rolled_back": "Tornato alla versione {version}. La versione più recente resta in {dir}."
     },
     "properties": {
       "icon_none": "Nessuna icona: nella lista server comparirà quella predefinita di Minecraft",
@@ -871,6 +903,53 @@
     },
     "reach": {
       "error": "Test non riuscito: {error}"
+    },
+    "links": {
+      "open_catalog": "Apri il catalogo mod di «{server}»",
+      "modpack_in_browser": "È un link a un modpack: i modpack si installano come nuovo server da + Aggiungi server → Aggiungi da link.",
+      "open_wizard": "Apri «Aggiungi da link»",
+      "searching_slug": "Link riconosciuto ({source}): cerco «{slug}»…",
+      "not_installable": "È un link a un {kind}: non si installa sul server.",
+      "cf_needs_key": "Il link è di CurseForge ma manca la chiave API (Impostazioni): cerco «{slug}» su Modrinth.",
+      "kinds": {
+        "resourcepack": "resource pack",
+        "shader": "shader",
+        "datapack": "datapack",
+        "world": "mondo",
+        "unknown": "contenuto non riconosciuto"
+      }
+    },
+    "modsides": {
+      "loading": "Lettura delle mod…",
+      "count": {
+        "one": "{count} mod da installare",
+        "other": "{count} mod da installare"
+      },
+      "server_only": {
+        "one": "{count} mod resta solo sul server",
+        "other": "{count} mod restano solo sul server"
+      },
+      "unknown_hint": {
+        "one": "{count} mod senza indicazione del lato: elencata per sicurezza",
+        "other": "{count} mod senza indicazione del lato: elencate per sicurezza"
+      },
+      "client_pill": "solo client",
+      "client_pill_title": "Inutile sul server; su Forge può impedire l'avvio",
+      "unknown_pill": "lato sconosciuto",
+      "client_only_note": {
+        "one": "{count} mod solo client installata: inutile sul server, su Forge può impedire l'avvio.",
+        "other": "{count} mod solo client installate: inutili sul server, su Forge possono impedire l'avvio."
+      },
+      "disabling": "Disattivo {count} mod solo client…",
+      "disabled_done": "Disattivate {count} mod solo client",
+      "copied": "Copiato!",
+      "copy_failed": "Copia non riuscita",
+      "saved": "Salvato in {path}",
+      "save_failed": "Salvataggio non riuscito: {error}",
+      "text_header": "Mod da installare per entrare in «{name}» ({env})",
+      "text_none": "Nessuna mod da installare",
+      "error": "Errore: {error}",
+      "empty": "Nessuna mod attiva"
     }
   },
   "progress": {
@@ -937,7 +1016,12 @@
     "paper": {
       "resolving": "Cerco la build Paper…"
     },
-    "verify": "Verifica dell'integrità…"
+    "verify": "Verifica dell'integrità…",
+    "retry": {
+      "rate_limited": "{who} ha chiesto di aspettare {seconds} s (tentativo {attempt} di {max})…",
+      "transient": "{who} non risponde ({error}): riprovo fra {seconds} s (tentativo {attempt} di {max})…",
+      "modrinth_window": "Modrinth: limite di richieste raggiunto, aspetto {seconds} s prima di continuare…"
+    }
   },
   "settings": {
     "language": {
@@ -1478,6 +1562,23 @@
       "yes": "sì",
       "no": "no",
       "untested": "non provato"
+    },
+    "link": {
+      "open_catalog": "Apri il catalogo mod"
+    },
+    "packs": {
+      "plan": "Prima viene fatto un backup del mondo. Viene conservato: mondo, server.properties, whitelist/op/ban, backup, icona. Viene sostituito: mods, config e script del pack.",
+      "rollback_title": "Versione precedente conservata",
+      "rollback_button": "Torna alla versione precedente"
+    },
+    "modsides": {
+      "button": "Cosa devono installare gli amici",
+      "title": "Cosa devono installare gli amici",
+      "intro": "Le mod qui sotto vanno installate anche nel gioco di chi entra, con lo stesso loader e la stessa versione di Minecraft. Le mod solo-server non compaiono.",
+      "copy": "Copia elenco",
+      "save": "Salva .txt",
+      "close": "Chiudi",
+      "disable_all": "Disattivale"
     }
   },
   "presence": {

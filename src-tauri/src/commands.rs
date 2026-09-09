@@ -936,3 +936,52 @@ pub async fn get_reachability(id: String) -> Result<Option<crate::reach::ReachRe
 pub async fn firewall_allow(port: u16, program: Option<String>) -> Result<crate::firewall::FirewallInfo, String> {
     tauri::async_runtime::spawn_blocking(move || crate::reach::firewall_allow(port, program.as_deref())).await.map_err(|e| e.to_string())?
 }
+
+// ---------------------------------------------------------------------------
+// Fase 20 — mod lato client/server, rollback dell'aggiornamento del modpack
+// ---------------------------------------------------------------------------
+
+/// Lato (client / server / entrambi) di ogni mod installata: cosa devono
+/// installare gli amici e quali mod solo-client non servono sul server.
+#[tauri::command]
+pub async fn get_mod_sides(app: AppHandle, id: String) -> Result<crate::modsides::ModSidesReport, String> {
+    tauri::async_runtime::spawn_blocking(move || crate::modsides::report(&app, &id)).await.map_err(|e| e.to_string())?
+}
+
+/// Dialog nativo "Salva con nome" per un file di testo (es. l'elenco delle mod
+/// per gli amici). Ritorna il percorso scelto, `None` se annullato. Solo locale.
+#[tauri::command]
+pub async fn save_text_file(app: AppHandle, suggested_name: String, content: String) -> Result<Option<String>, String> {
+    let name = suggested_name.replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], "_");
+    let picked = app
+        .dialog()
+        .file()
+        .add_filter("Testo (.txt)", &["txt"])
+        .set_file_name(if name.trim().is_empty() { "mods.txt".to_string() } else { name })
+        .blocking_save_file();
+    let Some(file) = picked else { return Ok(None) };
+    let path = file.into_path().map_err(|e| e.to_string())?;
+    std::fs::write(&path, content).map_err(|e| tr!("errors.file.write_failed", "path" => path.display(), "error" => e))?;
+    Ok(Some(path.to_string_lossy().to_string()))
+}
+
+/// Versione precedente del modpack conservata dopo un aggiornamento, se c'è.
+#[tauri::command]
+pub async fn get_pack_rollback(app: AppHandle, id: String) -> Result<Option<packs::RollbackInfo>, String> {
+    tauri::async_runtime::spawn_blocking(move || packs::rollback_info(&app, &id)).await.map_err(|e| e.to_string())?
+}
+
+/// Torna alla versione precedente del modpack (server spento). Mondo e impostazioni restano.
+#[tauri::command]
+pub async fn rollback_pack_update(app: AppHandle, id: String) -> Result<packs::RollbackInfo, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let r = packs::rollback_update(&app, &id);
+        if r.is_ok() {
+            // la versione "nuova" torna a essere un aggiornamento disponibile
+            packs::check_updates(&app, Some(&id));
+        }
+        r
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}

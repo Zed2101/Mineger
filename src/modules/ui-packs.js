@@ -115,6 +115,44 @@ export function renderPackCard(state, server) {
   el('pack-file').textContent = s.file_name || '';
   el('btn-pack-page').dataset.url = s.page_url || '';
   renderUpdateBlock(server);
+  refreshRollback(server);
+}
+
+// ---------------------------------------------------------------------------
+// Versione precedente (rollback dopo un aggiornamento)
+// ---------------------------------------------------------------------------
+
+let rollbackToken = 0;
+
+/** Mostra la riga "Versione precedente conservata" se `get_pack_rollback` trova la cartella `.old-…`. */
+async function refreshRollback(server) {
+  const box = el('pack-rollback');
+  const token = ++rollbackToken;
+  try {
+    const info = await invoke('get_pack_rollback', { id: server.id });
+    if (token !== rollbackToken) return;
+    box.classList.toggle('hidden', !info);
+    box.dataset.version = info?.version || '';
+    if (info) {
+      el('pack-rollback-text').textContent = t('msg2.packs.rollback_available', {
+        version: info.version || '?',
+        when: info.at ? formatRelativeDay(info.at * 1000) : '',
+      });
+    }
+  } catch (err) {
+    box.classList.add('hidden');
+    console.warn('get_pack_rollback', err);
+  }
+}
+
+/** "Aggiornato da 1.5 a 1.6. Conservati (4): … Sostituiti (3): … Backup del mondo: …" */
+export function describeUpdateResult(res) {
+  let text = t('msg2.packs.updated_summary', { previous: res.previous_version || '?', version: res.new_version });
+  if (res.kept?.length) text += t('msg2.packs.summary_kept', { count: res.kept.length, list: res.kept.join(', ') });
+  if (res.replaced?.length) text += t('msg2.packs.summary_replaced', { count: res.replaced.length, list: res.replaced.join(', ') });
+  text += res.backup_file ? t('msg2.packs.summary_backup', { file: res.backup_file }) : t('msg2.packs.summary_no_backup');
+  if (res.extra_mods?.length) text += t('msg2.packs.extra_mods', { list: res.extra_mods.join(', ') });
+  return text;
 }
 
 // ---------------------------------------------------------------------------
@@ -173,10 +211,10 @@ export function setupPacks(state, hooks = {}) {
     const running = rt.status !== 'offline';
     const bullets = [
       ...(running ? [t('msg2.packs.update_confirm_stop')] : []),
-      t('msg2.packs.update_confirm_world'),
-      t('msg2.packs.update_confirm_settings'),
-      t('msg2.packs.update_confirm_mods'),
-      t('msg2.packs.update_confirm_rollback'),
+      t('msg2.packs.confirm_backup_first'),
+      t('msg2.packs.confirm_kept'),
+      t('msg2.packs.confirm_replaced'),
+      t('msg2.packs.confirm_rollback_new'),
     ];
     const msg = `${t('msg2.packs.update_confirm_title', { name: server.name, version: u.latest.version || u.latest.name })}\n\n${bullets.join('\n')}`;
     if (!confirm(msg)) return;
@@ -192,9 +230,7 @@ export function setupPacks(state, hooks = {}) {
       }
       setProgress(0, t('msg2.packs.starting_update'));
       const res = await invoke('update_pack_server', { id: server.id });
-      let text = t('msg2.packs.updated_to', { version: res.new_version, dir: res.rollback_dir });
-      if (res.extra_mods?.length) text += t('msg2.packs.extra_mods', { list: res.extra_mods.join(', ') });
-      el('pack-update-note').textContent = text;
+      el('pack-update-note').textContent = describeUpdateResult(res);
       el('pack-update-note').className = 'note-ok mt-2';
       updates.delete(server.id);
       await hooks.onUpdated?.(server.id);
@@ -220,7 +256,42 @@ export function setupPacks(state, hooks = {}) {
     const { id, percent, message, phase } = event.payload;
     if (id !== state.activeServerId) return;
     if (phase === 'error') return;
+    // Attesa per un rate limit: solo il testo, la barra resta dov'è
+    if (phase === 'wait') {
+      el('pack-update-text').textContent = message;
+      return;
+    }
     setProgress(percent, message);
+  });
+
+  // Torna alla versione precedente (server spento, conferma esplicita)
+  el('btn-pack-rollback').addEventListener('click', async () => {
+    const server = state.serverList.find((s) => s.id === state.activeServerId);
+    if (!server) return;
+    const note = el('pack-rollback-note');
+    if (getRuntime(state, server.id).status !== 'offline') {
+      note.textContent = t('msg2.packs.rollback_stop_first');
+      note.className = 'note-warn mt-2 min-h-[14px]';
+      return;
+    }
+    const version = el('pack-rollback').dataset.version || '?';
+    if (!confirm(t('msg2.packs.rollback_confirm', { name: server.name, version }))) return;
+    const btn = el('btn-pack-rollback');
+    btn.disabled = true;
+    note.textContent = t('msg2.packs.rolling_back');
+    note.className = 'note mt-2 min-h-[14px]';
+    try {
+      const info = await invoke('rollback_pack_update', { id: server.id });
+      note.textContent = t('msg2.packs.rolled_back', { version: info.version, dir: info.dir });
+      note.className = 'note-ok mt-2 min-h-[14px]';
+      updates.delete(server.id);
+      await hooks.onUpdated?.(server.id);
+    } catch (err) {
+      note.textContent = t('msg2.packs.error_generic', { error: err });
+      note.className = 'note-err mt-2 min-h-[14px]';
+    } finally {
+      btn.disabled = false;
+    }
   });
 }
 
